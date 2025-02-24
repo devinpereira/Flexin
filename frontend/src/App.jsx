@@ -1,9 +1,10 @@
 // src/App.jsx
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Layout from './components/Layout';
+import Layout from './components/Layout'; // Updated to point to Layout.jsx
 import Login from './pages/Auth/Login';
 import Home from './pages/Home';
-import StorePage from './pages/StorePage';
+import StorePage from './pages/Store';
 import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import Community from './pages/Community';
 
