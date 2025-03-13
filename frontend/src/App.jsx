@@ -11,13 +11,11 @@ function App() {
   return (
     // <Layout>
       <Router>
-      <Routes>
         <Route path="/" element={<Login />} />
         <Route path='/store' element={<Store />} />
         <Route path='/checkout' element={<Checkout />} />
         <Route path='/product/:productId' element={<ProductView />} /> 
         {/* Other routes */}
-      </Routes>
       </Router>
     // </Layout>
   )
