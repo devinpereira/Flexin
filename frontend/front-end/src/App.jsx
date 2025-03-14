@@ -1,34 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import Layout from './components/Layout';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './pages/Login';
+import Store from './pages/Store';
+import Checkout from './components/Checkout';
+import ProductView from './components/ProductView';
+import Trainers from './pages/Trainers';
+import Explore from './pages/Explore';
+import Schedule from './pages/Schedule';
+import MealPlan from './pages/MealPlan';
+import Chat from './pages/Chat';
+import Subscription from './pages/Subscription';
+import TrainerProfile from './pages/TrainerProfile';
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    // <Layout>
+      <Router>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path='/store' element={<Store />} />
+        <Route path='/checkout' element={<Checkout />} />
+        <Route path='/product/:productId' element={<ProductView />} /> 
+        <Route path='/trainers' element={<Trainers />} />
+        <Route path='/explore' element={<Explore />} />
+        <Route path='/schedule/:trainerId' element={<Schedule />} />
+        <Route path='/meal-plan/:trainerId' element={<MealPlan />} />
+        <Route path='/chat/:trainerId' element={<Chat />} />
+        <Route path='/subscription/:trainerId' element={<Subscription />} />
+        <Route path='/trainer-profile/:trainerId' element={<TrainerProfile />} />
+        {/* Other routes */}
+      </Routes>
+      </Router>
+    // </Layout>
   )
 }
 
