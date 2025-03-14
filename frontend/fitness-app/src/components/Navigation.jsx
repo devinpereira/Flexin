@@ -9,7 +9,7 @@ const Navbar = () => {
         <div className="flex items-center">
           <img src="/logo.svg" alt="Logo" width="120" height="40" className='cursor-pointer' />
           <div className="hidden md:flex space-x-15 ml-20">
-            <a href="#" className="text-white hover:text-[#f67a45] text-lg">
+            <a href="/" className="text-white hover:text-[#f67a45] text-lg">
               HOME
             </a>
             <a href="/store" className="text-white hover:text-[#f67a45] text-lg">
@@ -18,7 +18,7 @@ const Navbar = () => {
             <a href="#" className="text-white hover:text-[#f67a45] text-lg">
               CALCULATORS
             </a>
-            <a href="#" className="text-white hover:text-[#f67a45] text-lg">
+            <a href="/trainers" className="text-white hover:text-[#f67a45] text-lg">
               TRAINERS
             </a>
             <a href="#" className="text-white hover:text-[#f67a45] text-lg">
