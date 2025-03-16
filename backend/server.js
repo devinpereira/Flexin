@@ -1,8 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import logger from "./middleware/logger.js";
-import errorHandler from "./middleware/error.js";
-import notFound from "./middleware/notFound.js";
 import connectDB from "./config/db.js";
 
 const port = process.env.PORT || 8000;
@@ -18,15 +17,12 @@ app.use(express.urlencoded({ extended: true }));
 // Init middleware
 app.use(logger);
 
-// Setup routes
-
-// Error handling middleware
-app.use(notFound);
-app.use(errorHandler);
-
 // Connect to MongoDB
 connectDB();
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// Setup routes
+
+// Serve uploads folder
+app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
+
+app.listen(port, () => console.log(`Server running on port ${port}`));
