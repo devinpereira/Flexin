@@ -1,9 +1,5 @@
 {
-<<<<<<<< HEAD:frontend/front-end/package.json
-  "name": "front-end",
-========
   "name": "fitness-app",
->>>>>>>> d2bc14e1d74bbfa1a9ab0b86840ddc872985e507:frontend/fitness-app/package.json
   "private": true,
   "version": "0.0.0",
   "type": "module",
