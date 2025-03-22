@@ -4,7 +4,7 @@ import { registerUser, loginUser, getUserInfo } from "../controllers/authControl
 
 const router = express.Router();
 
-router.post("/register", registerUser);
+router.post("/signup", registerUser);
 router.post("/login", loginUser);
 router.get("/getUserInfo", protect, getUserInfo);
 
