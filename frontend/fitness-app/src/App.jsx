@@ -2,6 +2,7 @@ import './App.css'
 import Layout from './components/Layout';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import Store from './pages/Store';
 import Checkout from './components/Checkout';
 import ProductView from './components/ProductView';
@@ -30,6 +31,7 @@ function App() {
       <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path='/store' element={<Store />} />
         <Route path='/checkout' element={<Checkout />} />
         <Route path='/product/:productId' element={<ProductView />} /> 
