@@ -20,6 +20,7 @@ import ViewSchedule from './pages/ViewSchedule';
 import SearchExercisesPage from './pages/SearchExercisesPage';
 import FitnessCalculators from './pages/FitnessCalculators';
 import Exercise from './pages/Exercises';
+import UserProvider from './context/UserContext';
 
 
 
@@ -27,9 +28,10 @@ function App() {
 
   return (
     // <Layout>
+    <UserProvider>
       <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path='/store' element={<Store />} />
         <Route path='/checkout' element={<Checkout />} />
         <Route path='/product/:productId' element={<ProductView />} /> 
@@ -51,6 +53,7 @@ function App() {
         {/* Other routes */}
       </Routes>
       </Router>
+      </UserProvider>
     // </Layout>
   )
 }
