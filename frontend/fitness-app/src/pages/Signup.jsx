@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import Navigation from '../components/Navigation';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion'; // Add framer-motion for animations
+import { validateEmail } from "../utils/helper.js";
+import { UserContext } from "../context/userContext.jsx";
+import axiosInstance from "../utils/axiosInstance.js";
+import { API_PATHS } from "../utils/apiPaths";
 
 const Signup = () => {
   const [fullName, setFullName] = useState('');
@@ -9,7 +13,55 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const { updateUser } = useContext(UserContext);
   const navigate = useNavigate();
+
+  // Handle SignUp Form Submit
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+
+    if (!fullName) {
+      setError("Please enter full name");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!password) {
+      setError("Please enter password");
+      return;
+    }
+
+    setError("");
+
+    // SignUp API Call
+    try {
+      const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+        fullName,
+        email,
+        password,
+        profileImageUrl,
+      });
+      const { token, user } = response.data;
+
+      if (token) {
+        localStorage.setItem("token", token);
+        updateUser(user);
+        navigate("/store");
+      }
+    } catch (error) {
+      if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Something went wrong. Please try again later");
+      }
+    }
+  };
 
   // Animation variants
   const containerVariants = {
@@ -27,17 +79,6 @@ const Signup = () => {
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate signup process
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/store');
-    }, 1500);
   };
 
   return (
@@ -68,7 +109,7 @@ const Signup = () => {
             Sign Up
           </motion.h2>
           
-          <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-4 sm:space-y-5" onSubmit={handleSignUp}>
             <motion.div variants={itemVariants}>
               <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
                 Full Name
