@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navigation from '../components/Navigation';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion'; // Add framer-motion for animations
 
-const Login = () => {
+const Signup = () => {
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -31,7 +33,7 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login process
+    // Simulate signup process
     setTimeout(() => {
       setIsLoading(false);
       navigate('/store');
@@ -41,17 +43,16 @@ const Login = () => {
   return (
     <div 
       className="min-h-screen bg-cover bg-center overflow-hidden bg-fixed"
-      style={{ backgroundImage: "url(/src/assets/background.png)" }}
+      style={{ backgroundImage: 'url(/src/assets/background.png)' }}
     >
       <Navigation />
       <div className="container mx-auto h-screen flex items-center justify-center px-4 sm:justify-end py-10 sm:py-0">
         {/* Left Side Image (Visible on medium screens and up) */}
-        <div
-          className="hidden md:block flex-1 h-full bg-center bg-contain bg-no-repeat mr-20"
-          style={{ backgroundImage: "url(/src/assets/left-image.png)" }}
-        ></div>
+        <div className="hidden md:block flex-1 h-full bg-center bg-contain bg-no-repeat mr-20"
+          style={{ backgroundImage: 'url(/src/assets/left-image.png)' }}>
+        </div>
 
-        {/* Login Form Container */}
+        {/* Signup Form Container */}
         <motion.div 
           initial="hidden"
           animate="visible"
@@ -64,12 +65,28 @@ const Login = () => {
             variants={itemVariants}
             className="text-2xl sm:text-3xl text-white font-bold mb-6 sm:mb-8 text-center"
           >
-            Sign In
+            Sign Up
           </motion.h2>
           
-          <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
             <motion.div variants={itemVariants}>
-              <label className="block text-white text-sm font-medium mb-2">
+              <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
+                          placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
+                          transform transition duration-300 focus:scale-[1.02]"
+                placeholder="Enter your full name"
+                required
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
                 Email
               </label>
               <input
@@ -85,7 +102,7 @@ const Login = () => {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <label className="block text-white text-sm font-medium mb-2">
+              <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
                 Password
               </label>
               <input
@@ -95,7 +112,23 @@ const Login = () => {
                 className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
                           placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
                           transform transition duration-300 focus:scale-[1.02]"
-                placeholder="Enter your password"
+                placeholder="Create a password"
+                required
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
+                          placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
+                          transform transition duration-300 focus:scale-[1.02]"
+                placeholder="Confirm your password"
                 required
               />
             </motion.div>
@@ -105,7 +138,7 @@ const Login = () => {
               type="submit"
               className="w-full bg-[#F16436] text-white py-3 px-4 rounded-lg font-medium 
                         hover:bg-opacity-90 active:bg-opacity-100 transition duration-300
-                        transform active:scale-95 flex justify-center items-center"
+                        transform active:scale-95 flex justify-center items-center mt-2"
               whileTap={{ scale: 0.97 }}
             >
               {isLoading ? (
@@ -114,16 +147,16 @@ const Login = () => {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               ) : null}
-              {isLoading ? 'Signing in...' : 'Sign In'}
+              {isLoading ? 'Creating account...' : 'Sign Up'}
             </motion.button>
 
             {/* Divider Line */}
-            <motion.div variants={itemVariants} className="h-0 relative shadow-[0px_0px_11.399999618530273px_0px_rgba(241,100,54,1.00)] outline-1 outline-offset-[-0.50px] outline-[#f16436] my-4">
+            <motion.div variants={itemVariants} className="h-0 relative shadow-[0px_0px_11.399999618530273px_0px_rgba(241,100,54,1.00)] outline-1 outline-offset-[-0.50px] outline-[#f16436] my-3">
               <div className="absolute inset-0 border-t border-[#f16436]"></div>
             </motion.div>
 
-            {/* Stacked Social Sign-In Buttons */}
-            <motion.div variants={itemVariants} className="space-y-3 sm:space-y-4 mt-4">
+            {/* Stacked Social Sign-Up Buttons */}
+            <motion.div variants={itemVariants} className="space-y-3 sm:space-y-4 mt-3">
               <button
                 type="button"
                 className="w-full relative bg-[#d9d9d9] rounded-sm py-2 px-4 flex items-center justify-center gap-2 
@@ -135,7 +168,7 @@ const Login = () => {
                   alt="Google Logo"
                   className="w-5 h-5"
                 />
-                <span className="text-sm font-medium">Sign in with Google</span>
+                <span className="text-sm font-medium">Sign up with Google</span>
               </button>
 
               <button
@@ -149,19 +182,19 @@ const Login = () => {
                   alt="Apple Logo"
                   className="w-5 h-5"
                 />
-                <span className="text-sm font-medium">Sign in with Apple</span>
+                <span className="text-sm font-medium">Sign up with Apple</span>
               </button>
             </motion.div>
 
             <motion.div 
               variants={itemVariants}
-              className="text-center mt-4"
+              className="text-center mt-3"
             >
               <Link 
-                to="/signup" 
+                to="/"
                 className="text-white/70 hover:text-white text-sm transition-colors duration-300"
               >
-                Don't have an account? <span className="underline">Sign Up</span>
+                Already have an account? <span className="underline">Sign In</span>
               </Link>
             </motion.div>
           </form>
@@ -171,4 +204,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;
