@@ -31,6 +31,7 @@ connectDB();
 
 // Setup routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/posts", postRoutes);
 
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
