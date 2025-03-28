@@ -8,7 +8,27 @@ const router = express.Router();
 export const getPosts = async (req, res) => {};
 
 // Get a Post
-export const getPost = async (req, res) => {};
+export const getPost = async (req, res) => {
+  const { id: postId } = req.params;
+
+  // Validate ObjectId (optional but recommended)
+  if (!postId.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ message: "Invalid post ID" });
+  }
+
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.status(200).json(post);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error getting post", error: err.message });
+  }
+};
 
 // Create a Post
 export const createPost = async (req, res) => {
