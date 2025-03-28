@@ -62,7 +62,7 @@ const FitnessCalculators = () => {
                 }`}
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate('/dashboard');
+                  navigate('/calculators');
                 }}
               >
                 <FaDumbbell size={20} />
