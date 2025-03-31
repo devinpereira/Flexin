@@ -7,6 +7,8 @@ import logger from "./middleware/logger.js";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
+import commentRoutes from "./routes/commentRoutes.js";
+import followRoutes from "./routes/followRoutes.js";
 
 const port = process.env.PORT || 8000;
 const app = express();
@@ -33,6 +35,8 @@ connectDB();
 // Setup routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/posts", postRoutes);
+app.use("/api/v1/comments", commentRoutes);
+app.use("/api/v1/follow", followRoutes);
 
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

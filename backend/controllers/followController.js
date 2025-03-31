@@ -1,0 +1,65 @@
+import Follow from "../models/Follow.js";
+
+export const sendFollowRequest = async (req, res) => {
+  try {
+    const { followingId } = req.params;
+    const followerId = req.user._id;
+
+    if (followerId.toString() === followingId.toString()) {
+      return res.status(400).json({ error: "You cannot follow yourself" });
+    }
+
+    const existingFollow = await Follow.findOne({ followerId, followingId });
+
+    if (existingFollow) {
+      return res.status(400).json({ error: "Follow request already sent" });
+    }
+
+    const newFollow = new Follow({
+      followerId,
+      followingId,
+      status: "pending",
+    });
+
+    await newFollow.save();
+
+    res.status(201).json({ message: "Follow request sent", follow: newFollow });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Approve Request
+export const approveFollowRequest = async (req, res) => {
+  try {
+    const { followId } = req.params;
+
+    const follow = await Follow.findById(followId);
+    if (!follow)
+      return res.status(404).json({ error: "Follow request not found" });
+
+    follow.status = "accepted";
+    await follow.save();
+
+    res.json({ message: "Follow request approved" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Decline Request
+export const rejectFollowRequest = async (req, res) => {
+  try {
+    const { followId } = req.params;
+
+    const follow = await Follow.findById(followId);
+    if (!follow)
+      return res.status(404).json({ error: "Follow request not found" });
+
+    await follow.deleteOne();
+
+    res.json({ message: "Follow request rejected" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
