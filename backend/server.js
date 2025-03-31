@@ -6,6 +6,7 @@ import path from "path";
 import logger from "./middleware/logger.js";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
 
 const port = process.env.PORT || 8000;
 const app = express();
