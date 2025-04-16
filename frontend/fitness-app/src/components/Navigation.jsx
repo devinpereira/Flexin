@@ -21,7 +21,7 @@ const Navbar = () => {
             <a href="/trainers" className="text-white hover:text-[#f67a45] text-lg">
               TRAINERS
             </a>
-            <a href="#" className="text-white hover:text-[#f67a45] text-lg">
+            <a href="/community" className="text-white hover:text-[#f67a45] text-lg">
               COMMUNITY
             </a>
           </div>

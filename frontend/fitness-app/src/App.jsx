@@ -21,11 +21,9 @@ import ViewSchedule from './pages/ViewSchedule';
 import SearchExercisesPage from './pages/SearchExercisesPage';
 import FitnessCalculators from './pages/FitnessCalculators';
 import Exercise from './pages/Exercises';
-
-
+import Community from './pages/Community'; // Import the new Community page
 
 function App() {
-
   return (
     // <Layout>
       <Router>
@@ -50,6 +48,7 @@ function App() {
         <Route path="/search-exercises" element={<SearchExercisesPage />} />
         <Route path="/fitness-calculators" element={<FitnessCalculators />} />
         <Route path="/exercise" element={<Exercise />} />
+        <Route path="/community" element={<Community />} />
         {/* Other routes */}
       </Routes>
       </Router>
