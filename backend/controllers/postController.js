@@ -57,12 +57,12 @@ export const getPost = async (req, res) => {
 // Create a Post
 export const createPost = async (req, res) => {
   try {
-    const { description, content } = req.body;
+    const { description } = req.body;
     const mediaFiles = req.files ? req.files.map((file) => file.path) : [];
     const newPost = new Post({
       userId: req.user._id,
       description,
-      content: mediaFiles.length > 0 ? mediaFiles : content,
+      content: mediaFiles,
     });
     await newPost.save();
     res.status(201).json(newPost);

@@ -10,8 +10,10 @@ import NotificationsPanel from './components/NotificationsPanel';
 import Profile from './components/Profile';
 import FriendsManagement from './components/FriendsManagement';
 import { motion } from 'framer-motion';
+import { useUserAuth } from "../../hooks/useUserAuth";
 
 const Community = () => {
+  useUserAuth();
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);
   const navigate = useNavigate();

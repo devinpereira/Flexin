@@ -129,7 +129,7 @@ const PostFeed = () => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <Post post={post} onLike={handleLikePost} />
+              <Post  key={post.id} post={post} onLike={handleLikePost} />
             </motion.div>
           ))}
         </motion.div>

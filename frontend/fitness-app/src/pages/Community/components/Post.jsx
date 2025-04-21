@@ -56,8 +56,8 @@ const Post = ({ post, onLike }) => {
         <div className="flex items-center">
           <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
             <img 
-              src={post.user.profileImage} 
-              alt={post.user.name} 
+              src={post.user?.profileImage || '/src/assets/profile1.png'} 
+              alt={post.user?.name || 'User'}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
