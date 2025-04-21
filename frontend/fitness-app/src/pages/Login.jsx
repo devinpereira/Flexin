@@ -5,7 +5,8 @@ import { motion } from 'framer-motion'; // Add framer-motion for animations
 import { validateEmail } from "../utils/helper.js";
 import axiosInstance from "../utils/axiosInstance.js";
 import { API_PATHS } from "../utils/apiPaths";
-import { UserContext } from "../context/userContext.jsx";
+import { UserContext } from "../context/UserContext.jsx";
+
 
 const Login = () => {
   const [email, setEmail] = useState('');
