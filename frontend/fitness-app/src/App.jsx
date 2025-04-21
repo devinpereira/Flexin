@@ -22,10 +22,12 @@ import SearchExercisesPage from './pages/SearchExercisesPage';
 import FitnessCalculators from './pages/FitnessCalculators';
 import Exercise from './pages/Exercises';
 import Community from './pages/Community'; // Import the new Community page
+import UserProvider from "./context/UserContext";
 
 function App() {
   return (
     // <Layout>
+    <UserProvider>
       <Router>
       <Routes>
         <Route path="/" element={<Login />} />
@@ -52,8 +54,9 @@ function App() {
         {/* Other routes */}
       </Routes>
       </Router>
+    </UserProvider>
     // </Layout>
-  )
+  );
 }
 
-export default App
+export default App;

@@ -1,17 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import Navigation from '../components/Navigation';
+import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Navigation from '../components/Navigation';
 import { motion } from 'framer-motion'; // Add framer-motion for animations
 import { validateEmail } from "../utils/helper.js";
 import axiosInstance from "../utils/axiosInstance.js";
 import { API_PATHS } from "../utils/apiPaths";
 import { UserContext } from "../context/UserContext.jsx";
 
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const { updateUser } = useContext(UserContext);
   const navigate = useNavigate();
+
+  // Handle Login Form Submit
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    if(!validateEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if(!password) {
+      setError("Please enter password");
+      return;
+    }
+
+    setError("");
+
+    // Login API Call
+    try {
+      const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, {
+        email,
+        password,
+      });
+      const { token, user } = response.data;
+
+      if (token) {
+        localStorage.setItem("token", token);
+        updateUser(user);
+        navigate("/calculators");
+      }
+    } catch (error) {
+      if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Something went wrong. Please try again later");
+      }
+    }
+  };
 
   // Animation variants
   const containerVariants = {
@@ -45,14 +87,15 @@ const Login = () => {
   return (
     <div 
       className="min-h-screen bg-cover bg-center overflow-hidden bg-fixed"
-      style={{ backgroundImage: 'url(/src/assets/background.png)' }}
+      style={{ backgroundImage: "url(/src/assets/background.png)" }}
     >
       <Navigation />
       <div className="container mx-auto h-screen flex items-center justify-center px-4 sm:justify-end py-10 sm:py-0">
         {/* Left Side Image (Visible on medium screens and up) */}
-        <div className="hidden md:block flex-1 h-full bg-center bg-contain bg-no-repeat mr-20"
-          style={{ backgroundImage: 'url(/src/assets/left-image.png)' }}>
-        </div>
+        <div
+          className="hidden md:block flex-1 h-full bg-center bg-contain bg-no-repeat mr-20"
+          style={{ backgroundImage: "url(/src/assets/left-image.png)" }}
+        ></div>
 
         {/* Login Form Container */}
         <motion.div 
@@ -69,8 +112,9 @@ const Login = () => {
           >
             Sign In
           </motion.h2>
+          {error && <p className="text-red-500 text-xs pb-2.5">{error}</p>}
           
-          <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-4 sm:space-y-6" onSubmit={handleLogin}>
             <motion.div variants={itemVariants}>
               <label className="block text-white text-sm font-medium mb-2">
                 Email
@@ -78,7 +122,7 @@ const Login = () => {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={({ target }) => setEmail(target.value)}
                 className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
                           placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
                           transform transition duration-300 focus:scale-[1.02]"
@@ -94,7 +138,7 @@ const Login = () => {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={({ target }) => setPassword(target.value)}
                 className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
                           placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
                           transform transition duration-300 focus:scale-[1.02]"

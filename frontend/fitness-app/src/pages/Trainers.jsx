@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import { FaUserFriends, FaPlus } from 'react-icons/fa';
 import { MdExplore } from 'react-icons/md';
+import { useUserAuth } from '../hooks/useUserAuth';
 
 const Trainers = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('My Trainers');
+  useUserAuth();
 
   // Mock trainer data
   const trainers = [
