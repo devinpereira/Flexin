@@ -1,5 +1,26 @@
 import Follow from "../models/Follow.js";
 
+
+export const searchFriends = async (req, res) => {
+  try {
+    const { username } = req.query;
+    const userId = req.user._id;
+
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+
+    const users = await Follow.find({
+      username: { $regex: username, $options: "i" },
+      _id: { $ne: userId },
+    }).limit(10);
+
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const sendFollowRequest = async (req, res) => {
   try {
     const { followingId } = req.params;
