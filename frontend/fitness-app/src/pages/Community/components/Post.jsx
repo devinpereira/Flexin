@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaHeart, FaRegHeart, FaComment, FaShare, FaEllipsisH } from 'react-icons/fa';
+import { FaHeart, FaRegHeart, FaComment, FaShare, FaEllipsisH, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const Post = ({ post, onLike }) => {
   const [liked, setLiked] = useState(post.liked || false);
@@ -7,6 +7,7 @@ const Post = ({ post, onLike }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [comments, setComments] = useState([
     // Sample comments
     { id: 1, user: 'Jessica Kim', text: 'Looking great! Keep up the good work!', timestamp: '1 hour ago' },
@@ -42,6 +43,20 @@ const Post = ({ post, onLike }) => {
     setCommentText('');
   };
 
+  // Handle image navigation
+  const goToPrevImage = () => {
+    setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : prev));
+  };
+
+  const goToNextImage = () => {
+    setCurrentImageIndex(prev => {
+      if (post.images && Array.isArray(post.images)) {
+        return prev < post.images.length - 1 ? prev + 1 : prev;
+      }
+      return prev;
+    });
+  };
+
   // Close menu when clicking outside
   React.useEffect(() => {
     const handleClickOutside = () => setShowMenu(false);
@@ -49,6 +64,9 @@ const Post = ({ post, onLike }) => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  // Check if we have multiple images
+  const hasMultipleImages = post.images && Array.isArray(post.images) && post.images.length > 0;
+  
   return (
     <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
       {/* Post Header */}
@@ -56,8 +74,8 @@ const Post = ({ post, onLike }) => {
         <div className="flex items-center">
           <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
             <img 
-              src={post.user?.profileImage || '/src/assets/profile1.png'} 
-              alt={post.user?.name || 'User'}
+              src={post.user.profileImage} 
+              alt={post.user.name} 
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
@@ -98,8 +116,62 @@ const Post = ({ post, onLike }) => {
       {/* Post Content */}
       <p className="text-white mb-4">{post.content}</p>
       
-      {/* Post Image (if any) */}
-      {post.image && (
+      {/* Post Image(s) */}
+      {hasMultipleImages ? (
+        <div className="rounded-lg overflow-hidden mb-4 relative">
+          <img 
+            src={post.images[currentImageIndex].preview} 
+            alt={`Post ${currentImageIndex + 1}`} 
+            className="w-full h-auto max-h-[500px] object-contain bg-black"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/src/assets/posts/default.jpg';
+            }}
+          />
+          
+          {post.images.length > 1 && (
+            <>
+              {/* Image Counter */}
+              <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded-full text-xs">
+                {currentImageIndex + 1}/{post.images.length}
+              </div>
+              
+              {/* Navigation Arrows */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToPrevImage();
+                }}
+                className={`absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${currentImageIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black/80'}`}
+                disabled={currentImageIndex === 0}
+              >
+                <FaChevronLeft />
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToNextImage();
+                }}
+                className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${currentImageIndex === post.images.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black/80'}`}
+                disabled={currentImageIndex === post.images.length - 1}
+              >
+                <FaChevronRight />
+              </button>
+              
+              {/* Thumbnail Indicators */}
+              <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+                {post.images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`w-2 h-2 rounded-full ${idx === currentImageIndex ? 'bg-[#f67a45]' : 'bg-white/50'}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      ) : post.image && (
         <div className="rounded-lg overflow-hidden mb-4">
           <img 
             src={post.image} 
