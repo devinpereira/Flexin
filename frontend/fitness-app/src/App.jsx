@@ -23,40 +23,41 @@ import FitnessCalculators from "./pages/FitnessCalculators";
 import Exercise from "./pages/Exercises";
 import Community from "./pages/Community";
 import UserProvider from "./context/UserContext";
+import Home from "./pages/Home";
+import { NavigationProvider } from "./context/NavigationContext";
 
 function App() {
   return (
-    // <Layout>
     <UserProvider>
       <Router>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/store" element={<Store />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/product/:productId" element={<ProductView />} />
-          <Route path="/trainers" element={<Trainers />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/schedule/:trainerId" element={<Schedule />} />
-          <Route path="/meal-plan/:trainerId" element={<MealPlan />} />
-          <Route path="/chat/:trainerId" element={<Chat />} />
-          <Route path="/subscription/:trainerId" element={<Subscription />} />
-          <Route path="/trainer-profile/:trainerId" element={<TrainerProfile />} />
-          <Route path="/calculators" element={<Calculators />} />
-          <Route path="/custom-schedules" element={<CustomSchedules />} />
-          <Route path="/add-schedule" element={<AddSchedule />} />
-          <Route path="/edit-schedule/:scheduleId" element={<EditSchedule />} />
-          <Route path="/view-schedule/:scheduleId" element={<ViewSchedule />} />
-          <Route path="/search-exercises" element={<SearchExercisesPage />} />
-          <Route path="/fitness-calculators" element={<FitnessCalculators />} />
-          <Route path="/exercise" element={<Exercise />} />
-          <Route path="/community" element={<Community />} />
-          {/* Other routes */}
-        </Routes>
+        <NavigationProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/store" element={<Store />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/product/:productId" element={<ProductView />} />
+            <Route path="/trainers" element={<Trainers />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/schedule/:trainerId" element={<Schedule />} />
+            <Route path="/meal-plan/:trainerId" element={<MealPlan />} />
+            <Route path="/chat/:trainerId" element={<Chat />} />
+            <Route path="/subscription/:trainerId" element={<Subscription />} />
+            <Route path="/trainer-profile/:trainerId" element={<TrainerProfile />} />
+            <Route path="/calculators" element={<Calculators />} />
+            <Route path="/custom-schedules" element={<CustomSchedules />} />
+            <Route path="/add-schedule" element={<AddSchedule />} />
+            <Route path="/edit-schedule/:scheduleId" element={<EditSchedule />} />
+            <Route path="/view-schedule/:scheduleId" element={<ViewSchedule />} />
+            <Route path="/search-exercises" element={<SearchExercisesPage />} />
+            <Route path="/fitness-calculators" element={<FitnessCalculators />} />
+            <Route path="/exercise" element={<Exercise />} />
+            <Route path="/community" element={<Community />} />
+          </Routes>
+        </NavigationProvider>
       </Router>
     </UserProvider>
-    // </Layout>
   );
 }
 
