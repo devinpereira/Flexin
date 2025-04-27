@@ -10,7 +10,8 @@ import {
   FaRunning, 
   FaChartBar,
   FaSearch,
-  FaFilter
+  FaFilter,
+  FaBars
 } from 'react-icons/fa';
 
 const Exercises = () => {
@@ -22,6 +23,8 @@ const Exercises = () => {
   const [filteredExercises, setFilteredExercises] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Body part categories
   const bodyParts = [
@@ -205,14 +208,133 @@ const Exercises = () => {
     setSearchQuery(e.target.value);
   };
 
+  // Handle window resize to close mobile menu on larger screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+        setIsMobileFilterOpen(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
       
-      <div className="container mx-auto pt-8 px-4 flex">
-        {/* Left Navigation */}
-        <div className="fixed left-0 top-50 z-10 h-screen">
+      {/* Mobile Menu Toggle Button - Only visible on mobile */}
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="bg-[#f67a45] text-white p-4 rounded-full shadow-lg"
+        >
+          <FaBars size={24} />
+        </button>
+      </div>
+      
+      {/* Mobile Navigation Menu - Slide up from bottom when open */}
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${
+        isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
+      }`}>
+        <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
+        
+        <div className="px-6 pb-8 pt-2">
+          <div className="flex flex-col space-y-4">
+            <a
+              href="#"
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
+                activeSection === 'Training'
+                  ? 'bg-[#f67a45] text-white font-medium'
+                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/dashboard');
+              }}
+            >
+              <FaDumbbell size={20} />
+              <span>Training</span>
+            </a>
+            
+            <a
+              href="#"
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
+                activeSection === 'Custom Schedules'
+                  ? 'bg-[#f67a45] text-white font-medium'
+                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/custom-schedules');
+              }}
+            >
+              <FaCalendarAlt size={20} />
+              <span>Custom Schedules</span>
+            </a>
+            
+            {/* Add remaining navigation items */}
+            
+            <div className="border-t border-white/20 pt-4 mt-4">
+              <div className="flex items-center gap-3 px-6 py-2">
+                <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
+                <span className="text-white">Account</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile Filter Panel - Slide up when open */}
+      <div className={`md:hidden fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
+        isMobileFilterOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}>
+        <div className={`absolute bottom-0 left-0 right-0 bg-[#121225] rounded-t-3xl p-5 transition-transform duration-300 transform ${
+          isMobileFilterOpen ? 'translate-y-0' : 'translate-y-full'
+        }`}>
+          <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mb-6"></div>
+          
+          <h3 className="text-white text-lg font-bold mb-4">Filter Exercises</h3>
+          
+          <div className="mb-6">
+            <label className="block text-white mb-2">Body Part</label>
+            <div className="grid grid-cols-2 gap-2 max-h-[30vh] overflow-y-auto pb-2">
+              {bodyParts.map(bodyPart => (
+                <button
+                  key={bodyPart}
+                  className={`px-3 py-2 rounded-lg capitalize text-sm ${
+                    selectedBodyPart === bodyPart
+                      ? 'bg-[#f67a45] text-white'
+                      : 'bg-[#1A1A2F] text-white'
+                  }`}
+                  onClick={() => {
+                    handleBodyPartSelect(bodyPart);
+                    setIsMobileFilterOpen(false);
+                  }}
+                >
+                  {bodyPart}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <button 
+              onClick={() => setIsMobileFilterOpen(false)}
+              className="bg-[#f67a45] text-white px-6 py-2 rounded-full"
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div className="container mx-auto pt-4 sm:pt-8 px-4">
+        {/* Left Navigation - Hidden on mobile, visible on md screens and up */}
+        <div className="hidden md:block fixed left-0 top-50 z-10 h-screen">
           <nav className="bg-[#03020d] rounded-tr-[30px] w-[275px] p-6 h-full">
             <div className="space-y-6 mt-8">
               {/* Training */}
@@ -309,48 +431,51 @@ const Exercises = () => {
           </nav>
         </div>
         
-        {/* Main Content */}
-        <div className="ml-[300px] flex-1">
-          {/* Page Header */}
-          <div className="mb-6">
-            <h2 className="text-white text-2xl font-bold">Exercise Library</h2>
-            <p className="text-white/70">Browse exercises by body part or search for specific movements</p>
+        {/* Main Content with responsive margins */}
+        <div className="w-full md:ml-[275px] lg:ml-[300px]">
+          {/* Page Header - Responsive */}
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-white text-xl sm:text-2xl font-bold">Exercise Library</h2>
+            <p className="text-white/70 text-sm sm:text-base">Browse exercises by body part or search for specific movements</p>
           </div>
 
-          {/* Search and Filter Section */}
-          <div class="bg-[#121225] rounded-lg p-6 mb-6">
-            <div class="flex flex-col md:flex-row gap-4 items-center">
+          {/* Search and Filter Section - Responsive */}
+          <div className="bg-[#121225] rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
+            <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center">
               {/* Search Input */}
-              <div class="relative flex-1">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch class="text-gray-400" />
+              <div className="relative flex-1 w-full">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaSearch className="text-gray-400" />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   placeholder="Search exercises, muscles, equipment..."
-                  class="w-full pl-10 pr-4 py-3 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
+                  className="w-full pl-10 pr-4 py-2 sm:py-3 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
                 />
               </div>
               
               {/* Filter Button - For mobile */}
-              <div class="md:hidden">
-                <button class="bg-[#1A1A2F] border border-gray-700 text-white px-4 py-3 rounded-lg flex items-center gap-2">
+              <div className="md:hidden w-full">
+                <button 
+                  onClick={() => setIsMobileFilterOpen(true)}
+                  className="w-full bg-[#1A1A2F] border border-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 text-sm"
+                >
                   <FaFilter />
-                  <span>Filter</span>
+                  <span>Filter ({selectedBodyPart !== 'all' ? '1' : '0'})</span>
                 </button>
               </div>
             </div>
           </div>
           
-          {/* Body Part Filter Buttons */}
-          <div class="mb-6 overflow-x-auto">
-            <div class="flex gap-2 min-w-max pb-2">
+          {/* Body Part Filter Buttons - Horizontal scroll on mobile, normal on desktop */}
+          <div className="mb-4 sm:mb-6 overflow-x-auto">
+            <div className="flex gap-2 min-w-max pb-2 px-1">
               {bodyParts.map(bodyPart => (
                 <button
                   key={bodyPart}
-                  class={`px-4 py-2 rounded-full capitalize whitespace-nowrap ${
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full capitalize text-xs sm:text-sm whitespace-nowrap ${
                     selectedBodyPart === bodyPart
                       ? 'bg-[#f67a45] text-white'
                       : 'bg-[#1A1A2F] text-white hover:bg-[#f67a45]/20'
@@ -363,23 +488,23 @@ const Exercises = () => {
             </div>
           </div>
           
-          {/* Content - Exercise Cards */}
+          {/* Content - Exercise Cards - Responsive grid layout */}
           <div className="pb-12">
             {loading ? (
-              // Loading skeleton
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              // Loading skeleton - Responsive grid
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {[1, 2, 3, 4, 5, 6].map(n => (
                   <div key={n} className="bg-[#121225] rounded-lg overflow-hidden animate-pulse">
-                    <div className="bg-gray-700 h-48 w-full"></div>
-                    <div className="p-4">
-                      <div className="h-6 bg-gray-700 rounded w-3/4 mb-2"></div>
+                    <div className="bg-gray-700 h-36 sm:h-48 w-full"></div>
+                    <div className="p-3 sm:p-4">
+                      <div className="h-5 sm:h-6 bg-gray-700 rounded w-3/4 mb-2"></div>
                       <div className="h-4 bg-gray-700 rounded w-1/2"></div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : filteredExercises.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {filteredExercises.map(exercise => (
                   <ExerciseCard 
                     key={exercise.id}
@@ -389,20 +514,17 @@ const Exercises = () => {
                 ))}
               </div>
             ) : (
-              <div className="bg-[#121225] rounded-lg p-8 text-center">
+              <div className="bg-[#121225] rounded-lg p-6 sm:p-8 text-center">
                 <div className="text-white/60 mb-4">No exercises found</div>
-                <p className="text-white/40">Try adjusting your filters or search query</p>
+                <p className="text-white/40 text-sm sm:text-base">Try adjusting your filters or search query</p>
               </div>
             )}
+            
+            {/* Add extra bottom padding to account for the floating button on mobile */}
+            <div className="h-16 md:h-0"></div>
           </div>
 
-          {/* Exercise Detail Modal */}
-          {selectedExercise && (
-            <ExerciseDetail 
-              exercise={selectedExercise} 
-              onClose={handleCloseExerciseDetails}
-            />
-          )}
+          {/* Exercise Detail Modal is handled by the ExerciseDetail component */}
         </div>
       </div>
     </div>

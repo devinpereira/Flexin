@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '../components/Navigation';
-import { FaUserFriends, FaPaperclip, FaImage, FaFile, FaMicrophone, FaPhoneAlt, FaStopCircle } from 'react-icons/fa';
+import { FaUserFriends, FaPaperclip, FaImage, FaFile, FaMicrophone, FaPhoneAlt, FaStopCircle, FaBars } from 'react-icons/fa';
 import { MdExplore, MdArrowBack, MdSend } from 'react-icons/md';
 import { BsCalendarWeek, BsEmojiSmile } from 'react-icons/bs';
 import { GiMeal } from 'react-icons/gi';
@@ -19,6 +19,7 @@ const Chat = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -56,6 +57,18 @@ const Chat = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle window resize to close mobile menu on larger screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -209,9 +222,71 @@ const Chat = () => {
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
       
-      <div className="container mx-auto pt-8 px-4 flex">
-        {/* Left Navigation */}
-        <div className="fixed left-0 top-50 z-10 h-screen">
+      {/* Mobile Menu Toggle Button - Only visible on mobile */}
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="bg-[#f67a45] text-white p-4 rounded-full shadow-lg"
+        >
+          <FaBars size={24} />
+        </button>
+      </div>
+      
+      {/* Mobile Navigation Menu - Slide up from bottom when open */}
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${
+        isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
+      }`}>
+        <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
+        
+        <div className="px-6 pb-8 pt-2">
+          <div className="flex flex-col space-y-4">
+            <a
+              href="#"
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
+                activeSection === 'My Trainers'
+                  ? 'bg-[#f67a45] text-white font-medium'
+                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveSection('My Trainers');
+                navigate('/trainers');
+              }}
+            >
+              <FaUserFriends size={20} />
+              <span>My Trainers</span>
+            </a>
+            
+            <a
+              href="#"
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
+                activeSection === 'Explore'
+                  ? 'bg-[#f67a45] text-white font-medium'
+                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveSection('Explore');
+                navigate('/explore');
+              }}
+            >
+              <MdExplore size={20} />
+              <span>Explore</span>
+            </a>
+            
+            <div className="border-t border-white/20 pt-4 mt-4">
+              <div className="flex items-center gap-3 px-6 py-2">
+                <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
+                <span className="text-white">Account</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="container mx-auto pt-4 sm:pt-8 px-4">
+        {/* Left Navigation - Hidden on mobile, visible on md screens and up */}
+        <div className="hidden md:block fixed left-0 top-50 z-10 h-screen">
           <nav className="bg-[#03020d] rounded-tr-[30px] w-[275px] p-6 h-full">
             <div className="space-y-6 mt-8">
               {/* My Trainers */}
@@ -225,6 +300,7 @@ const Chat = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   setActiveSection('My Trainers');
+                  navigate('/trainers');
                 }}
               >
                 <FaUserFriends size={20} />
@@ -242,6 +318,7 @@ const Chat = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   setActiveSection('Explore');
+                  navigate('/explore');
                 }}
               >
                 <MdExplore size={20} />
@@ -258,60 +335,60 @@ const Chat = () => {
           </nav>
         </div>
         
-        {/* Main Content */}
-        <div className="ml-[300px] flex-1">
+        {/* Main Content with responsive margins */}
+        <div className="w-full md:ml-[275px] lg:ml-[300px]">
           <button 
             onClick={() => navigate(`/schedule/${trainerId}`)}
-            className="mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
+            className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
           >
             <MdArrowBack size={20} />
             <span>Back to Schedule</span>
           </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Left side - Chat content */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
+            {/* Left side - Chat content - Full width on mobile, 3/4 on desktop */}
             <div className="lg:col-span-3">
-              <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 mb-8 flex flex-col h-[calc(100vh-180px)]">
-                {/* Chat header */}
-                <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-700">
+              <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-6 mb-4 sm:mb-8 flex flex-col h-[calc(100vh-180px)]">
+                {/* Chat header - Responsive with smaller padding on mobile */}
+                <div className="flex justify-between items-center mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-700">
                   <div className="flex items-center">
                     <div className="relative">
                       <img 
                         src={trainer.image} 
                         alt={trainer.name} 
-                        className="w-12 h-12 rounded-full mr-3"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-full mr-2 sm:mr-3"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = '/src/assets/profile1.png';
                         }}
                       />
-                      <span className={`absolute bottom-0 right-1 w-3 h-3 ${trainer.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'} rounded-full border-2 border-[#121225]`}></span>
+                      <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 ${trainer.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'} rounded-full border-2 border-[#121225]`}></span>
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">{trainer.name}</h3>
-                      <p className="text-gray-400 text-sm">{trainer.status}</p>
+                      <h3 className="text-white font-medium text-sm sm:text-base">{trainer.name}</h3>
+                      <p className="text-gray-400 text-xs sm:text-sm">{trainer.status}</p>
                     </div>
                   </div>
                   <div>
                     <button 
                       onClick={() => setShowAppointmentModal(true)}
-                      className="bg-[#f67a45] text-white px-4 py-2 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center gap-2"
+                      className="bg-[#f67a45] text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
                     >
-                      <FaPhoneAlt size={14} />
+                      <FaPhoneAlt size={12} sm:size={14} />
                       <span>Request Call</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Messages container */}
-                <div className="flex-1 overflow-y-auto mb-4 px-2">
+                {/* Messages container - Responsive with adjusted padding and spacing */}
+                <div className="flex-1 overflow-y-auto mb-3 sm:mb-4 px-1 sm:px-2">
                   {messages.map((msg) => (
                     <div 
                       key={msg.id} 
-                      className={`mb-4 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`mb-3 sm:mb-4 flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div 
-                        className={`max-w-[70%] rounded-2xl p-3 ${
+                        className={`max-w-[75%] sm:max-w-[70%] rounded-2xl p-2 sm:p-3 ${
                           msg.sender === 'user' 
                             ? 'bg-[#f67a45] text-white rounded-br-none'
                             : 'bg-[#1e1e35] text-white rounded-bl-none'
@@ -322,15 +399,15 @@ const Chat = () => {
                             <img 
                               src={msg.image} 
                               alt="Shared image" 
-                              className="w-full h-auto max-h-60 object-contain"
+                              className="w-full h-auto max-h-48 sm:max-h-60 object-contain"
                             />
                           </div>
                         )}
                         
                         {msg.file && !msg.image && (
                           <div className="mb-2 bg-[#121225] p-2 rounded-lg flex items-center">
-                            <FaFile className="text-gray-400 mr-2" />
-                            <span className="text-sm text-gray-200 truncate">
+                            <FaFile className="text-gray-400 mr-2 text-xs sm:text-sm" />
+                            <span className="text-xs sm:text-sm text-gray-200 truncate">
                               {msg.file.name}
                             </span>
                           </div>
@@ -338,30 +415,30 @@ const Chat = () => {
                         
                         {msg.voiceMessage && (
                           <div className="mb-2 bg-[#121225] p-2 rounded-lg flex items-center">
-                            <FaMicrophone className="text-gray-400 mr-2" />
+                            <FaMicrophone className="text-gray-400 mr-2 text-xs sm:text-sm" />
                             <div className="flex-1">
                               <div className="w-full bg-gray-700 h-1 rounded-full">
                                 <div className="bg-gray-400 h-1 rounded-full w-0"></div>
                               </div>
                             </div>
-                            <span className="text-sm text-gray-200 ml-2">{msg.duration}</span>
+                            <span className="text-xs sm:text-sm text-gray-200 ml-2">{msg.duration}</span>
                           </div>
                         )}
                         
                         {msg.appointment && (
                           <div className="mb-2 bg-[#121225] p-2 rounded-lg">
-                            <p className="text-sm text-gray-200 mb-1">
+                            <p className="text-xs sm:text-sm text-gray-200 mb-1">
                               Appointment Request: {msg.appointment.dateTime}
                             </p>
                             <div className="flex justify-between items-center">
-                              <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-400">
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
                                 {msg.appointment.status}
                               </span>
                             </div>
                           </div>
                         )}
                         
-                        <p>{msg.text}</p>
+                        <p className="text-xs sm:text-sm md:text-base">{msg.text}</p>
                         <div className={`text-xs mt-1 ${msg.sender === 'user' ? 'text-white/70' : 'text-gray-400'} flex justify-between items-center`}>
                           <span>{msg.time}</span>
                           {msg.sender === 'user' && (
@@ -376,56 +453,56 @@ const Chat = () => {
                   <div ref={messagesEndRef} />
                 </div>
                 
-                {/* Input area */}
+                {/* Input area - Responsive with adjusted sizing */}
                 <div className="relative">
                   {isRecording ? (
-                    <div className="flex items-center justify-between bg-[#1e1e35] rounded-full px-4 py-3">
+                    <div className="flex items-center justify-between bg-[#1e1e35] rounded-full px-3 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center flex-1">
-                        <FaMicrophone size={20} className="text-[#f67a45] animate-pulse mr-3" />
-                        <div className="text-white">Recording... {formatTime(recordingTime)}</div>
+                        <FaMicrophone size={16} sm:size={20} className="text-[#f67a45] animate-pulse mr-2 sm:mr-3" />
+                        <div className="text-white text-xs sm:text-base">Recording... {formatTime(recordingTime)}</div>
                       </div>
                       <button
                         onClick={handleToggleRecording}
-                        className="bg-[#f67a45] text-white p-2 rounded-full hover:bg-[#e56d3d] transition-colors"
+                        className="bg-[#f67a45] text-white p-1.5 sm:p-2 rounded-full hover:bg-[#e56d3d] transition-colors"
                       >
-                        <FaStopCircle size={20} />
+                        <FaStopCircle size={16} sm:size={20} />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center bg-[#1e1e35] rounded-full px-4 py-2">
+                    <div className="flex items-center bg-[#1e1e35] rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
                       <button
                         onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}
-                        className="text-white p-2 hover:text-[#f67a45] transition-colors"
+                        className="text-white p-1.5 sm:p-2 hover:text-[#f67a45] transition-colors"
                       >
-                        <FaPaperclip size={20} />
+                        <FaPaperclip size={16} sm:size={20} />
                       </button>
                       <input
                         type="text"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Type a message..."
-                        className="bg-transparent border-none outline-none text-white flex-1 px-4"
+                        className="bg-transparent border-none outline-none text-white flex-1 px-2 sm:px-4 py-1 text-xs sm:text-base"
                         onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                       />
                       <button
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className="text-white p-2 hover:text-[#f67a45] transition-colors"
+                        className="text-white p-1.5 sm:p-2 hover:text-[#f67a45] transition-colors"
                       >
-                        <BsEmojiSmile size={20} />
+                        <BsEmojiSmile size={16} sm:size={20} />
                       </button>
                       {message.trim() !== '' ? (
                         <button
                           onClick={handleSendMessage}
-                          className="bg-[#f67a45] text-white p-2 rounded-full hover:bg-[#e56d3d] transition-colors ml-2"
+                          className="bg-[#f67a45] text-white p-1.5 sm:p-2 rounded-full hover:bg-[#e56d3d] transition-colors ml-1 sm:ml-2"
                         >
-                          <MdSend size={20} />
+                          <MdSend size={16} sm:size={20} />
                         </button>
                       ) : (
                         <button
                           onClick={handleToggleRecording}
-                          className="bg-[#f67a45] text-white p-2 rounded-full hover:bg-[#e56d3d] transition-colors ml-2"
+                          className="bg-[#f67a45] text-white p-1.5 sm:p-2 rounded-full hover:bg-[#e56d3d] transition-colors ml-1 sm:ml-2"
                         >
-                          <FaMicrophone size={20} />
+                          <FaMicrophone size={16} sm:size={20} />
                         </button>
                       )}
                     </div>
@@ -440,17 +517,17 @@ const Chat = () => {
                     accept="image/*,.pdf,.doc,.docx"
                   />
 
-                  {/* Attachment options */}
+                  {/* Attachment options - Responsive positioning */}
                   {showAttachmentOptions && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 flex gap-4">
+                    <div className="absolute bottom-full left-0 mb-2 bg-[#121225] border border-[#f67a45]/30 rounded-lg p-2 sm:p-3 flex gap-2 sm:gap-4">
                       <button
                         onClick={() => {
                           fileInputRef.current.accept = "image/*";
                           fileInputRef.current.click();
                         }}
-                        className="flex flex-col items-center p-3 hover:bg-[#1e1e35] rounded transition-colors"
+                        className="flex flex-col items-center p-2 sm:p-3 hover:bg-[#1e1e35] rounded transition-colors"
                       >
-                        <FaImage size={24} className="text-[#f67a45] mb-1" />
+                        <FaImage size={20} sm:size={24} className="text-[#f67a45] mb-1" />
                         <span className="text-white text-xs">Image</span>
                       </button>
                       <button
@@ -458,18 +535,18 @@ const Chat = () => {
                           fileInputRef.current.accept = ".pdf,.doc,.docx";
                           fileInputRef.current.click();
                         }}
-                        className="flex flex-col items-center p-3 hover:bg-[#1e1e35] rounded transition-colors"
+                        className="flex flex-col items-center p-2 sm:p-3 hover:bg-[#1e1e35] rounded transition-colors"
                       >
-                        <FaFile size={24} className="text-[#f67a45] mb-1" />
+                        <FaFile size={20} sm:size={24} className="text-[#f67a45] mb-1" />
                         <span className="text-white text-xs">Document</span>
                       </button>
                     </div>
                   )}
 
-                  {/* Emoji picker (simplified) */}
+                  {/* Emoji picker - Simplified and responsive */}
                   {showEmojiPicker && (
-                    <div className="absolute bottom-full right-0 mb-2 bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3">
-                      <div className="grid grid-cols-8 gap-2">
+                    <div className="absolute bottom-full right-0 mb-2 bg-[#121225] border border-[#f67a45]/30 rounded-lg p-2 sm:p-3">
+                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 sm:gap-2">
                         {["😊", "😂", "❤️", "👍", "🙌", "🔥", "💪", "👏"].map(emoji => (
                           <button
                             key={emoji}
@@ -477,7 +554,7 @@ const Chat = () => {
                               setMessage(prev => prev + emoji);
                               setShowEmojiPicker(false);
                             }}
-                            className="text-2xl hover:bg-[#1e1e35] p-1 rounded"
+                            className="text-lg sm:text-2xl hover:bg-[#1e1e35] p-1 rounded"
                           >
                             {emoji}
                           </button>
@@ -489,8 +566,8 @@ const Chat = () => {
               </div>
             </div>
             
-            {/* Right side - Trainer info and actions */}
-            <div className="lg:col-span-1">
+            {/* Right side - Trainer info card - Hidden on mobile, shown on larger screens */}
+            <div className="hidden lg:block lg:col-span-1">
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
                 <div className="flex flex-col items-center mb-6">
                   <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
@@ -540,33 +617,81 @@ const Chat = () => {
                     onClick={() => navigate(`/subscription/${trainerId}`)}
                     className="w-full bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
                   >
-                  <RiVipDiamondLine />
-                  <span>Subscription</span>
+                    <RiVipDiamondLine />
+                    <span>Subscription</span>
                   </button>
                 </div>
+              </div>
+            </div>
+            
+            {/* Compact trainer info for mobile - Only shown on small screens at bottom of chat */}
+            <div className="lg:hidden flex items-center justify-between bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-4">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img 
+                    src={trainer.image} 
+                    alt={trainer.name}
+                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/src/assets/profile1.png';
+                    }}
+                  />
+                  <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 ${trainer.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'} rounded-full border-2 border-[#121225]`}></span>
+                </div>
+                <div>
+                  <h3 className="text-white font-medium text-sm sm:text-base">{trainer.name}</h3>
+                  <a
+                    onClick={() => navigate(`/trainer-profile/${trainerId}`)}
+                    className="text-[#f67a45] text-xs sm:text-sm cursor-pointer"
+                  >
+                    View Profile
+                  </a>
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate(`/schedule/${trainerId}`)}
+                  className="text-white bg-gray-700/50 p-2 rounded-full hover:bg-gray-700"
+                >
+                  <BsCalendarWeek size={18} />
+                </button>
+                <button
+                  onClick={() => navigate(`/meal-plan/${trainerId}`)}
+                  className="text-white bg-gray-700/50 p-2 rounded-full hover:bg-gray-700"
+                >
+                  <GiMeal size={18} />
+                </button>
+                <button
+                  onClick={() => navigate(`/subscription/${trainerId}`)}
+                  className="text-white bg-gray-700/50 p-2 rounded-full hover:bg-gray-700"
+                >
+                  <RiVipDiamondLine size={18} />
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Appointment Modal */}
+      {/* Appointment Modal - Responsive */}
       {showAppointmentModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-white text-xl font-bold mb-4">Schedule a Call</h3>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 max-w-md w-full">
+            <h3 className="text-white text-lg sm:text-xl font-bold mb-4">Schedule a Call</h3>
             
-            <div className="mb-4">
-              <label className="block text-white mb-2">Select Date & Time</label>
+            <div className="mb-3 sm:mb-4">
+              <label className="block text-white mb-1 sm:mb-2 text-sm sm:text-base">Select Date & Time</label>
               <input 
                 type="datetime-local" 
-                className="w-full bg-[#1e1e35] border border-gray-700 rounded p-3 text-white"
+                className="w-full bg-[#1e1e35] border border-gray-700 rounded p-2 sm:p-3 text-white text-sm sm:text-base"
               />
             </div>
             
-            <div className="mb-4">
-              <label className="block text-white mb-2">Reason for Call</label>
-              <select className="w-full bg-[#1e1e35] border border-gray-700 rounded p-3 text-white">
+            <div className="mb-4 sm:mb-5">
+              <label className="block text-white mb-1 sm:mb-2 text-sm sm:text-base">Reason for Call</label>
+              <select className="w-full bg-[#1e1e35] border border-gray-700 rounded p-2 sm:p-3 text-white text-sm sm:text-base">
                 <option>Training Questions</option>
                 <option>Nutrition Advice</option>
                 <option>Progress Review</option>
@@ -575,16 +700,16 @@ const Chat = () => {
               </select>
             </div>
             
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2 sm:gap-3">
               <button 
                 onClick={() => setShowAppointmentModal(false)}
-                className="px-4 py-2 border border-gray-600 rounded-lg text-white hover:bg-[#1e1e35]"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 border border-gray-600 rounded-lg text-white hover:bg-[#1e1e35] text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button 
-                onClick={() => handleRequestAppointment('2025-03-15 15:30')}
-                className="px-4 py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d]"
+                onClick={() => handleRequestAppointment('2023-05-15 15:30')}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d] text-sm sm:text-base"
               >
                 Request Call
               </button>
