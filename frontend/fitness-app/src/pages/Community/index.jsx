@@ -10,23 +10,21 @@ import NotificationsPanel from './components/NotificationsPanel';
 import Profile from './components/Profile';
 import FriendsManagement from './components/FriendsManagement';
 import { motion } from 'framer-motion';
-import { useUserAuth } from "../../hooks/useUserAuth";
 
 const Community = () => {
-  useUserAuth();
+  // Existing state and functions
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);
-  const navigate = useNavigate();
-
+  
   const handleSectionChange = (section) => {
     setActiveSection(section);
-    setSelectedUser(null); // Clear selected user when changing sections
+    setSelectedUser(null);
   };
-
+  
   const handleSelectUser = (user) => {
     setSelectedUser(user);
   };
-
+  
   const handleBackToSearch = () => {
     setSelectedUser(null);
   };
@@ -36,18 +34,20 @@ const Community = () => {
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
       
-      <div className="container mx-auto pt-8 px-4 flex">
-        {/* Left Sidebar */}
-        <div className="w-[275px] flex-shrink-0">
-          <Sidebar 
-            activeSection={activeSection} 
-            onSectionChange={handleSectionChange} 
-          />
+      <div className="container mx-auto flex relative">
+        {/* Left Sidebar - Fixed width, full height */}
+        <div className="fixed top-16 left-0 bottom-0 w-[240px] z-10 overflow-hidden">
+          <div className="h-full">
+            <Sidebar 
+              activeSection={activeSection} 
+              onSectionChange={handleSectionChange} 
+            />
+          </div>
         </div>
         
-        {/* Main Content */}
+        {/* Main Content - Add left margin to avoid overlap with sidebar */}
         <motion.div 
-          className="flex-grow mx-4 pb-10"
+          className="flex-grow ml-[240px] px-4 pt-6 pb-10 max-w-[calc(100%-540px)]"
           key={activeSection + (selectedUser ? selectedUser.id : '')}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -73,8 +73,8 @@ const Community = () => {
           {activeSection === 'Profile' && <Profile />}
         </motion.div>
         
-        {/* Right Sidebar - Friends */}
-        <div className="w-[300px] flex-shrink-0">
+        {/* Right Sidebar - Fixed width */}
+        <div className="fixed top-30 right-23 bottom-0 px-4 pt-6 overflow-y-auto">
           <FriendsSidebar />
         </div>
       </div>
