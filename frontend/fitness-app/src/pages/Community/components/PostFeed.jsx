@@ -26,7 +26,10 @@ const PostFeed = () => {
               profileImage: '/src/assets/trainers/trainer2.png'
             },
             content: 'Just finished a great workout session! 💪 Feeling energized and ready for the day. #FitnessJourney #MorningWorkout',
-            image: '/src/assets/posts/workout.png',
+            images: [
+              { preview: '/src/assets/posts/workout.png' },
+              { preview: '/src/assets/posts/workout1.png' }
+            ],
             likes: 24,
             comments: 8,
             shares: 3,
@@ -54,7 +57,11 @@ const PostFeed = () => {
               profileImage: '/src/assets/trainers/trainer5.png'
             },
             content: 'New personal record on deadlifts today! 315 lbs x 5 reps. Hard work pays off! #Gains #PersonalRecord',
-            image: null,
+            images: [
+              { preview: '/src/assets/posts/workout.png' },
+              { preview: '/src/assets/posts/workout1.png' },
+              { preview: '/src/assets/posts/workout.png' }
+            ],
             likes: 36,
             comments: 12,
             shares: 2,
@@ -129,7 +136,7 @@ const PostFeed = () => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <Post  key={post.id} post={post} onLike={handleLikePost} />
+              <Post post={post} onLike={handleLikePost} />
             </motion.div>
           ))}
         </motion.div>
