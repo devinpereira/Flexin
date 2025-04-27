@@ -1,216 +1,174 @@
 import React, { useState } from 'react';
-import { FaEllipsisV, FaEye, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 
 const DayExercises = ({ exercises, day, onUpdate, onDelete }) => {
-  const [viewingExercise, setViewingExercise] = useState(null);
-  
-  // Handle menu visibility for each exercise
-  const [openMenuId, setOpenMenuId] = useState(null);
-  
-  const toggleMenu = (exerciseId, e) => {
-    e.stopPropagation();
-    setOpenMenuId(openMenuId === exerciseId ? null : exerciseId);
+  const [editingExercise, setEditingExercise] = useState(null);
+
+  const handleEditClick = (exercise) => {
+    setEditingExercise({ ...exercise });
   };
-  
-  // Close menu when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = () => {
-      setOpenMenuId(null);
-    };
+
+  const handleSaveEdit = () => {
+    if (editingExercise) {
+      onUpdate(day, editingExercise.id, editingExercise);
+      setEditingExercise(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingExercise(null);
+  };
+
+  const handleInputChange = (field, value) => {
+    if (!editingExercise) return;
     
-    document.addEventListener('click', handleClickOutside);
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, []);
-  
-  // Handle updating sets and reps
-  const handleSetsChange = (exerciseId, newSets) => {
-    onUpdate(day, exerciseId, { sets: newSets });
-  };
-  
-  const handleRepsChange = (exerciseId, newReps) => {
-    onUpdate(day, exerciseId, { reps: newReps });
-  };
-  
-  // Handle view exercise details
-  const handleViewExercise = (exercise) => {
-    setViewingExercise(exercise);
+    setEditingExercise(prevState => ({
+      ...prevState,
+      [field]: field === 'sets' || field === 'reps' ? parseInt(value, 10) || 0 : value
+    }));
   };
 
   return (
-    <div className="space-y-4">
-      {exercises.map((exercise) => (
+    <div className="space-y-3 sm:space-y-4">
+      {exercises.map((exercise, index) => (
         <div 
           key={exercise.id} 
-          className="bg-white rounded-lg p-4"
+          className={`bg-[#1A1A2F] rounded-lg p-3 sm:p-4 ${
+            editingExercise?.id === exercise.id ? 'border-2 border-[#f67a45]' : ''
+          }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center flex-1">
-              {/* Exercise Image */}
-              <div className="w-16 h-16 rounded-lg overflow-hidden mr-4 flex-shrink-0">
-                <img 
-                  src={exercise.image} 
-                  alt={exercise.name} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/src/assets/exercises/default.jpg';
-                  }}
+          {editingExercise?.id === exercise.id ? (
+            // Edit Mode - Responsive layout
+            <div>
+              <div className="mb-3">
+                <label className="block text-white/70 text-xs sm:text-sm mb-1">Exercise Name</label>
+                <input
+                  type="text"
+                  value={editingExercise.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="w-full bg-[#121225] border border-gray-700 rounded-lg px-3 py-2 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
                 />
               </div>
               
-              {/* Exercise Details */}
-              <div className="flex-1">
-                <h4 className="font-bold text-[#121225]">{exercise.name}</h4>
-                <div className="text-gray-500">{exercise.category}</div>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
+                <div>
+                  <label className="block text-white/70 text-xs sm:text-sm mb-1">Sets</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingExercise.sets}
+                    onChange={(e) => handleInputChange('sets', e.target.value)}
+                    className="w-full bg-[#121225] border border-gray-700 rounded-lg px-3 py-2 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/70 text-xs sm:text-sm mb-1">Reps</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingExercise.reps}
+                    onChange={(e) => handleInputChange('reps', e.target.value)}
+                    className="w-full bg-[#121225] border border-gray-700 rounded-lg px-3 py-2 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-3 py-1 sm:px-4 sm:py-1.5 bg-white/10 text-white text-sm rounded-md hover:bg-white/20"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-3 py-1 sm:px-4 sm:py-1.5 bg-[#f67a45] text-white text-sm rounded-md hover:bg-[#e56d3d]"
+                >
+                  Save
+                </button>
               </div>
             </div>
-            
-            {/* Sets and Reps Controls */}
-            <div className="flex items-center gap-4">
-              {/* Sets dropdown */}
-              <div className="flex items-center">
-                <label htmlFor={`sets-${exercise.id}`} className="text-[#121225] mr-2 whitespace-nowrap">
-                  Sets:
-                </label>
-                <select 
-                  id={`sets-${exercise.id}`}
-                  value={exercise.sets}
-                  onChange={(e) => handleSetsChange(exercise.id, e.target.value)}
-                  className="bg-gray-100 border border-gray-300 text-[#121225] rounded-md px-2 py-1 focus:ring-2 focus:ring-[#f67a45]"
-                >
-                  {[1, 2, 3, 4, 5, 6].map(num => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Reps dropdown */}
-              <div className="flex items-center">
-                <label htmlFor={`reps-${exercise.id}`} className="text-[#121225] mr-2 whitespace-nowrap">
-                  Reps:
-                </label>
-                <select 
-                  id={`reps-${exercise.id}`}
-                  value={exercise.reps}
-                  onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
-                  className="bg-gray-100 border border-gray-300 text-[#121225] rounded-md px-2 py-1 focus:ring-2 focus:ring-[#f67a45]"
-                >
-                  {[5, 8, 10, 12, 15, 20, 25, 30].map(num => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
-              </div>
-              
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                {/* View Exercise Button */}
-                <button
-                  onClick={() => handleViewExercise(exercise)}
-                  className="p-2 rounded-full text-gray-600 hover:bg-gray-200"
-                  title="View Exercise"
-                >
-                  <FaEye />
-                </button>
+          ) : (
+            // View Mode - Responsive layout
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center flex-1 mb-3 sm:mb-0">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden mr-3 sm:mr-4 flex-shrink-0">
+                  <img 
+                    src={exercise.image} 
+                    alt={exercise.name} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = '/src/assets/exercises/default.jpg';
+                    }}
+                  />
+                </div>
                 
-                {/* Menu Button */}
-                <div className="relative">
-                  <button
-                    onClick={(e) => toggleMenu(exercise.id, e)}
-                    className="p-2 rounded-full text-gray-600 hover:bg-gray-200"
-                  >
-                    <FaEllipsisV />
-                  </button>
-                  
-                  {/* Dropdown Menu */}
-                  {openMenuId === exercise.id && (
-                    <div className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[150px] z-10">
-                      <button 
-                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                        onClick={() => onDelete(day, exercise.id)}
-                      >
-                        <FaTrash className="text-red-500" size={14} />
-                        <span>Remove Exercise</span>
-                      </button>
-                    </div>
+                <div className="flex-1">
+                  <h4 className="text-white font-bold text-sm sm:text-base">{exercise.name}</h4>
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
+                    <span className="bg-white/10 text-white/80 text-xs px-2 py-0.5 rounded-full">
+                      {exercise.sets} sets
+                    </span>
+                    <span className="bg-white/10 text-white/80 text-xs px-2 py-0.5 rounded-full">
+                      {exercise.reps} reps
+                    </span>
+                    {exercise.category && (
+                      <span className="bg-[#f67a45]/20 text-[#f67a45] text-xs px-2 py-0.5 rounded-full">
+                        {exercise.category}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 justify-end">
+                <div className="flex flex-row sm:flex-col">
+                  {index > 0 && (
+                    <button
+                      onClick={() => onUpdate(day, exercise.id, { order: index - 1 })}
+                      className="text-white/70 hover:text-white p-1"
+                      title="Move Up"
+                    >
+                      <FaArrowUp size={12} />
+                    </button>
+                  )}
+                  {index < exercises.length - 1 && (
+                    <button
+                      onClick={() => onUpdate(day, exercise.id, { order: index + 1 })}
+                      className="text-white/70 hover:text-white p-1"
+                      title="Move Down"
+                    >
+                      <FaArrowDown size={12} />
+                    </button>
                   )}
                 </div>
+                <button
+                  onClick={() => handleEditClick(exercise)}
+                  className="text-white/70 hover:text-white p-1"
+                  title="Edit"
+                >
+                  <FaEdit size={16} />
+                </button>
+                <button
+                  onClick={() => onDelete(day, exercise.id)}
+                  className="text-white/70 hover:text-red-500 p-1"
+                  title="Delete"
+                >
+                  <FaTrash size={16} />
+                </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       ))}
-      
-      {/* Exercise Detail Modal */}
-      {viewingExercise && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121225] rounded-xl w-full max-w-lg overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center bg-[#1A1A2F] p-4">
-              <h3 className="text-white text-xl font-bold">Exercise Details</h3>
-              <button 
-                onClick={() => setViewingExercise(null)}
-                className="text-white/70 hover:text-white"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* Modal Body */}
-            <div className="p-6">
-              {/* Exercise Image */}
-              <div className="w-full h-48 rounded-lg overflow-hidden mb-6">
-                <img
-                  src={viewingExercise.image}
-                  alt={viewingExercise.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/src/assets/exercises/default.jpg';
-                  }}
-                />
-              </div>
-              
-              {/* Exercise Info */}
-              <div className="bg-[#1A1A2F] rounded-lg p-6">
-                <h4 className="text-white text-lg font-bold mb-2">{viewingExercise.name}</h4>
-                <div className="flex items-center mb-4">
-                  <div className="px-3 py-1 bg-[#f67a45]/20 text-[#f67a45] rounded-full text-sm">
-                    {viewingExercise.category}
-                  </div>
-                  <div className="ml-2 px-3 py-1 bg-[#f67a45]/20 text-[#f67a45] rounded-full text-sm">
-                    {viewingExercise.sets} sets × {viewingExercise.reps} reps
-                  </div>
-                </div>
-                <h5 className="text-white font-medium mb-2">How to perform:</h5>
-                <p className="text-white/70 leading-relaxed">
-                  {viewingExercise.description}
-                </p>
-              </div>
-            </div>
-            
-            {/* Modal Footer */}
-            <div className="bg-[#1A1A2F] p-4 flex justify-end">
-              <button 
-                onClick={() => setViewingExercise(null)}
-                className="bg-[#f67a45] text-white px-6 py-2 rounded-full hover:bg-[#e56d3d] transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
+      {exercises.length === 0 && (
+        <div className="text-white/50 text-center py-8 sm:py-10 italic">
+          No exercises added yet for {day}
         </div>
       )}
     </div>
   );
-};
-
-// Set default props
-DayExercises.defaultProps = {
-  exercises: []
 };
 
 export default DayExercises;
