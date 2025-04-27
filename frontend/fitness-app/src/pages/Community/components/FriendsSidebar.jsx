@@ -20,7 +20,7 @@ const FriendsSidebar = () => {
 
   return (
     <div className="hidden lg:block w-[300px]">
-      <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 sticky top-24">
+      <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 sticky top-25">
         <h3 className="text-white text-lg font-medium mb-4">Friends</h3>
         
         {/* Friends Search */}
