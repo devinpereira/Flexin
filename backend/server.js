@@ -12,6 +12,7 @@ import authRoutes from "./routes/authRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
 
 const port = process.env.PORT || 8000;
 const app = express();
@@ -45,7 +46,8 @@ connectDB();
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/comments", commentRoutes);
-app.use("/api/v1/follow", followRoutes);
+app.use("/api/v1/friends", followRoutes);
+app.use("/api/v1/profile", profileRoutes);
 
 // Real-time Event Handling
 io.on("connection", (socket) => {

@@ -10,7 +10,7 @@ const generateToken = (id) => {
 
 // Register User
 export const registerUser = async (req, res) => {
-    const { fullName, email, password, profileImageUrl, dob, role } = req.body;
+    const { fullName, username, email, password, profileImageUrl, dob, role } = req.body;
     
     // validation: Check for missing fields
     if (!fullName || !email || !password || !dob) {
@@ -27,6 +27,7 @@ export const registerUser = async (req, res) => {
         // Create new user
         const user = await User.create({
             fullName,
+            username,
             email,
             password,
             profileImageUrl,

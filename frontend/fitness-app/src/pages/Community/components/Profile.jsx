@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FaUserEdit, FaTh, FaBookmark, FaCog, FaSignOutAlt, FaCamera, FaPen, 
          FaImage, FaChevronLeft, FaChevronRight, FaTimes, FaHeart } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import axiosInstance from "../../../utils/axiosInstance";
+import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState('posts');
@@ -11,48 +13,34 @@ const Profile = () => {
   const [selectedPost, setSelectedPost] = useState(null);
   const [currentPostImageIndex, setCurrentPostImageIndex] = useState(0);
   
-  // Mock current user data
-  const [user, setUser] = useState({
-    name: 'John Doe',
-    username: '@johndoe',
-    profileImage: '/src/assets/profile1.png',
-    bio: 'Fitness enthusiast | Working out since 2018 | Plant-based diet',
-    posts: 24,
-    followers: 530,
-    following: 215,
-  });
-  
-  // Mock posts data with multiple images
-  const [posts, setPosts] = useState([
-    { 
-      id: 1, 
-      images: [
-        '/src/assets/posts/workout.png',
-        '/src/assets/posts/workout1.png'
-      ], 
-      likes: 45, 
-      comments: 12, 
-      caption: 'Morning workout session! Double session today 💪 #fitness #workout #motivation' 
-    },
-    { 
-      id: 2, 
-      images: ['/src/assets/posts/workout1.png'], 
-      likes: 32, 
-      comments: 8, 
-      caption: 'New personal best today! Added 10kg to my deadlift.' 
-    },
-    { 
-      id: 3, 
-      images: [
-        '/src/assets/posts/workout.png',
-        '/src/assets/posts/workout1.png',
-        '/src/assets/posts/workout.png'
-      ], 
-      likes: 67, 
-      comments: 15, 
-      caption: 'Weekend training with the squad. Great energy today!' 
-    },
-  ]);
+  const [user, setUser] = useState([]);
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await axiosInstance.get(`${API_PATHS.PROFILE.GET_PROFILE_INFO}`);
+        setUser(response.data);
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+
+  const [posts, setPosts] = useState([]);
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await axiosInstance.get(`${API_PATHS.POST.GET_ALL_POSTS}`);
+        setPosts(res.data);
+      } catch (err) {
+        console.error('Error fetching posts:', err);
+      }
+    };
+
+    fetchPosts();
+  }, []);
   
   // Mock saved posts
   const [savedPosts, setSavedPosts] = useState([
@@ -215,7 +203,7 @@ const Profile = () => {
 
   // Edit Profile Modal Component
   const EditProfileModal = () => {
-    const [name, setName] = useState(user.name);
+    const [name, setName] = useState(user.fullName);
     const [username, setUsername] = useState(user.username);
     const [bio, setBio] = useState(user.bio);
 
@@ -581,13 +569,13 @@ const Profile = () => {
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                 <img 
-                  src={user.profileImage} 
-                  alt={user.name} 
+                  src={user.profileImageUrl} 
+                  alt={user.fullName} 
                   className="w-full h-full object-cover"
                 />
               </div>
               <div>
-                <p className="text-white font-medium">{user.name}</p>
+                <p className="text-white font-medium">{user.fullName}</p>
                 <p className="text-gray-400 text-sm">{user.username}</p>
               </div>
             </div>
@@ -650,8 +638,8 @@ const Profile = () => {
           {/* Profile Picture */}
           <div className="absolute -top-14 left-6 w-28 h-28 rounded-full border-4 border-[#121225] overflow-hidden">
             <img 
-              src={user.profileImage} 
-              alt={user.name} 
+              src={`${BASE_URL}/${user.profileImageUrl}`} 
+              alt={user.fullName} 
               className="w-full h-full object-cover"
             />
           </div>
@@ -668,22 +656,22 @@ const Profile = () => {
           
           {/* User Info */}
           <div>
-            <h1 className="text-white text-2xl font-bold">{user.name}</h1>
-            <p className="text-gray-400 mb-4">{user.username}</p>
+            <h1 className="text-white text-2xl font-bold">{user.fullName}</h1>
+            <p className="text-gray-400 mb-4">{`@${user.username}`}</p>
             
-            <p className="text-white mb-6">{user.bio}</p>
+            <p className="text-white mb-6">{user.bio || ""}</p>
             
             <div className="flex gap-6">
               <div className="text-center">
-                <p className="text-white font-bold">{user.posts}</p>
+                <p className="text-white font-bold">{user.posts || ""}</p>
                 <p className="text-gray-400 text-sm">Posts</p>
               </div>
               <div className="text-center">
-                <p className="text-white font-bold">{user.followers}</p>
+                <p className="text-white font-bold">{user.followers || ""}</p>
                 <p className="text-gray-400 text-sm">Followers</p>
               </div>
               <div className="text-center">
-                <p className="text-white font-bold">{user.following}</p>
+                <p className="text-white font-bold">{user.following || ""}</p>
                 <p className="text-gray-400 text-sm">Following</p>
               </div>
             </div>
@@ -729,7 +717,7 @@ const Profile = () => {
                 >
                   {posts.map(post => (
                     <motion.div 
-                      key={post.id} 
+                      key={post._id} 
                       className="aspect-square overflow-hidden rounded-md cursor-pointer relative group"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -737,7 +725,8 @@ const Profile = () => {
                       onClick={() => handleViewPost(post)}
                     >
                       <img 
-                        src={post.images[0]} 
+                        key={post.id}
+                        src={`${BASE_URL}/${post.content[0]}`}
                         alt="Post" 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
@@ -745,7 +734,7 @@ const Profile = () => {
                           e.target.src = '/src/assets/posts/default.jpg';
                         }}
                       />
-                      {post.images.length > 1 && (
+                      {post.content.length > 1 && (
                         <div className="absolute top-2 right-2 bg-black/70 text-white p-1 rounded-md text-xs">
                           <FaImage size={12} />
                         </div>

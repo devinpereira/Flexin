@@ -10,8 +10,11 @@ import NotificationsPanel from './components/NotificationsPanel';
 import Profile from './components/Profile';
 import FriendsManagement from './components/FriendsManagement';
 import { motion } from 'framer-motion';
+import { useUserAuth } from '../../hooks/useUserAuth';
+import UserProvider from '../../context/UserContext';
 
 const Community = () => {
+  useUserAuth();
   // Existing state and functions
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);

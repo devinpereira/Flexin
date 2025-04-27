@@ -129,9 +129,9 @@ const PostFeed = () => {
           animate={{ opacity: 1 }}
           transition={{ staggerChildren: 0.1 }}
         >
-          {posts.map(post => (
+          {posts.map((post, index) => (
             <motion.div 
-              key={post.id}
+              key={post.id || index} // added an index.
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.3 }}

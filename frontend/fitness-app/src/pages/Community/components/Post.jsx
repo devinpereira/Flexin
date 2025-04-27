@@ -65,7 +65,7 @@ const Post = ({ post, onLike }) => {
   }, []);
 
   // Check if we have multiple images
-  const hasMultipleImages = post.images && Array.isArray(post.images) && post.images.length > 0;
+  const hasMultipleImages = post.content && Array.isArray(post.content) && post.content.length > 0;
   
   return (
     <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
@@ -74,8 +74,8 @@ const Post = ({ post, onLike }) => {
         <div className="flex items-center">
           <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
             <img 
-              src={post.user.profileImage} 
-              alt={post.user.name} 
+              src={post.user.profileImageURL} 
+              alt={post.user.fullName} 
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
@@ -84,7 +84,7 @@ const Post = ({ post, onLike }) => {
             />
           </div>
           <div>
-            <h4 className="text-white font-medium">{post.user.name}</h4>
+            <h4 className="text-white font-medium">{post.user.fullName}</h4>
             <div className="flex items-center">
               <span className="text-gray-400 text-sm">{post.user.username} • {post.timestamp}</span>
             </div>
@@ -120,7 +120,7 @@ const Post = ({ post, onLike }) => {
       {hasMultipleImages ? (
         <div className="rounded-lg overflow-hidden mb-4 relative">
           <img 
-            src={post.images[currentImageIndex].preview} 
+            src={post.content[currentImageIndex].preview} 
             alt={`Post ${currentImageIndex + 1}`} 
             className="w-full h-auto max-h-[500px] object-contain bg-black"
             onError={(e) => {
@@ -133,7 +133,7 @@ const Post = ({ post, onLike }) => {
             <>
               {/* Image Counter */}
               <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded-full text-xs">
-                {currentImageIndex + 1}/{post.images.length}
+                {currentImageIndex + 1}/{post.content.length}
               </div>
               
               {/* Navigation Arrows */}
@@ -152,15 +152,15 @@ const Post = ({ post, onLike }) => {
                   e.stopPropagation();
                   goToNextImage();
                 }}
-                className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${currentImageIndex === post.images.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black/80'}`}
-                disabled={currentImageIndex === post.images.length - 1}
+                className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${currentImageIndex === post.content.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black/80'}`}
+                disabled={currentImageIndex === post.content.length - 1}
               >
                 <FaChevronRight />
               </button>
               
               {/* Thumbnail Indicators */}
               <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
-                {post.images.map((_, idx) => (
+                {post.content.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentImageIndex(idx)}

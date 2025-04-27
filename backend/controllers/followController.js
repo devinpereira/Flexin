@@ -1,16 +1,17 @@
 import Follow from "../models/Follow.js";
+import User from "../models/User.js";
 
 
 export const searchFriends = async (req, res) => {
   try {
-    const { username } = req.query;
+    const { username } = req.params;
     const userId = req.user._id;
 
     if (!username) {
       return res.status(400).json({ error: "Username is required" });
     }
 
-    const users = await Follow.find({
+    const users = await User.find({
       username: { $regex: username, $options: "i" },
       _id: { $ne: userId },
     }).limit(10);
