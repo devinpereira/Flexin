@@ -8,11 +8,13 @@ import OffersAndDealsView from '../components/OffersAndDealsView';
 import FavoritesView from '../components/FavoritesView';
 import ShoppingCartView from '../components/ShoppingCartView';
 import { FiShoppingCart } from 'react-icons/fi';
+import { FiMenu } from 'react-icons/fi';
 
 const Store = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [showMobileNav, setShowMobileNav] = useState(false);
   
   // Load favorites from localStorage on initial render
   const [favorites, setFavorites] = useState(() => {
@@ -25,6 +27,11 @@ const Store = () => {
     const savedCart = localStorage.getItem('cartItems');
     return savedCart ? JSON.parse(savedCart) : [];
   });
+
+  // Close mobile nav when changing sections
+  useEffect(() => {
+    setShowMobileNav(false);
+  }, [activeSection, selectedSubcategory]);
 
   // Save to localStorage whenever favorites or cart changes
   useEffect(() => {
@@ -102,24 +109,24 @@ const Store = () => {
 
 
   // Function to handle checkout
-const handleCheckout = (selectedItems, total) => {
-  console.log("Checkout initiated", selectedItems, total); // Add debugging
-  const itemsToCheckout = cartItems.filter(item => selectedItems.includes(item.id));
-  
-  // Make sure we have items to checkout
-  if (itemsToCheckout.length === 0) {
-    console.error("No items selected for checkout");
-    return;
-  }
-  
-  // Use navigate with state object
-  navigate('/checkout', { 
-    state: { 
-      items: itemsToCheckout, 
-      total: total
-    } 
-  });
-};
+  const handleCheckout = (selectedItems, total) => {
+    console.log("Checkout initiated", selectedItems, total);
+    const itemsToCheckout = cartItems.filter(item => selectedItems.includes(item.id));
+    
+    // Make sure we have items to checkout
+    if (itemsToCheckout.length === 0) {
+      console.error("No items selected for checkout");
+      return;
+    }
+    
+    // Use navigate with state object
+    navigate('/checkout', { 
+      state: { 
+        items: itemsToCheckout, 
+        total: total
+      } 
+    });
+  };
 
   // Render appropriate content based on active section and selected subcategory
   const renderContent = () => {
@@ -176,44 +183,80 @@ const handleCheckout = (selectedItems, total) => {
     >
       {/* Search Bar Section */}
       <Navigation />
-      <div className="container mx-auto pt-8 px-100 flex items-center gap-4">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            className="w-[545px] h-[26px] relative rounded-[22px] outline-1 outline-offset-[-1px] outline-white/50 bg-black/30 backdrop-blur-sm px-4 text-white"
-            placeholder="Search products..."
-          />
-          <button className="w-[93px] h-[26px] relative bg-[#f67a45] rounded-[25px] text-white text-sm ml-2">
-            Search
+      <div className="container mx-auto pt-8 px-4 md:px-8">
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-4 md:mb-0">
+          {/* Mobile Menu Toggle Button */}
+          <button 
+            className="md:hidden mr-auto bg-[#1A1A2F] p-2 rounded-lg text-white"
+            onClick={() => setShowMobileNav(!showMobileNav)}
+          >
+            <FiMenu size={24} />
           </button>
-        </div>
-        <div className="flex items-center">
-          <div className="relative mr-4">
-            <button 
-              className="text-white text-2xl"
-              onClick={() => setActiveSection('Shopping Cart')}
-            >
-              <FiShoppingCart size={22} />
+
+          {/* Search Bar */}
+          <div className="w-full md:w-[545px] relative flex items-center">
+            <input
+              type="text"
+              className="w-full h-10 md:h-[26px] rounded-[22px] outline-1 outline-offset-[-1px] outline-white/50 bg-black/30 backdrop-blur-sm px-4 text-white"
+              placeholder="Search products..."
+            />
+            <button className="h-8 md:h-[26px] px-4 absolute right-0 bg-[#f67a45] rounded-[25px] text-white text-sm">
+              Search
             </button>
-            {cartItems.length > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[#f67a45] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-              </span>
-            )}
+          </div>
+
+          {/* Shopping Cart Icon */}
+          <div className="flex items-center ml-auto md:ml-0">
+            <div className="relative">
+              <button 
+                className="text-white text-2xl"
+                onClick={() => setActiveSection('Shopping Cart')}
+              >
+                <FiShoppingCart size={22} />
+              </button>
+              {cartItems.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#f67a45] text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                  {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Mobile Navigation Drawer */}
+      <div className={`fixed top-0 left-0 h-full w-full bg-black/50 z-40 transition-opacity duration-300 md:hidden ${showMobileNav ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`bg-[#03020d] h-full w-3/4 max-w-xs p-6 shadow-lg transition-transform duration-300 transform ${showMobileNav ? 'translate-x-0' : '-translate-x-full'}`}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-white text-xl font-bold">Menu</h3>
+            <button className="text-white" onClick={() => setShowMobileNav(false)}>✕</button>
+          </div>
+          <LeftNavigation
+            activeSection={activeSection}
+            onSectionChange={handleSectionChange}
+            selectedSubcategory={selectedSubcategory}
+            onSubcategorySelect={setSelectedSubcategory}
+            cartItemsCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+            isMobile={true}
+          />
+        </div>
+      </div>
+
       {/* Main Content Container */}
-      <div className="flex container mx-auto gap-9 mt-9 pl-60">
-        <LeftNavigation
-          activeSection={activeSection}
-          onSectionChange={handleSectionChange}
-          selectedSubcategory={selectedSubcategory}
-          onSubcategorySelect={setSelectedSubcategory}
-          cartItemsCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-        />
-        <div className="flex-1">
+      <div className="flex flex-col md:flex-row container mx-auto mt-4 md:mt-9 px-4 md:pl-60">
+        {/* Desktop LeftNavigation */}
+        <div className="hidden md:block">
+          <LeftNavigation
+            activeSection={activeSection}
+            onSectionChange={handleSectionChange}
+            selectedSubcategory={selectedSubcategory}
+            onSubcategorySelect={setSelectedSubcategory}
+            cartItemsCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+          />
+        </div>
+        
+        {/* Main Content */}
+        <div className="flex-1 w-full">
           {renderContent()}
         </div>
       </div>

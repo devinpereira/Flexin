@@ -44,7 +44,16 @@ const Login = () => {
       if (token) {
         localStorage.setItem("token", token);
         updateUser(user);
-        navigate("/calculators");
+        
+        // Check if there's a saved redirect path
+        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
+        if (redirectPath) {
+          sessionStorage.removeItem('redirectAfterLogin'); // Clear it after use
+          navigate(redirectPath);
+        } else {
+          // Default redirect if no specific path was saved
+          navigate("/calculators");
+        }
       }
     } catch (error) {
       if (error.response && error.response.data.message) {
