@@ -1,74 +1,74 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Add this import
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { FiShoppingCart } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
-const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddToCart }) => {
-  const navigate = useNavigate(); // Initialize navigate
-  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
-  const [showFlavorDropdown, setShowFlavorDropdown] = useState(false);
+const SubcategoryView = ({ subcategory, favorites, onToggleFavorite, onAddToCart }) => {
+  const navigate = useNavigate();
+  const [priceRange, setPriceRange] = useState([0, 500]);
   const [showPriceRange, setShowPriceRange] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 1000]); // Default min: 0, max: 1000
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
-  // Sample data for sort options
-  const brands = ['Brand A', 'Brand B', 'Brand C'];
-  const flavors = ['Flavor X', 'Flavor Y', 'Flavor Z'];
+  // Calculate position in percentage for range sliders
+  const minPos = (priceRange[0] / 1000) * 100;
+  const maxPos = (priceRange[1] / 1000) * 100;
 
-  // Helper function to check if a product is in favorites
+  // Function to check if product is in favorites
   const isFavorite = (productId) => {
     return favorites.some(item => item.id === productId);
   };
 
-  // Helper function to create product objects with consistent IDs
-  const createProduct = (i) => ({
-    id: `${subcategory.toLowerCase().replace(/\s+/g, '-')}-product-${i}`,
-    name: `${subcategory} ${i + 1}`,
-    price: '99.99',
-    discount: 30,
-    image: `/src/assets/products/product${(i % 5) + 1}.png`
-  });
-
-  // Add this function to handle product clicks
-  const handleProductClick = (product, e) => {
-    // Prevent navigation when clicking action buttons
-    if (e.target.closest('button')) return;
-    
-    navigate(`/product/${product.id}`, { state: { product } });
-  };
-
-  // Handle price range change
+  // Function to handle price range changes
   const handlePriceChange = (e, index) => {
-    const newValue = Number(e.target.value);
-    const newRange = [...priceRange];
-    newRange[index] = newValue;
-
-    // Ensure min is not greater than max
-    if (index === 0 && newValue > priceRange[1]) {
-      newRange[0] = priceRange[1];
-    } else if (index === 1 && newValue < priceRange[0]) {
-      newRange[1] = priceRange[0];
-    }
-
-    setPriceRange(newRange);
+    const value = parseInt(e.target.value);
+    setPriceRange(prev => {
+      const newRange = [...prev];
+      newRange[index] = value;
+      // Make sure min <= max
+      if (index === 0 && value > newRange[1]) newRange[1] = value;
+      if (index === 1 && value < newRange[0]) newRange[0] = value;
+      return newRange;
+    });
   };
 
-  // Calculate the position and width of the price range track
-  const minPos = (priceRange[0] / 1000) * 100;
-  const maxPos = (priceRange[1] / 1000) * 100;
+  // Generate sample products based on subcategory
+  const createProduct = (index) => {
+    return {
+      id: `${subcategory}-${index}`,
+      name: `${subcategory} Item ${index + 1}`,
+      price: Math.floor(Math.random() * 50) + 20,
+      image: `/src/assets/products/product${(index % 5) + 1}.png`,
+    };
+  };
+
+  // Handle product click navigation
+  const handleProductClick = (product, e) => {
+    navigate(`/product/${product.id}`);
+  };
+
+  // Sample brand and categories for filters
+  const brands = ['Brand A', 'Brand B', 'Brand C', 'Brand D'];
+  const categories = ['Category X', 'Category Y', 'Category Z'];
 
   return (
-    <div>
-      {/* Subcategory Heading */}
-      <h2 className="text-white text-2xl font-bold mb-4">{subcategory}</h2>
-      <hr className="border-gray-600 mb-4" />
+    <div className="pb-12">
+      {/* Page Header */}
+      <h2 className="text-white text-xl md:text-2xl font-bold mb-4">{subcategory}</h2>
+      <p className="text-gray-300 mb-6">Browse our collection of premium {subcategory.toLowerCase()}</p>
+      <hr className="border-gray-600 mb-6" />
 
-      {/* Sort Options */}
-      <div className="flex gap-8 mb-6">
-        {/* Brand */}
+      {/* Filters */}
+      <div className="mb-6 flex flex-wrap gap-3">
+        {/* Brand Filter */}
         <div className="relative">
           <button
-            className="bg-gray-700/50 px-6 py-2 rounded-full text-white hover:bg-gray-600/60 transition-colors"
-            onClick={() => setShowBrandDropdown(!showBrandDropdown)}
+            className="bg-gray-700/50 px-4 py-2 rounded-full text-white hover:bg-gray-600/60 transition-colors"
+            onClick={() => {
+              setShowBrandDropdown(!showBrandDropdown);
+              setShowPriceRange(false);
+              setShowCategoryDropdown(false);
+            }}
           >
             Brand
           </button>
@@ -78,50 +78,58 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
                 <div key={brand} className="flex items-center gap-2 py-2 hover:bg-[#1e1e35] px-3 rounded transition-all">
                   <input 
                     type="checkbox" 
-                    id={brand} 
+                    id={`brand-${brand}`} 
                     className="accent-[#f67a45] w-4 h-4" 
                   />
-                  <label htmlFor={brand} className="text-white cursor-pointer">{brand}</label>
+                  <label htmlFor={`brand-${brand}`} className="text-white cursor-pointer">{brand}</label>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Flavor */}
+        {/* Category Filter */}
         <div className="relative">
           <button
-            className="bg-gray-700/50 px-6 py-2 rounded-full text-white hover:bg-gray-600/60 transition-colors"
-            onClick={() => setShowFlavorDropdown(!showFlavorDropdown)}
+            className="bg-gray-700/50 px-4 py-2 rounded-full text-white hover:bg-gray-600/60 transition-colors"
+            onClick={() => {
+              setShowCategoryDropdown(!showCategoryDropdown);
+              setShowBrandDropdown(false);
+              setShowPriceRange(false);
+            }}
           >
-            Flavor
+            Category
           </button>
-          {showFlavorDropdown && (
+          {showCategoryDropdown && (
             <div className="absolute top-full left-0 mt-3 w-48 bg-[#121225] border border-[#f67a45]/30 rounded-md shadow-xl p-3 z-20 backdrop-blur-sm animate-fadeIn">
-              {flavors.map((flavor) => (
-                <div key={flavor} className="flex items-center gap-2 py-2 hover:bg-[#1e1e35] px-3 rounded transition-all">
+              {categories.map((category) => (
+                <div key={category} className="flex items-center gap-2 py-2 hover:bg-[#1e1e35] px-3 rounded transition-all">
                   <input 
                     type="checkbox" 
-                    id={flavor} 
+                    id={`category-${category}`} 
                     className="accent-[#f67a45] w-4 h-4" 
                   />
-                  <label htmlFor={flavor} className="text-white cursor-pointer">{flavor}</label>
+                  <label htmlFor={`category-${category}`} className="text-white cursor-pointer">{category}</label>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Price */}
+        {/* Price Filter */}
         <div className="relative">
           <button
-            className="bg-gray-700/50 px-6 py-2 rounded-full text-white hover:bg-gray-600/60 transition-colors"
-            onClick={() => setShowPriceRange(!showPriceRange)}
+            className="bg-gray-700/50 px-4 py-2 rounded-full text-white hover:bg-gray-600/60 transition-colors"
+            onClick={() => {
+              setShowPriceRange(!showPriceRange);
+              setShowBrandDropdown(false);
+              setShowCategoryDropdown(false);
+            }}
           >
             Price
           </button>
           {showPriceRange && (
-            <div className="absolute top-full left-0 mt-3 w-80 bg-[#121225] border border-[#f67a45]/30 rounded-md shadow-xl p-5 z-20 backdrop-blur-sm animate-fadeIn">
+            <div className="absolute top-full left-0 mt-3 w-64 md:w-80 bg-[#121225] border border-[#f67a45]/30 rounded-md shadow-xl p-5 z-20 backdrop-blur-sm animate-fadeIn">
               <div className="flex justify-between text-white mb-6">
                 <div className="bg-[#1e1e35] px-3 py-1 rounded">
                   <span>${priceRange[0]}</span>
@@ -131,19 +139,16 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
                 </div>
               </div>
               
-              {/* Simplified price slider */}
+              {/* Price slider */}
               <div className="relative h-8 mb-6">
-                {/* Track background */}
                 <div className="absolute w-full h-2 bg-gray-700/70 rounded-full top-3"></div>
-                
-                {/* Active range track */}
                 <div 
                   className="absolute h-2 bg-gradient-to-r from-[#f67a45] to-[#f67a45] rounded-full top-3" 
                   style={{ left: `${minPos}%`, width: `${maxPos - minPos}%` }}
                 ></div>
                 
                 {/* Min thumb - positioned on left */}
-                <div 
+                <div
                   className="absolute top-1.5 w-5 h-5 bg-white rounded-full shadow-lg cursor-pointer"
                   style={{ left: `calc(${minPos}% - 10px)` }}
                 >
@@ -191,7 +196,7 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
 
       {/* Products Grid */}
       <div className="mb-12">
-        <div className="grid grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
           {[...Array(10)].map((_, i) => {
             const product = createProduct(i);
             const productIsFavorite = isFavorite(product.id);
@@ -199,8 +204,8 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
             return (
               <div
                 key={product.id}
-                className="w-[161px] h-[236px] relative origin-top-left rounded outline-1 outline-offset-[-1px] outline-white/30 bg-black/30 backdrop-blur-sm p-4 cursor-pointer"
-                onClick={(e) => handleProductClick(product, e)} // Add onClick handler for navigation
+                className="w-full relative rounded outline-1 outline-offset-[-1px] outline-white/30 bg-black/30 backdrop-blur-sm p-3 md:p-4 cursor-pointer"
+                onClick={(e) => handleProductClick(product, e)} 
               >
                 <div className="w-[29px] h-[29px] absolute top-0 right-0 bg-[#e50909] rounded-tr-sm rounded-bl-[7px] flex items-center justify-center text-white text-xs">
                   30%
@@ -217,8 +222,8 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
                     className="bg-black/30 rounded-full p-1 transition-colors hover:bg-black/50"
                   >
                     {productIsFavorite ? 
-                      <AiFillHeart size={20} className="text-[#f67a45]" /> : 
-                      <AiOutlineHeart size={20} className="text-white hover:text-[#f67a45]" />
+                      <AiFillHeart size={18} className="text-[#f67a45]" /> : 
+                      <AiOutlineHeart size={18} className="text-white hover:text-[#f67a45]" />
                     }
                   </button>
                   
@@ -231,11 +236,11 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
                     className="bg-black/30 rounded-full p-1 transition-colors hover:bg-black/50"
                     title="Add to cart"
                   >
-                    <FiShoppingCart size={20} className="text-white hover:text-[#f67a45]" />
+                    <FiShoppingCart size={18} className="text-white hover:text-[#f67a45]" />
                   </button>
                 </div>
                 
-                <div className="w-full h-32 bg-gray-700/30 mb-4 rounded-lg flex items-center justify-center">
+                <div className="w-full h-24 md:h-32 bg-gray-700/30 mb-3 md:mb-4 rounded-lg flex items-center justify-center">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -243,7 +248,7 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
                   />
                 </div>
                 <div className="text-center">
-                  <h3 className="text-white font-medium mb-1">{product.name}</h3>
+                  <h3 className="text-white font-medium text-sm md:text-base mb-1 truncate">{product.name}</h3>
                   <p className="text-[#f67a45] text-sm">${product.price}</p>
                 </div>
               </div>
@@ -254,10 +259,10 @@ const SubcategoryView = ({ subcategory, favorites = [], onToggleFavorite, onAddT
 
       {/* Pagination */}
       <div className="flex justify-center gap-2 text-white">
-        <button className="underline">1</button>
-        <button>2</button>
-        <button>3</button>
-        <button>Next {'>'}</button>
+        <button className="underline w-8 h-8 flex items-center justify-center">1</button>
+        <button className="w-8 h-8 flex items-center justify-center">2</button>
+        <button className="w-8 h-8 flex items-center justify-center">3</button>
+        <button className="flex items-center justify-center">Next {'>'}</button>
       </div>
     </div>
   );
