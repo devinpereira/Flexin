@@ -11,7 +11,9 @@ const LeftNavigation = ({
   activeSection = 'Home', 
   onSectionChange,
   selectedSubcategory, 
-  onSubcategorySelect 
+  onSubcategorySelect,
+  cartItemsCount = 0,
+  isMobile = false
 }) => {
   const [showCategories, setShowCategories] = useState(false);
 
@@ -29,7 +31,75 @@ const LeftNavigation = ({
     { name: 'Shakers & Bottles', icon: <BiDrink size={16} /> },
   ];
 
-  return (
+  return isMobile ? (
+    // Mobile Navigation
+    <div className="space-y-4">
+      {navItems.map((item) => (
+        <div key={item.name}>
+          <a
+            href="#"
+            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-md transition-all duration-200 ${
+              activeSection === item.name
+                ? 'bg-[#f67a45] text-white font-medium'
+                : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+            }`}
+            onClick={(e) => {
+              e.preventDefault();
+              onSectionChange(item.name);
+              if (item.name === 'Categories') {
+                setShowCategories(!showCategories);
+              } else {
+                // Close categories dropdown when selecting other items
+                setShowCategories(false);
+              }
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex-shrink-0">{item.icon}</span>
+              <span>{item.name}</span>
+              {item.name === 'Shopping Cart' && cartItemsCount > 0 && (
+                <span className="ml-2 bg-[#f67a45] text-white text-xs px-2 py-0.5 rounded-full">{cartItemsCount}</span>
+              )}
+            </div>
+            {item.name === 'Categories' && (
+              showCategories ? <MdKeyboardArrowUp size={20} /> : <MdKeyboardArrowDown size={20} />
+            )}
+          </a>
+
+          {item.name === 'Categories' && showCategories && (
+            <div className="ml-6 mt-2 space-y-2 border-l-2 border-gray-700 pl-4">
+              {subCategories.map((subItem) => (
+                <a
+                  key={subItem.name}
+                  href="#"
+                  className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                    selectedSubcategory === subItem.name
+                      ? 'text-[#f67a45] font-medium'
+                      : 'text-white hover:text-[#f67a45]'
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSubcategorySelect(subItem.name);
+                  }}
+                >
+                  <span className="flex-shrink-0">{subItem.icon}</span>
+                  <span>{subItem.name}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      <div className="mt-8 border-t border-white/20 pt-6">
+        <div className="flex items-center gap-3">
+          <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
+          <span className="text-white">Account</span>
+        </div>
+      </div>
+    </div>
+  ) : (
+    // Desktop Navigation
     <div className="fixed left-0 top-50 z-10 h-screen">
       <nav className="bg-[#03020d] rounded-tr-[30px] w-[275px] p-6 h-full">
         <div className="space-y-6">
@@ -56,6 +126,9 @@ const LeftNavigation = ({
                 <div className="flex items-center gap-3">
                   <span className="flex-shrink-0">{item.icon}</span>
                   <span>{item.name}</span>
+                  {item.name === 'Shopping Cart' && cartItemsCount > 0 && (
+                    <span className="ml-2 bg-[#f67a45] text-white text-xs px-2 py-0.5 rounded-full">{cartItemsCount}</span>
+                  )}
                 </div>
                 {item.name === 'Categories' && (
                   showCategories ? <MdKeyboardArrowUp size={20} /> : <MdKeyboardArrowDown size={20} />
