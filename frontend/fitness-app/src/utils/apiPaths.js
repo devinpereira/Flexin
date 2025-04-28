@@ -21,6 +21,15 @@ export const API_PATHS = {
     DELETE_COMMENT: (postId, commentId) => `/api/v1/comments/${postId}/${commentId}`,
   },
   FOLLOW: {
-    FOLLOW_USER: "/api/v1/follow/followUser",
-  }
+    UNFOLLOW_USER: (followingId) => `/api/v1/friends/unfollow/${followingId}`,
+    GET_FOLLOWERS: (userId) => `/api/v1/friends/followers/${userId}`,
+    SEARCH_FOLLOWERS: (username) => `/api/v1/friends/search/${username}`,
+    SEND_FOLLOW_REQUEST: (followingId) => `/api/v1/friends/follow/${followingId}`,
+    APPROVE_FOLLOW_REQUEST: (followId) => `/api/v1/friends/approve/${followId}`,
+    REJECT_FOLLOW_REQUEST: (followId) => `/api/v1/friends/reject/${followId}`,
+
+  },
+  PROFILE: {
+    GET_PROFILE_INFO: "/api/v1/profile",
+  },
 };

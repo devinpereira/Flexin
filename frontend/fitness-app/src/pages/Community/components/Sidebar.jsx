@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { 
   FaHome, 
   FaSearch, 
@@ -8,13 +8,14 @@ import {
   FaUser 
 } from 'react-icons/fa';
 
-const Sidebar = ({ activeSection, onSectionChange }) => {
-  // Mock user data
-  const user = {
-    name: 'John Doe',
-    username: '@johndoe',
-    profileImage: '/src/assets/profile1.png'
-  };
+const Sidebar = ({ activeSection, onSectionChange, name, username, profileImage }) => {
+
+    // Mock user data
+    const user = {
+      name: 'John Doe',
+      username: '@johndoe',
+      profileImage: '/src/assets/profile1.png'
+    };
 
   const menuItems = [
     { id: 'Home', label: 'Home', icon: <FaHome size={20} /> },
@@ -32,13 +33,13 @@ const Sidebar = ({ activeSection, onSectionChange }) => {
         <div className="flex flex-col items-center mb-8 pt-6">
           <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
             <img 
-              src={user.profileImage} 
-              alt={user.name} 
+              src={profileImage} 
+              alt={name} 
               className="w-full h-full object-cover"
             />
           </div>
-          <h3 className="text-white text-xl font-medium">{user.name}</h3>
-          <p className="text-gray-400">{user.username}</p>
+          <h3 className="text-white text-xl font-medium">{name}</h3>
+          <p className="text-gray-400">{username}</p>
         </div>
         
         {/* Divider */}

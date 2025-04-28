@@ -11,7 +11,9 @@ export const getFeedPosts = async (req, res) => {
 
     const followedUserIds = following.map((f) => f.followingId);
 
-    const feedPosts = await Post.find({ userId: { $in: followedUserIds } }).sort({ createdAt: -1 });
+    const feedPosts = await Post.find({ userId: { $in: followedUserIds } })
+      .sort({ createdAt: -1 })
+      .populate("userId", "username profileImageUrl");
 
     res.status(200).json(feedPosts);
   } catch (err) {
@@ -58,7 +60,7 @@ export const getPost = async (req, res) => {
 export const createPost = async (req, res) => {
   try {
     const { description } = req.body;
-    const mediaFiles = req.files ? req.files.map((file) => file.path) : [];
+    const mediaFiles = req.files ? req.files.map((file) => file.path.replace(/\\/g, '/')) : [];
     const newPost = new Post({
       userId: req.user._id,
       description,
