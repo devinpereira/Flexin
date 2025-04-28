@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
 import Sidebar from './components/Sidebar';
@@ -11,10 +11,13 @@ import Profile from './components/Profile';
 import FriendsManagement from './components/FriendsManagement';
 import { motion } from 'framer-motion';
 import { useUserAuth } from '../../hooks/useUserAuth';
-import UserProvider from '../../context/UserContext';
+import { UserContext } from '../../context/UserContext';
+import { BASE_URL } from '../../utils/apiPaths';
 
 const Community = () => {
   useUserAuth();
+  const {user} = useContext(UserContext);
+  console.log("User in Community", user);
   // Existing state and functions
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -43,7 +46,10 @@ const Community = () => {
           <div className="h-full">
             <Sidebar 
               activeSection={activeSection} 
-              onSectionChange={handleSectionChange} 
+              onSectionChange={handleSectionChange}
+              name={user?.fullName}
+              username={`@${user?.username}`}
+              profileImage={`${BASE_URL}/${user?.profileImageUrl}`}
             />
           </div>
         </div>
