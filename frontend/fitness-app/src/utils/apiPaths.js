@@ -21,7 +21,7 @@ export const API_PATHS = {
     DELETE_COMMENT: (postId, commentId) => `/api/v1/comments/${postId}/${commentId}`,
   },
   FOLLOW: {
-    UNFOLLOW_USER: "/api/v1/friends/unfollowUser",
+    UNFOLLOW_USER: (followingId) => `/api/v1/friends/unfollow/${followingId}`,
     GET_FOLLOWERS: (userId) => `/api/v1/friends/followers/${userId}`,
     SEARCH_FOLLOWERS: (username) => `/api/v1/friends/search/${username}`,
     SEND_FOLLOW_REQUEST: (followingId) => `/api/v1/friends/follow/${followingId}`,

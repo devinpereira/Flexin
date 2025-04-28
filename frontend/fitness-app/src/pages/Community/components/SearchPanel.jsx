@@ -31,7 +31,7 @@ const SearchPanel = ({ onSelectUser }) => {
         posts: 0,
         followers: 0,
         following: 0,
-        isFollowing: false,
+        isFollowing: user.isFollowing,
       }));
 
       setSearchResults(formattedUsers);
@@ -42,6 +42,24 @@ const SearchPanel = ({ onSelectUser }) => {
       setIsSearching(false);
     }
   };
+
+  const handleFollowUser = async (userId, isFollowing) => {
+    try {
+      if (isFollowing) {
+        await axiosInstance.delete(`${API_PATHS.FOLLOW.UNFOLLOW_USER(userId)}`);
+      } else {
+        await axiosInstance.post(`${API_PATHS.FOLLOW.SEND_FOLLOW_REQUEST(userId)}`);
+      }
+      // Update the local state to reflect the follow/unfollow action
+      setSearchResults((prevResults) =>
+        prevResults.map((user) =>
+          user.id === userId ? { ...user, isFollowing: !isFollowing } : user
+        )
+      );
+    } catch (err) {
+      console.error("Error following/unfollowing user:", err);
+    }
+  }
 
   // Whenever searchQuery changes, trigger the search
   useEffect(() => {
@@ -117,7 +135,7 @@ const SearchPanel = ({ onSelectUser }) => {
                     }`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      // Handle follow/unfollow logic
+                      handleFollowUser(user.id, user.isFollowing);
                     }}
                   >
                     {user.isFollowing ? "Following" : "Follow"}

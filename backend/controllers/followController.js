@@ -11,10 +11,49 @@ export const searchFriends = async (req, res) => {
       return res.status(400).json({ error: "Username is required" });
     }
 
-    const users = await User.find({
-      username: { $regex: username, $options: "i" },
-      _id: { $ne: userId },
-    }).limit(10);
+    const users = await User.aggregate([
+      {
+        $match: {
+          username: { $regex: username, $options: "i" },
+          _id: { $ne: userId },
+        },
+      },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "follows",
+          let: { userId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$followerId", userId] },
+                    { $eq: ["$followingId", "$$userId"] },
+                    { $eq: ["$status", "accepted"] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "followInfo",
+        },
+      },
+      {
+        $addFields: {
+          isFollowing: { $gt: [{ $size: "$followInfo" }, 0] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          fullName: 1,
+          profileImageUrl: 1,
+          username: 1,
+          isFollowing: 1,
+        },
+      },
+    ]);
 
     res.status(200).json(users);
   } catch (err) {
@@ -40,12 +79,33 @@ export const sendFollowRequest = async (req, res) => {
     const newFollow = new Follow({
       followerId,
       followingId,
-      status: "pending",
+      status: "accepted",
     });
 
     await newFollow.save();
 
     res.status(201).json({ message: "Follow request sent", follow: newFollow });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const unfollowUser = async (req, res) => {
+  try {
+    const { followingId } = req.params;
+    const followerId = req.user._id;
+
+    const follow = await Follow.findOneAndDelete({
+      followerId,
+      followingId,
+      status: "accepted",
+    });
+
+    if (!follow) {
+      return res.status(404).json({ error: "Follow relationship not found" });
+    }
+
+    res.json({ message: "Unfollowed successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
