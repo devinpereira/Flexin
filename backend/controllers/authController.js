@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import ProfileData from "../models/ProfileData.js";
 import jwt from "jsonwebtoken";
 
 // Generate JWT token
@@ -10,7 +11,7 @@ const generateToken = (id) => {
 
 // Register User
 export const registerUser = async (req, res) => {
-    const { fullName, username, email, password, profileImageUrl, dob, role } = req.body;
+    const { fullName, email, password, profileImageUrl, dob, role } = req.body;
     
     // validation: Check for missing fields
     if (!fullName || !email || !password || !dob) {
@@ -27,7 +28,6 @@ export const registerUser = async (req, res) => {
         // Create new user
         const user = await User.create({
             fullName,
-            username,
             email,
             password,
             profileImageUrl,
@@ -72,14 +72,21 @@ export const loginUser = async (req, res) => {
 
 // Get User Info
 export const getUserInfo = async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select("-password");
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        res.status(200).json(user);
-    } catch (err) {
-        res.status(500).json({ message: "Error getting user info", error: err.message });
+  try {
+    const user = await User.findById(req.user.id).select("-password -__v");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    const profile = await ProfileData.findOne({ userId: req.user.id }).select("username bio noOfPosts followers following");
+
+    res.status(200).json({
+      ...user.toObject(),
+      ...(profile && {
+        username: profile.username,
+      }),
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error getting user info", error: err.message });
+  }
 };

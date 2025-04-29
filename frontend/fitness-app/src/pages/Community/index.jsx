@@ -17,8 +17,6 @@ import { BASE_URL } from '../../utils/apiPaths';
 const Community = () => {
   useUserAuth();
   const {user} = useContext(UserContext);
-  console.log("User in Community", user);
-  // Existing state and functions
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);
   

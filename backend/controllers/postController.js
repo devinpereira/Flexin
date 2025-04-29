@@ -1,23 +1,62 @@
 import Post from "../models/Post.js";
 import Like from "../models/Like.js";
 import Comment from "../models/Comment.js";
+import Follow from "../models/Follow.js";
 
-// Get feed Posts
 export const getFeedPosts = async (req, res) => {
   try {
     const userId = req.user._id;
 
+    // Get list of followed user IDs
     const following = await Follow.find({ followerId: userId, status: "accepted" }).select("followingId");
-
     const followedUserIds = following.map((f) => f.followingId);
 
-    const feedPosts = await Post.find({ userId: { $in: followedUserIds } })
-      .sort({ createdAt: -1 })
-      .populate("userId", "username profileImageUrl");
+    // Aggregate posts with user and profile data
+    const feedPosts = await Post.aggregate([
+      { $match: { userId: { $in: followedUserIds } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userInfo",
+        },
+      },
+      {
+        $lookup: {
+          from: "profiledatas",
+          localField: "userId",
+          foreignField: "userId",
+          as: "profileInfo",
+        },
+      },
+      {
+        $unwind: "$userInfo",
+      },
+      {
+        $unwind: "$profileInfo",
+      },
+      {
+        $addFields: {
+          user: {
+            username: "$profileInfo.username",
+            profileImageUrl: "$userInfo.profileImageUrl",
+          },
+        },
+      },
+      {
+        $project: {
+          userInfo: 0,
+          profileInfo: 0,
+          __v: 0,
+        },
+      },
+    ]);
 
     res.status(200).json(feedPosts);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Failed to get feed posts", error: err.message });
   }
 };
 
