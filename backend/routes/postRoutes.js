@@ -8,6 +8,7 @@ import {
   getPost,
   editPost,
   getFeedPosts,
+  getPostsByUserId,
 } from "../controllers/postController.js";
 import upload from "../middleware/uploadMiddleware.js";
 
@@ -16,6 +17,7 @@ const router = express.Router();
 router.get("/feed", protect, getFeedPosts);
 router.post("/", protect, upload.array("media", 5), createPost);
 router.get("/", protect, getPosts);
+router.get("/user/:id", protect, getPostsByUserId);
 router.get("/:id", protect, getPost);
 router.put("/:id", protect, upload.array("media", 5), editPost);
 router.delete("/:id", protect, deletePost);

@@ -3,6 +3,7 @@ import Like from "../models/Like.js";
 import Comment from "../models/Comment.js";
 import Follow from "../models/Follow.js";
 
+// Get Feed Posts
 export const getFeedPosts = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -73,6 +74,25 @@ export const getPosts = async (req, res) => {
   }
 };
 
+// Get Posts by User ID
+export const getPostsByUserId = async (req, res) => {
+  const { id: userId } = req.params;
+
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
+
+  try {
+    const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+    if (!posts) {
+      return res.status(404).json({ message: "No posts found for this user" });
+    }
+    res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({ message: "Error getting posts", error: err.message });
+  }
+}
+
 // Get a Post
 export const getPost = async (req, res) => {
   const { id: postId } = req.params;
@@ -106,6 +126,13 @@ export const createPost = async (req, res) => {
       content: mediaFiles,
     });
     await newPost.save();
+
+    // Increment post count for the user
+    await ProfileData.findOneAndUpdate(
+      { userId: req.user._id },
+      { $inc: { noOfPosts: 1 } },
+      { new: true }
+    );
     res.status(201).json(newPost);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -145,6 +172,13 @@ export const deletePost = async (req, res) => {
     await Like.deleteMany({ postId: post._id });
     await Comment.deleteMany({ postId: post._id });
     await post.deleteOne();
+
+    // Increment post count for the user
+    await ProfileData.findOneAndUpdate(
+      { userId: req.user._id },
+      { $inc: { noOfPosts: -1 } },
+      { new: true }
+    );
 
     res.json({ message: "Post and associated likes/comments deleted" });
   } catch (err) {

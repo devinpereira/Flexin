@@ -2,7 +2,7 @@ import Follow from "../models/Follow.js";
 import User from "../models/User.js";
 import ProfileData from "../models/ProfileData.js";
 
-
+// Search for Friends
 export const searchFriends = async (req, res) => {
   try {
     const { username } = req.params;
@@ -56,7 +56,7 @@ export const searchFriends = async (req, res) => {
   }
 };
 
-
+// Send Follow Request
 export const sendFollowRequest = async (req, res) => {
   try {
     const { followingId } = req.params;
@@ -99,6 +99,25 @@ export const sendFollowRequest = async (req, res) => {
   }
 };
 
+// Get Follow Requests - need to fix
+export const getFollowRequests = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const followRequests = await Follow.find({
+      followingId: userId,
+      status: "pending",
+    })
+      .populate("followerId", "fullName profileImageUrl")
+      .lean();
+
+    res.status(200).json(followRequests);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Unfollow User
 export const unfollowUser = async (req, res) => {
   try {
     const { followingId } = req.params;
@@ -113,6 +132,19 @@ export const unfollowUser = async (req, res) => {
     if (!follow) {
       return res.status(404).json({ error: "Follow relationship not found" });
     }
+
+    // Decrement counts
+    await ProfileData.findOneAndUpdate(
+      { userId: followerId },
+      { $inc: { following: -1 } },
+      { new: true }
+    );
+
+    await ProfileData.findOneAndUpdate(
+      { userId: followingId },
+      { $inc: { followers: -1 } },
+      { new: true }
+    );
 
     res.json({ message: "Unfollowed successfully" });
   } catch (err) {
