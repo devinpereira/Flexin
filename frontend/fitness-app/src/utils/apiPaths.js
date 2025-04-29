@@ -17,8 +17,8 @@ export const API_PATHS = {
     GET_USER_POSTS: (userId) => `/api/v1/posts/user/${userId}`,
   },
   COMMENT: {
-    GET_COMMENTS: (commentId) => `/api/v1/comments/${commentId}`,
-    ADD_COMMENT: (commentId) => `/api/v1/comments/${commentId}`,
+    GET_COMMENTS: (postId) => `/api/v1/comments/${postId}`,
+    ADD_COMMENT: (postId) => `/api/v1/comments/${postId}`,
     DELETE_COMMENT: (postId, commentId) => `/api/v1/comments/${postId}/${commentId}`,
   },
   FOLLOW: {

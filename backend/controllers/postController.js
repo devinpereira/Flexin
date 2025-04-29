@@ -4,6 +4,7 @@ import Comment from "../models/Comment.js";
 import Follow from "../models/Follow.js";
 
 // Get Feed Posts
+// Get Feed Posts
 export const getFeedPosts = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -12,10 +13,12 @@ export const getFeedPosts = async (req, res) => {
     const following = await Follow.find({ followerId: userId, status: "accepted" }).select("followingId");
     const followedUserIds = following.map((f) => f.followingId);
 
-    // Aggregate posts with user and profile data
+    // Aggregate posts with user and profile data and liked status
     const feedPosts = await Post.aggregate([
       { $match: { userId: { $in: followedUserIds } } },
       { $sort: { createdAt: -1 } },
+
+      // Join user info
       {
         $lookup: {
           from: "users",
@@ -32,24 +35,43 @@ export const getFeedPosts = async (req, res) => {
           as: "profileInfo",
         },
       },
+
+      // Check if this post is liked by the current user
       {
-        $unwind: "$userInfo",
+        $lookup: {
+          from: "likes",
+          let: { postId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $and: [
+              { $eq: ["$postId", "$$postId"] },
+              { $eq: ["$userId", userId] }
+            ]}}},
+            { $limit: 1 }
+          ],
+          as: "likedByUser"
+        }
       },
-      {
-        $unwind: "$profileInfo",
-      },
+
+      { $unwind: "$userInfo" },
+      { $unwind: "$profileInfo" },
+
+      // Add user info and liked status
       {
         $addFields: {
           user: {
+            name: "$userInfo.fullName",
             username: "$profileInfo.username",
             profileImageUrl: "$userInfo.profileImageUrl",
           },
+          liked: { $gt: [{ $size: "$likedByUser" }, 0] }
         },
       },
+
       {
         $project: {
           userInfo: 0,
           profileInfo: 0,
+          likedByUser: 0,
           __v: 0,
         },
       },

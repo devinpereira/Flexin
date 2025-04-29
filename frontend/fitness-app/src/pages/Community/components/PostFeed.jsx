@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Post from './Post';
 import CreatePost from './CreatePost';
 import { motion } from 'framer-motion';
+import { API_PATHS, BASE_URL } from '../../../utils/apiPaths';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const PostFeed = () => {
   const [posts, setPosts] = useState([]);
@@ -9,67 +11,28 @@ const PostFeed = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulate fetching posts from an API
     const fetchPosts = async () => {
       setIsLoading(true);
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Mock data - in a real app, this would be an API call
-        const mockPosts = [
-          {
-            id: 1,
-            user: {
-              name: 'Sarah Johnson',
-              username: '@sarahjohnson',
-              profileImage: '/src/assets/trainers/trainer2.png'
-            },
-            content: 'Just finished a great workout session! 💪 Feeling energized and ready for the day. #FitnessJourney #MorningWorkout',
-            images: [
-              { preview: '/src/assets/posts/workout.png' },
-              { preview: '/src/assets/posts/workout1.png' }
-            ],
-            likes: 24,
-            comments: 8,
-            shares: 3,
-            timestamp: '2 hours ago'
+        const res = await axiosInstance.get(`${API_PATHS.POST.GET_FEED_POSTS}`);
+        const data = await res.data;
+    
+        const formattedPosts = data.map(post => ({
+          id: post._id,
+          user: {
+            name: post.user.name,
+            username: `@${post.user.username}`,
+            profileImage: `${BASE_URL}/${post.user.profileImageUrl}`
           },
-          {
-            id: 2,
-            user: {
-              name: 'Mike Chen',
-              username: '@mikechen',
-              profileImage: '/src/assets/trainers/trainer3.png'
-            },
-            content: 'Here\'s my meal prep for the week! Healthy eating is 80% of the fitness battle. What are your favorite meal prep recipes?',
-            image: '/src/assets/posts/workout1.png',
-            likes: 42,
-            comments: 15,
-            shares: 7,
-            timestamp: '5 hours ago'
-          },
-          {
-            id: 3,
-            user: {
-              name: 'Alex Rivera',
-              username: '@alexrivera',
-              profileImage: '/src/assets/trainers/trainer5.png'
-            },
-            content: 'New personal record on deadlifts today! 315 lbs x 5 reps. Hard work pays off! #Gains #PersonalRecord',
-            images: [
-              { preview: '/src/assets/posts/workout.png' },
-              { preview: '/src/assets/posts/workout1.png' },
-              { preview: '/src/assets/posts/workout.png' }
-            ],
-            likes: 36,
-            comments: 12,
-            shares: 2,
-            timestamp: '1 day ago'
-          }
-        ];
-        
-        setPosts(mockPosts);
+          content: post.description,
+          images: post.content.map(img => ({ preview: `${BASE_URL}/${img}` })),
+          likes: post.likes,
+          isliked: post.liked,
+          comments: post.comments,
+          timestamp: new Date(post.createdAt).toLocaleString()
+        }));
+    
+        setPosts(formattedPosts);
         setError(null);
       } catch (err) {
         console.error("Error fetching posts:", err);
@@ -78,6 +41,7 @@ const PostFeed = () => {
         setIsLoading(false);
       }
     };
+    
 
     fetchPosts();
   }, []);
@@ -129,9 +93,9 @@ const PostFeed = () => {
           animate={{ opacity: 1 }}
           transition={{ staggerChildren: 0.1 }}
         >
-          {posts.map((post, index) => (
+          {posts.map((post) => (
             <motion.div 
-              key={post.id || index} // added an index.
+              key={post.id}
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.3 }}
