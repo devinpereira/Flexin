@@ -28,10 +28,10 @@ const SearchPanel = ({ onSelectUser }) => {
         username: `@${user.username}`,
         profileImage: `${BASE_URL}/${user.profileImageUrl}` || "/src/assets/profile1.png",
         bio: user.bio || "",
-        posts: 0,
-        followers: 0,
-        following: 0,
-        isFollowing: user.isFollowing,
+        posts: user.noOfPosts,
+        followers: user.followers,
+        following: user.following,
+        isFollowing: user.followStatus,
       }));
 
       setSearchResults(formattedUsers);
@@ -45,7 +45,7 @@ const SearchPanel = ({ onSelectUser }) => {
 
   const handleFollowUser = async (userId, isFollowing) => {
     try {
-      if (isFollowing) {
+      if (isFollowing == "accepted") {
         await axiosInstance.delete(`${API_PATHS.FOLLOW.UNFOLLOW_USER(userId)}`);
       } else {
         await axiosInstance.post(`${API_PATHS.FOLLOW.SEND_FOLLOW_REQUEST(userId)}`);

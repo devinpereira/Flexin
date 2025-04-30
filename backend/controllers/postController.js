@@ -1,23 +1,85 @@
 import Post from "../models/Post.js";
 import Like from "../models/Like.js";
 import Comment from "../models/Comment.js";
+import Follow from "../models/Follow.js";
 
-// Get feed Posts
+// Get Feed Posts
+// Get Feed Posts
 export const getFeedPosts = async (req, res) => {
   try {
     const userId = req.user._id;
 
+    // Get list of followed user IDs
     const following = await Follow.find({ followerId: userId, status: "accepted" }).select("followingId");
-
     const followedUserIds = following.map((f) => f.followingId);
 
-    const feedPosts = await Post.find({ userId: { $in: followedUserIds } })
-      .sort({ createdAt: -1 })
-      .populate("userId", "username profileImageUrl");
+    // Aggregate posts with user and profile data and liked status
+    const feedPosts = await Post.aggregate([
+      { $match: { userId: { $in: followedUserIds } } },
+      { $sort: { createdAt: -1 } },
+
+      // Join user info
+      {
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userInfo",
+        },
+      },
+      {
+        $lookup: {
+          from: "profiledatas",
+          localField: "userId",
+          foreignField: "userId",
+          as: "profileInfo",
+        },
+      },
+
+      // Check if this post is liked by the current user
+      {
+        $lookup: {
+          from: "likes",
+          let: { postId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $and: [
+              { $eq: ["$postId", "$$postId"] },
+              { $eq: ["$userId", userId] }
+            ]}}},
+            { $limit: 1 }
+          ],
+          as: "likedByUser"
+        }
+      },
+
+      { $unwind: "$userInfo" },
+      { $unwind: "$profileInfo" },
+
+      // Add user info and liked status
+      {
+        $addFields: {
+          user: {
+            name: "$userInfo.fullName",
+            username: "$profileInfo.username",
+            profileImageUrl: "$userInfo.profileImageUrl",
+          },
+          liked: { $gt: [{ $size: "$likedByUser" }, 0] }
+        },
+      },
+
+      {
+        $project: {
+          userInfo: 0,
+          profileInfo: 0,
+          likedByUser: 0,
+          __v: 0,
+        },
+      },
+    ]);
 
     res.status(200).json(feedPosts);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Failed to get feed posts", error: err.message });
   }
 };
 
@@ -33,6 +95,25 @@ export const getPosts = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
+
+// Get Posts by User ID
+export const getPostsByUserId = async (req, res) => {
+  const { id: userId } = req.params;
+
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    return res.status(400).json({ message: "Invalid user ID" });
+  }
+
+  try {
+    const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+    if (!posts) {
+      return res.status(404).json({ message: "No posts found for this user" });
+    }
+    res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({ message: "Error getting posts", error: err.message });
+  }
+}
 
 // Get a Post
 export const getPost = async (req, res) => {
@@ -67,6 +148,13 @@ export const createPost = async (req, res) => {
       content: mediaFiles,
     });
     await newPost.save();
+
+    // Increment post count for the user
+    await ProfileData.findOneAndUpdate(
+      { userId: req.user._id },
+      { $inc: { noOfPosts: 1 } },
+      { new: true }
+    );
     res.status(201).json(newPost);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -106,6 +194,13 @@ export const deletePost = async (req, res) => {
     await Like.deleteMany({ postId: post._id });
     await Comment.deleteMany({ postId: post._id });
     await post.deleteOne();
+
+    // Increment post count for the user
+    await ProfileData.findOneAndUpdate(
+      { userId: req.user._id },
+      { $inc: { noOfPosts: -1 } },
+      { new: true }
+    );
 
     res.json({ message: "Post and associated likes/comments deleted" });
   } catch (err) {

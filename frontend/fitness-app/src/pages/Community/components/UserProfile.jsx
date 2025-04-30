@@ -1,18 +1,35 @@
 import React, { useState } from 'react';
 import { FaArrowLeft, FaEllipsisH, FaTh, FaBookmark, FaUserTag } from 'react-icons/fa';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 const UserProfile = ({ user, onBack }) => {
   const [activeTab, setActiveTab] = useState('posts');
-  
-  // Mock data for user posts
-  const posts = [
-    { id: 1, image: '/src/assets/posts/workout.png' },
-    { id: 2, image: '/src/assets/posts/workout1.png' },
-    { id: 3, image: '/src/assets/posts/workout.png' },
-    { id: 4, image: '/src/assets/posts/workout1.png' },
-    { id: 5, image: '/src/assets/posts/workout.png' },
-    { id: 6, image: '/src/assets/posts/workout1.png' },
-  ];
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await axiosInstance.get(`${API_PATHS.POST.GET_USER_POSTS(user._id)}`);
+        setPosts(res.data);
+      } catch (err) {
+        console.error('Error fetching posts:', err);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  const handleFollowUser = async (userId, isFollowing) => {
+      try {
+        if (isFollowing == "accepted") {
+          await axiosInstance.delete(`${API_PATHS.FOLLOW.UNFOLLOW_USER(userId)}`);
+        } else {
+          await axiosInstance.post(`${API_PATHS.FOLLOW.SEND_FOLLOW_REQUEST(userId)}`);
+        }
+      } catch (err) {
+        console.error("Error following/unfollowing user:", err);
+      }
+    }
   
   return (
     <div className="max-w-3xl mx-auto">
@@ -74,6 +91,10 @@ const UserProfile = ({ user, onBack }) => {
                   className={`px-6 py-2 rounded-full ${user.isFollowing 
                     ? 'bg-gray-700 text-white' 
                     : 'bg-[#f67a45] text-white hover:bg-[#e56d3d]'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFollowUser(user.id, user.isFollowing);
+                  }}
                 >
                   {user.isFollowing ? 'Following' : 'Follow'}
                 </button>

@@ -1,7 +1,8 @@
 import Follow from "../models/Follow.js";
 import User from "../models/User.js";
+import ProfileData from "../models/ProfileData.js";
 
-
+// Search for Friends
 export const searchFriends = async (req, res) => {
   try {
     const { username } = req.params;
@@ -11,56 +12,51 @@ export const searchFriends = async (req, res) => {
       return res.status(400).json({ error: "Username is required" });
     }
 
-    const users = await User.aggregate([
-      {
-        $match: {
-          username: { $regex: username, $options: "i" },
-          _id: { $ne: userId },
-        },
-      },
-      { $limit: 10 },
-      {
-        $lookup: {
-          from: "follows",
-          let: { userId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$followerId", userId] },
-                    { $eq: ["$followingId", "$$userId"] },
-                    { $eq: ["$status", "accepted"] },
-                  ],
-                },
-              },
-            },
-          ],
-          as: "followInfo",
-        },
-      },
-      {
-        $addFields: {
-          isFollowing: { $gt: [{ $size: "$followInfo" }, 0] },
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          fullName: 1,
-          profileImageUrl: 1,
-          username: 1,
-          isFollowing: 1,
-        },
-      },
-    ]);
+    // Step 1: Search matching profiles
+    const profiles = await ProfileData.find({
+      username: { $regex: username, $options: "i" },
+      userId: { $ne: userId },
+    })
+      .limit(10)
+      .populate("userId", "fullName profileImageUrl")
+      .lean();
 
-    res.status(200).json(users);
+    const followedUserIds = profiles.map((p) => p.userId._id);
+
+    // Step 2: Get follow statuses (accepted, pending)
+    const followRecords = await Follow.find({
+      followerId: userId,
+      followingId: { $in: followedUserIds },
+    }).select("followingId status");
+
+    const followStatusMap = {};
+    followRecords.forEach((f) => {
+      followStatusMap[f.followingId.toString()] = f.status;
+    });
+
+    // Step 3: Append follow status to each profile
+    const result = profiles.map((p) => {
+      const followingIdStr = p.userId._id.toString();
+      return {
+        _id: p.userId._id,
+        username: p.username,
+        fullName: p.userId.fullName,
+        profileImageUrl: p.userId.profileImageUrl,
+        bio: p.bio,
+        noOfPosts: p.noOfPosts,
+        followers: p.followers,
+        following: p.following,
+        followStatus: followStatusMap[followingIdStr] || null, // "accepted", "pending", or null
+      };
+    });
+
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+// Send Follow Request
 export const sendFollowRequest = async (req, res) => {
   try {
     const { followingId } = req.params;
@@ -84,12 +80,44 @@ export const sendFollowRequest = async (req, res) => {
 
     await newFollow.save();
 
+    // Update the following and followers count for both users
+    await ProfileData.findOneAndUpdate(
+      { userId: followerId }, 
+      { $inc: { following: 1 } },  // Increment following count of the follower
+      { new: true }
+    );
+
+    await ProfileData.findOneAndUpdate(
+      { userId: followingId }, 
+      { $inc: { followers: 1 } },  // Increment followers count of the followed user
+      { new: true }
+    );
+
     res.status(201).json({ message: "Follow request sent", follow: newFollow });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+// Get Follow Requests - need to fix
+export const getFollowRequests = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const followRequests = await Follow.find({
+      followingId: userId,
+      status: "pending",
+    })
+      .populate("followerId", "fullName profileImageUrl")
+      .lean();
+
+    res.status(200).json(followRequests);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Unfollow User
 export const unfollowUser = async (req, res) => {
   try {
     const { followingId } = req.params;
@@ -104,6 +132,19 @@ export const unfollowUser = async (req, res) => {
     if (!follow) {
       return res.status(404).json({ error: "Follow relationship not found" });
     }
+
+    // Decrement counts
+    await ProfileData.findOneAndUpdate(
+      { userId: followerId },
+      { $inc: { following: -1 } },
+      { new: true }
+    );
+
+    await ProfileData.findOneAndUpdate(
+      { userId: followingId },
+      { $inc: { followers: -1 } },
+      { new: true }
+    );
 
     res.json({ message: "Unfollowed successfully" });
   } catch (err) {

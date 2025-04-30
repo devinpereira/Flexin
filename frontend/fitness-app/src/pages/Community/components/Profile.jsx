@@ -18,7 +18,7 @@ const Profile = () => {
     const fetchUserProfile = async () => {
       try {
         const response = await axiosInstance.get(`${API_PATHS.PROFILE.GET_PROFILE_INFO}`);
-        setUser(response.data);
+        setUser(response.data.user);
       } catch (err) {
         console.error('Error fetching user profile:', err);
       }
@@ -638,7 +638,7 @@ const Profile = () => {
           {/* Profile Picture */}
           <div className="absolute -top-14 left-6 w-28 h-28 rounded-full border-4 border-[#121225] overflow-hidden">
             <img 
-              src={`${BASE_URL}/${user.profileImageUrl}`} 
+              src={user.profileImageUrl ? `${BASE_URL}/${user.profileImageUrl}` : '/src/assets/profile1.png'}
               alt={user.fullName} 
               className="w-full h-full object-cover"
             />
@@ -659,19 +659,19 @@ const Profile = () => {
             <h1 className="text-white text-2xl font-bold">{user.fullName}</h1>
             <p className="text-gray-400 mb-4">{`@${user.username}`}</p>
             
-            <p className="text-white mb-6">{user.bio || ""}</p>
+            <p className="text-white mb-6">{user.bio}</p>
             
             <div className="flex gap-6">
               <div className="text-center">
-                <p className="text-white font-bold">{user.posts || ""}</p>
+                <p className="text-white font-bold">{user.noOfPosts}</p>
                 <p className="text-gray-400 text-sm">Posts</p>
               </div>
               <div className="text-center">
-                <p className="text-white font-bold">{user.followers || ""}</p>
+                <p className="text-white font-bold">{user.followers}</p>
                 <p className="text-gray-400 text-sm">Followers</p>
               </div>
               <div className="text-center">
-                <p className="text-white font-bold">{user.following || ""}</p>
+                <p className="text-white font-bold">{user.following}</p>
                 <p className="text-gray-400 text-sm">Following</p>
               </div>
             </div>

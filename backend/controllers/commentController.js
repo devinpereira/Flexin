@@ -16,7 +16,18 @@ export const commentPost = async (req, res) => {
     await newComment.save();
     post.comments += 1;
     await post.save();
-    res.status(201).json(newComment);
+    const populatedComment = await Comment.findById(newComment._id)
+      .populate("userId", "fullName");
+
+    res.status(201).json({
+      _id: populatedComment._id,
+      comment: populatedComment.comment,
+      user: {
+        _id: populatedComment.userId._id,
+        fullName: populatedComment.userId.fullName,
+      },
+      createdAt: populatedComment.createdAt,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -54,7 +65,7 @@ export const deleteComment = async (req, res) => {
 export const getComments = async (req, res) => {
   try {
     const { id: postId } = req.params;
-    const comments = await Comment.find({ postId }).sort({ createdAt: -1 });
+    const comments = await Comment.find({ postId }).sort({ createdAt: -1 }).populate('userId', 'fullName profileImageUrl');
     res.status(200).json(comments);
   } catch (err) {
     res.status(500).json({ error: err.message });

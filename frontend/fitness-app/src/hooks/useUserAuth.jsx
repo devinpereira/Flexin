@@ -19,7 +19,6 @@ export const useUserAuth = () => {
 
                 if (isMounted && response.data) {
                     updateUser(response.data);
-                    console.log("User info fetched successfully", response.data);
                 }
             } catch (error) {
                 console.error("Failed to fetch user info", error);
