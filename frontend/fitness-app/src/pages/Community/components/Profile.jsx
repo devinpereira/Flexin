@@ -95,9 +95,7 @@ const Profile = () => {
 
   // Handle logout
   const handleLogout = () => {
-    // In a real app, this would clear auth tokens and redirect to login
     console.log("Logging out...");
-    // Example redirect: window.location.href = '/';
   };
 
   // Handle creating a new post

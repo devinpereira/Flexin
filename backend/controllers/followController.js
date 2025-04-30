@@ -186,3 +186,60 @@ export const rejectFollowRequest = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Get Friends and Following list
+export const getFriends = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const limit = 5;
+
+    // 1. Get accepted followings
+    const followings = await Follow.find({
+      followerId: userId,
+      status: 'accepted'
+    });
+
+    // 2. Get accepted followers
+    const followers = await Follow.find({
+      followingId: userId,
+      status: 'accepted'
+    });
+
+    const followingIds = followings.map(f => f.followingId.toString());
+    const followerIds = followers.map(f => f.followerId.toString());
+
+    const friendIds = followingIds.filter(id => followerIds.includes(id));
+    const otherFollowings = followingIds.filter(id => !friendIds.includes(id));
+
+    // 3. Fetch friend and following user data
+    const friends = await User.find({ _id: { $in: friendIds } })
+      .select('_id fullName profileImageUrl')
+      .lean();
+
+    const others = await User.find({ _id: { $in: otherFollowings } })
+      .select('_id fullName profileImageUrl')
+      .lean();
+
+    const prioritized = [
+      ...friends.map(u => ({ ...u, isFriend: true })),
+      ...others.map(u => ({ ...u, isFriend: false }))
+    ];
+
+    // 4. Apply limit
+    const limited = prioritized.slice(0, limit);
+
+    res.json({ success: true, friends: limited });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get Followers
+export const getFollowers = async (req, res) => {}
+
+// Get Following
+export const getFollowing = async (req, res) => {}
+
+// Suggest Friends
+export const suggestFriends = async (req, res) => {}

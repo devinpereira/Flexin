@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaArrowLeft, FaEllipsisH, FaTh, FaBookmark, FaUserTag } from 'react-icons/fa';
 import { API_PATHS } from '../../../utils/apiPaths';
 
