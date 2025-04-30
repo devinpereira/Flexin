@@ -29,7 +29,6 @@ export const API_PATHS = {
     APPROVE_FOLLOW_REQUEST: (followId) => `/api/v1/friends/approve/${followId}`,
     REJECT_FOLLOW_REQUEST: (followId) => `/api/v1/friends/reject/${followId}`,
     GET_FRIENDS: "/api/v1/friends/", // Done
-    GET_FRIENDS: "/api/v1/friends/followers",
     GET_FOLLOWING: "/api/v1/friends/following",
     GET_SUGGESTIONS: "/api/v1/friends/suggestions",
   },

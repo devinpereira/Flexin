@@ -193,44 +193,35 @@ export const getFriends = async (req, res) => {
     const userId = req.user._id;
     const limit = 5;
 
-    // 1. Get accepted followings
-    const followings = await Follow.find({
-      followerId: userId,
-      status: 'accepted'
-    });
+    // 1. Run both follow queries in parallel
+    const [followings, followers] = await Promise.all([
+      Follow.find({ followerId: userId, status: 'accepted' }).lean(),
+      Follow.find({ followingId: userId, status: 'accepted' }).lean(),
+    ]);
 
-    // 2. Get accepted followers
-    const followers = await Follow.find({
-      followingId: userId,
-      status: 'accepted'
-    });
+    // 2. Use Sets for efficient lookup
+    const followingIds = new Set(followings.map(f => f.followingId.toString()));
+    const followerIds = new Set(followers.map(f => f.followerId.toString()));
 
-    const followingIds = followings.map(f => f.followingId.toString());
-    const followerIds = followers.map(f => f.followerId.toString());
+    const friendIds = [...followingIds].filter(id => followerIds.has(id));
+    const otherFollowings = [...followingIds].filter(id => !followerIds.has(id));
 
-    const friendIds = followingIds.filter(id => followerIds.includes(id));
-    const otherFollowings = followingIds.filter(id => !friendIds.includes(id));
+    // 3. Fetch user data in parallel
+    const [friends, others] = await Promise.all([
+      User.find({ _id: { $in: friendIds } }).select('_id fullName profileImageUrl').lean(),
+      User.find({ _id: { $in: otherFollowings } }).select('_id fullName profileImageUrl').lean(),
+    ]);
 
-    // 3. Fetch friend and following user data
-    const friends = await User.find({ _id: { $in: friendIds } })
-      .select('_id fullName profileImageUrl')
-      .lean();
-
-    const others = await User.find({ _id: { $in: otherFollowings } })
-      .select('_id fullName profileImageUrl')
-      .lean();
-
+    // 4. Prioritize and limit
     const prioritized = [
       ...friends.map(u => ({ ...u, isFriend: true })),
-      ...others.map(u => ({ ...u, isFriend: false }))
-    ];
+      ...others.map(u => ({ ...u, isFriend: false })),
+    ].slice(0, limit);
 
-    // 4. Apply limit
-    const limited = prioritized.slice(0, limit);
+    res.json({ success: true, friends: prioritized });
 
-    res.json({ success: true, friends: limited });
   } catch (err) {
-    console.error(err);
+    console.error('Error in getFriends:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
