@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaUserPlus, FaUserCheck, FaUserTimes, FaSearch, FaFilter } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { API_PATHS } from '../../../utils/apiPaths';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const FriendsManagement = () => {
   const [activeTab, setActiveTab] = useState('following');
@@ -13,11 +15,24 @@ const FriendsManagement = () => {
   useEffect(() => {
     const fetchFriends = async () => {
       setIsLoading(true);
-    
+      try {  
+        const [followersData, followingData, suggestionsData] = await Promise.all([
+          axiosInstance.get(`${API_PATHS.FOLLOW.GET_MY_FOLLOWERS}`),
+          axiosInstance.get(`${API_PATHS.FOLLOW.GET_FOLLOWING}`),
+          axiosInstance.get(`${API_PATHS.FOLLOW.GET_SUGGESTIONS}`)
+        ]);
+  
+        setFollowers(followersData.data);
+        setFollowing(followingData.data);
+        setSuggestions(suggestionsData.data);
+      } catch (err) {
+        console.error("Failed to fetch friends", err);
+      }
+      setIsLoading(false);
     };
-    
+  
     fetchFriends();
-  }, []);
+  }, []);  
   
   const handleFollow = (id) => {
     // Update suggestions
@@ -130,7 +145,7 @@ const FriendsManagement = () => {
                   <div className="flex items-center">
                     <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                       <img 
-                        src={user.profileImage} 
+                        src={user.profileImage || '/src/assets/profile1.png'}
                         alt={user.name} 
                         className="w-full h-full object-cover"
                         onError={(e) => {

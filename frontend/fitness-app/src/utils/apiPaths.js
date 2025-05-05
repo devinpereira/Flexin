@@ -30,6 +30,7 @@ export const API_PATHS = {
     REJECT_FOLLOW_REQUEST: (followId) => `/api/v1/friends/reject/${followId}`,
     GET_FRIENDS: "/api/v1/friends/", // Done
     GET_FOLLOWING: "/api/v1/friends/following",
+    GET_MY_FOLLOWERS: "/api/v1/friends/followers",
     GET_SUGGESTIONS: "/api/v1/friends/suggestions",
   },
   PROFILE: {

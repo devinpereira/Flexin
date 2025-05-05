@@ -227,10 +227,107 @@ export const getFriends = async (req, res) => {
 };
 
 // Get Followers
-export const getFollowers = async (req, res) => {}
+export const getFollowers = async (req, res) => {
+  try {
+    const myId = req.user._id;
+
+    // Find all users who follow me
+    const followers = await Follow.find({ followingId: myId, status: 'accepted' });
+
+    const followerIds = followers.map(f => f.followerId);
+
+    // Check if I'm following them back
+    const followingBack = await Follow.find({ 
+      followerId: myId, 
+      followingId: { $in: followerIds }, 
+      status: 'accepted' 
+    }).distinct('followingId');
+
+    const users = await User.find({ _id: { $in: followerIds } });
+    const profiles = await ProfileData.find({ userId: { $in: followerIds } });
+
+    const profileMap = Object.fromEntries(profiles.map(p => [p.userId.toString(), p]));
+
+    const result = users.map(u => ({
+      id: u._id,
+      name: u.fullName,
+      username: profileMap[u._id.toString()]?.username || '',
+      profileImage: u.profileImageUrl,
+      isFollowing: followingBack.includes(u._id.toString())
+    }));
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch followers" });
+  }
+}
 
 // Get Following
-export const getFollowing = async (req, res) => {}
+export const getFollowing = async (req, res) => {
+  try {
+    const myId = req.user._id;
+
+    // All users I'm following
+    const following = await Follow.find({ followerId: myId, status: 'accepted' });
+
+    const followingIds = following.map(f => f.followingId);
+
+    const users = await User.find({ _id: { $in: followingIds } });
+    const profiles = await ProfileData.find({ userId: { $in: followingIds } });
+
+    const profileMap = Object.fromEntries(profiles.map(p => [p.userId.toString(), p]));
+
+    const result = users.map(u => ({
+      id: u._id,
+      name: u.fullName,
+      username: profileMap[u._id.toString()]?.username || '',
+      profileImage: u.profileImageUrl,
+      isFollowing: true
+    }));
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch following" });
+  }
+}
 
 // Suggest Friends
-export const suggestFriends = async (req, res) => {}
+export const suggestFriends = async (req, res) => {
+  try {
+    const myId = req.user._id;
+
+    // All users I'm following or being followed by (to exclude)
+    const relations = await Follow.find({ 
+      $or: [
+        { followerId: myId }, 
+        { followingId: myId }
+      ]
+    });
+
+    const relatedIds = new Set([
+      ...relations.map(r => r.followerId.toString()), 
+      ...relations.map(r => r.followingId.toString()),
+      myId.toString()
+    ]);
+
+    const candidates = await User.find({ _id: { $nin: Array.from(relatedIds) } }).limit(10);
+    const profiles = await ProfileData.find({ userId: { $in: candidates.map(c => c._id) } });
+
+    const profileMap = Object.fromEntries(profiles.map(p => [p.userId.toString(), p]));
+
+    const result = candidates.map(u => ({
+      id: u._id,
+      name: u.fullName,
+      username: profileMap[u._id.toString()]?.username || '',
+      profileImage: u.profileImageUrl,
+      isFollowing: false
+    }));
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to suggest friends" });
+  }
+};
