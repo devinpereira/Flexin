@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaUserPlus, FaUserCheck, FaUserTimes, FaSearch, FaFilter } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { API_PATHS } from '../../../utils/apiPaths';
+import { API_PATHS, BASE_URL } from '../../../utils/apiPaths';
 import axiosInstance from '../../../utils/axiosInstance';
 
 const FriendsManagement = () => {
@@ -145,7 +145,7 @@ const FriendsManagement = () => {
                   <div className="flex items-center">
                     <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
                       <img 
-                        src={user.profileImage || '/src/assets/profile1.png'}
+                        src={`${BASE_URL}/${user.profileImage}` || '/src/assets/profile1.png'}
                         alt={user.name} 
                         className="w-full h-full object-cover"
                         onError={(e) => {

@@ -16,6 +16,7 @@ const Signup = () => {
   const [birthMonth, setBirthMonth] = useState('');
   const [birthYear, setBirthYear] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [profileImageUrl, setProfileImageUrl] = useState(null);
   
   // Add state for age validation
   const [ageError, setAgeError] = useState(false);
@@ -30,28 +31,42 @@ const Signup = () => {
 
     if (!fullName) {
       setError("Please enter full name");
+      console.log("Please enter full name");
       return;
     }
 
     if (!validateEmail(email)) {
       setError("Please enter a valid email address");
+      console.log("Please enter a valid email address");
       return;
     }
 
     if (!password) {
       setError("Please enter password");
+      console.log("Please enter password");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      console.log("Passwords do not match");
       return;
     }
 
     setError("");
 
+    const dob = `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`;
+    const role = 'user';
+
     // SignUp API Call
     try {
-      const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+      const response = await axiosInstance.post(API_PATHS.AUTH.SIGNUP, {
         fullName,
         email,
         password,
         profileImageUrl,
+        dob,
+        role
       });
       const { token, user } = response.data;
 
