@@ -2,8 +2,10 @@ import Post from "../models/Post.js";
 import Like from "../models/Like.js";
 import Comment from "../models/Comment.js";
 import Follow from "../models/Follow.js";
+import ProfileData from "../models/ProfileData.js";
+import User from "../models/User.js";
+const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
-// Get Feed Posts
 // Get Feed Posts
 export const getFeedPosts = async (req, res) => {
   try {
@@ -141,7 +143,9 @@ export const getPost = async (req, res) => {
 export const createPost = async (req, res) => {
   try {
     const { description } = req.body;
-    const mediaFiles = req.files ? req.files.map((file) => file.path.replace(/\\/g, '/')) : [];
+    const mediaFiles = req.files ? req.files.map(file => file.path.replace(/\\/g, '/')) : [];
+
+    // 1. Create and save new post
     const newPost = new Post({
       userId: req.user._id,
       description,
@@ -149,17 +153,43 @@ export const createPost = async (req, res) => {
     });
     await newPost.save();
 
-    // Increment post count for the user
+    // 2. Increment user's post count
     await ProfileData.findOneAndUpdate(
       { userId: req.user._id },
       { $inc: { noOfPosts: 1 } },
       { new: true }
     );
-    res.status(201).json(newPost);
+
+    // 3. Fetch user info and profile data
+    const user = await User.findById(req.user._id).select("fullName profileImageUrl");
+    const profile = await ProfileData.findOne({ userId: req.user._id }).select("username");
+
+    if (!user || !profile) {
+      return res.status(404).json({ error: "User or profile data not found" });
+    }
+
+    // 4. Construct response
+    const response = {
+      id: newPost._id,
+      user: {
+        name: user.fullName,
+        username: `@${profile.username}`,
+        profileImage: user.profileImageUrl ? `${BASE_URL}/${user.profileImageUrl}` : null
+      },
+      content: newPost.description,
+      images: newPost.content.map(img => ({ preview: `${BASE_URL}/${img}` })),
+      likes: newPost.likes || 0,
+      isliked: false, // default until like feature is implemented
+      comments: newPost.comments || 0,
+      timestamp: new Date(newPost.createdAt).toLocaleString()
+    };
+
+    res.status(201).json(response);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // Update a Post
 export const editPost = async (req, res) => {
