@@ -179,7 +179,7 @@ export const createPost = async (req, res) => {
       content: newPost.description,
       images: newPost.content.map(img => ({ preview: `${BASE_URL}/${img}` })),
       likes: newPost.likes || 0,
-      isliked: false, // default until like feature is implemented
+      isliked: false,
       comments: newPost.comments || 0,
       timestamp: new Date(newPost.createdAt).toLocaleString()
     };
@@ -189,7 +189,6 @@ export const createPost = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 // Update a Post
 export const editPost = async (req, res) => {

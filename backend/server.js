@@ -19,7 +19,13 @@ const app = express();
 const server = http.createServer(app);
 
 // Initialize socket.io with CORS handled in socketAuth middleware
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 app.set("io", io);
 socketAuth(io);
 
@@ -56,15 +62,15 @@ io.on("connection", (socket) => {
     return;
   }
 
-  console.log(`User connected: ${socket.user.username}`);
+  console.log(`User connected: ${socket.user.id}`);
 
   socket.on("like-post", (data) => {
-    console.log(`${socket.user.username} liked a post`);
+    console.log(`${socket.user.id} liked a post`);
     // handle like post logic
   });
 
   socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.user.username}`);
+    console.log(`User disconnected: ${socket.user.id}`);
   });
 });
 

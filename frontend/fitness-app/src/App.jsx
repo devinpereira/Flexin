@@ -25,10 +25,12 @@ import Community from "./pages/Community";
 import UserProvider from "./context/UserContext";
 import Home from "./pages/Home";
 import { NavigationProvider } from "./context/NavigationContext";
+import { SocketProvider } from "./context/SocketContext";
 
 function App() {
   return (
     <UserProvider>
+      <SocketProvider>
       <Router>
         <NavigationProvider>
           <Routes>
@@ -57,6 +59,7 @@ function App() {
           </Routes>
         </NavigationProvider>
       </Router>
+      </SocketProvider>
     </UserProvider>
   );
 }

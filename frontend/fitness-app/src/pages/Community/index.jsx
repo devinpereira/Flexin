@@ -13,10 +13,13 @@ import { motion } from 'framer-motion';
 import { useUserAuth } from '../../hooks/useUserAuth';
 import { UserContext } from '../../context/UserContext';
 import { BASE_URL } from '../../utils/apiPaths';
+import { SocketContext } from "../../context/SocketContext";
+
 
 const Community = () => {
   useUserAuth();
   const {user} = useContext(UserContext);
+  const socket = useContext(SocketContext);
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);
   
