@@ -57,20 +57,35 @@ app.use("/api/v1/profile", profileRoutes);
 
 // Real-time Event Handling
 io.on("connection", (socket) => {
-  if (!socket.user) {
+
+  const userId = socket.user?.id;
+  if (!userId) {
     console.error("User not authenticated.");
     return;
   }
 
-  console.log(`User connected: ${socket.user.id}`);
+  console.log(`User connected: ${userId}`);
+  onlineUsers.set(userId, socket.id);
 
-  socket.on("like-post", (data) => {
-    console.log(`${socket.user.id} liked a post`);
-    // handle like post logic
+  socket.on("likePost", (data) => {
+    const { postId, postOwnerId, likerId, likerName, liked } = data;
+
+    console.log(`${likerName} liked a post`);
+
+    if (liked && postOwnerId !== likerId) {
+      const ownerSocketId = onlineUsers.get(postOwnerId);
+      if (ownerSocketId) {
+        io.to(ownerSocketId).emit("notifyLike", {
+          postId,
+          likerId,
+          message: `${likerName} liked your post!`,
+        });
+      }
+    }
   });
 
   socket.on("disconnect", () => {
-    console.log(`User disconnected: ${socket.user.id}`);
+    console.log(`User disconnected: ${userId}`);
   });
 });
 

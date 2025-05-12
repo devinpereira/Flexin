@@ -12,7 +12,10 @@ export const getFeedPosts = async (req, res) => {
     const userId = req.user._id;
 
     // Get list of followed user IDs
-    const following = await Follow.find({ followerId: userId, status: "accepted" }).select("followingId");
+    const following = await Follow.find({
+      followerId: userId,
+      status: "accepted",
+    }).select("followingId");
     const followedUserIds = following.map((f) => f.followingId);
 
     // Aggregate posts with user and profile data and liked status
@@ -44,14 +47,20 @@ export const getFeedPosts = async (req, res) => {
           from: "likes",
           let: { postId: "$_id" },
           pipeline: [
-            { $match: { $expr: { $and: [
-              { $eq: ["$postId", "$$postId"] },
-              { $eq: ["$userId", userId] }
-            ]}}},
-            { $limit: 1 }
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$postId", "$$postId"] },
+                    { $eq: ["$userId", userId] },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
           ],
-          as: "likedByUser"
-        }
+          as: "likedByUser",
+        },
       },
 
       { $unwind: "$userInfo" },
@@ -65,7 +74,7 @@ export const getFeedPosts = async (req, res) => {
             username: "$profileInfo.username",
             profileImageUrl: "$userInfo.profileImageUrl",
           },
-          liked: { $gt: [{ $size: "$likedByUser" }, 0] }
+          liked: { $gt: [{ $size: "$likedByUser" }, 0] },
         },
       },
 
@@ -81,7 +90,9 @@ export const getFeedPosts = async (req, res) => {
 
     res.status(200).json(feedPosts);
   } catch (err) {
-    res.status(500).json({ message: "Failed to get feed posts", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Failed to get feed posts", error: err.message });
   }
 };
 
@@ -92,8 +103,7 @@ export const getPosts = async (req, res) => {
   try {
     const posts = await Post.find({ userId }).sort({ createdAt: -1 });
     res.status(200).json(posts);
-  }
-  catch (err) {
+  } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
@@ -113,9 +123,11 @@ export const getPostsByUserId = async (req, res) => {
     }
     res.status(200).json(posts);
   } catch (err) {
-    res.status(500).json({ message: "Error getting posts", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error getting posts", error: err.message });
   }
-}
+};
 
 // Get a Post
 export const getPost = async (req, res) => {
@@ -133,9 +145,7 @@ export const getPost = async (req, res) => {
 
     res.status(200).json(post);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error getting post", error: err.message });
+    res.status(500).json({ message: "Error getting post", error: err.message });
   }
 };
 
@@ -143,7 +153,9 @@ export const getPost = async (req, res) => {
 export const createPost = async (req, res) => {
   try {
     const { description } = req.body;
-    const mediaFiles = req.files ? req.files.map(file => file.path.replace(/\\/g, '/')) : [];
+    const mediaFiles = req.files
+      ? req.files.map((file) => file.path.replace(/\\/g, "/"))
+      : [];
 
     // 1. Create and save new post
     const newPost = new Post({
@@ -161,8 +173,12 @@ export const createPost = async (req, res) => {
     );
 
     // 3. Fetch user info and profile data
-    const user = await User.findById(req.user._id).select("fullName profileImageUrl");
-    const profile = await ProfileData.findOne({ userId: req.user._id }).select("username");
+    const user = await User.findById(req.user._id).select(
+      "fullName profileImageUrl"
+    );
+    const profile = await ProfileData.findOne({ userId: req.user._id }).select(
+      "username"
+    );
 
     if (!user || !profile) {
       return res.status(404).json({ error: "User or profile data not found" });
@@ -174,14 +190,16 @@ export const createPost = async (req, res) => {
       user: {
         name: user.fullName,
         username: `@${profile.username}`,
-        profileImage: user.profileImageUrl ? `${BASE_URL}/${user.profileImageUrl}` : null
+        profileImage: user.profileImageUrl
+          ? `${BASE_URL}/${user.profileImageUrl}`
+          : null,
       },
       content: newPost.description,
-      images: newPost.content.map(img => ({ preview: `${BASE_URL}/${img}` })),
+      images: newPost.content.map((img) => ({ preview: `${BASE_URL}/${img}` })),
       likes: newPost.likes || 0,
       isliked: false,
       comments: newPost.comments || 0,
-      timestamp: new Date(newPost.createdAt).toLocaleString()
+      timestamp: new Date(newPost.createdAt).toLocaleString(),
     };
 
     res.status(201).json(response);
@@ -245,16 +263,35 @@ export const likePost = async (req, res) => {
 
     const existingLike = await Like.findOne({ postId, userId });
 
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+
+    const postOwnerId = post.userId;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const likerName = user.fullName;
+
     if (existingLike) {
       // Unlike the post
       await Like.deleteOne({ postId, userId });
       await Post.findByIdAndUpdate(postId, { $inc: { likes: -1 } });
+
       return res.json({ message: "Post unliked" });
     }
 
     // Like the post
     await new Like({ postId, userId }).save();
     await Post.findByIdAndUpdate(postId, { $inc: { likes: 1 } });
+
+    socket.emit("likePost", {
+      postId,
+      postOwnerId,
+      likerId: userId,
+      likerName: likerName,
+      liked: true,
+    });
 
     res.json({ message: "Post liked" });
   } catch (err) {

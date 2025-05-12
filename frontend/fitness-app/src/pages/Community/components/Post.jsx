@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   FaHeart,
   FaRegHeart,
@@ -11,8 +11,10 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import axiosInstance from "../../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
+import { SocketContext } from "../../../context/SocketContext";
 
 const Post = ({ post, onLike }) => {
+  const socket = useContext(SocketContext);
   const [liked, setLiked] = useState(post.liked || false);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [showMenu, setShowMenu] = useState(false);
