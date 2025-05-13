@@ -36,4 +36,8 @@ export const API_PATHS = {
   PROFILE: {
     GET_PROFILE_INFO: "/api/v1/profile",
   },
+  NOTIFICATION: {
+    GET_NOTIFICATIONS: "/api/v1/notifications", // Done
+    MARK_AS_READ: (notificationId) => `/api/v1/notifications/${notificationId}/read`,
+  },
 };

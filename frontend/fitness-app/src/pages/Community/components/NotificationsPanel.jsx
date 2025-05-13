@@ -1,62 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useContext } from 'react';
 import { FaBell, FaUserPlus, FaHeart, FaComment } from 'react-icons/fa';
+import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
+import { API_PATHS, BASE_URL } from '../../../utils/apiPaths';
+import axiosInstance from '../../../utils/axiosInstance';
+import { SocketContext } from '../../../context/SocketContext';
 
 const NotificationsPanel = () => {
+  const socket = useContext(SocketContext);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // Simulate fetching notifications
     const fetchNotifications = async () => {
       setIsLoading(true);
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = await axiosInstance.get(`${API_PATHS.NOTIFICATION.GET_NOTIFICATIONS}`);
         
-        // Mock data for notifications
-        const mockNotifications = [
-          {
-            id: 1,
-            type: 'like',
-            user: {
-              name: 'Sewmina Fernando',
-              username: '@sewmina',
-              profileImage: '/src/assets/trainers/trainer2.png'
-            },
-            content: 'liked your post',
-            postImage: '/src/assets/posts/workout.png',
-            time: '5 minutes ago',
-            read: false
-          },
-          {
-            id: 2,
-            type: 'comment',
-            user: {
-              name: 'Devin Perera',
-              username: '@devin',
-              profileImage: '/src/assets/trainers/trainer3.png'
-            },
-            content: 'commented on your post: "Great progress! Keep it up!"',
-            postImage: '/src/assets/posts/workout1.png',
-            time: '2 hours ago',
-            read: false
-          },
-          {
-            id: 3,
-            type: 'follow',
-            user: {
-              name: 'Malaka Perera',
-              username: '@malaka',
-              profileImage: '/src/assets/trainers/trainer5.png'
-            },
-            content: 'started following you',
-            time: '1 day ago',
-            read: true
-          }
-        ];
-        
-        setNotifications(mockNotifications);
+        setNotifications(response.data);
       } catch (err) {
         console.error("Error fetching notifications:", err);
       } finally {
@@ -66,6 +27,34 @@ const NotificationsPanel = () => {
 
     fetchNotifications();
   }, []);
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('likePostNotify', (data) => {
+        setNotifications((prevNotifications) => [
+          ...prevNotifications,
+          {
+            id: data.postId,
+            type: 'like',
+            user: {
+              name: data.likerName,
+              profileImage: data.likerProfileImage,
+            },
+            content: data.message,
+            postImage: data.postImage,
+            time: new Date().toISOString(),
+            read: false,
+          },
+        ]);
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('likePostNotify');
+      }
+    };
+  }, [socket]);
   
   const markAsRead = (id) => {
     setNotifications(notifications.map(notification => 
@@ -133,7 +122,7 @@ const NotificationsPanel = () => {
                       <p className="text-white">
                         <span className="font-medium">{notification.user.name}</span> {notification.content}
                       </p>
-                      <p className="text-gray-400 text-sm">{notification.time}</p>
+                      <p className="text-gray-400 text-sm">{formatDistanceToNow(new Date(notification.time), { addSuffix: true })}</p>
                     </div>
                   </div>
                   

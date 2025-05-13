@@ -13,10 +13,12 @@ import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 const port = process.env.PORT || 8000;
 const app = express();
 const server = http.createServer(app);
+const onlineUsers = new Map();
 
 // Initialize socket.io with CORS handled in socketAuth middleware
 const io = new Server(server, {
@@ -27,6 +29,7 @@ const io = new Server(server, {
   },
 });
 app.set("io", io);
+app.set("onlineUsers", onlineUsers);
 socketAuth(io);
 
 // Enable CORS for Express API routes
@@ -54,11 +57,12 @@ app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/friends", followRoutes);
 app.use("/api/v1/profile", profileRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 // Real-time Event Handling
 io.on("connection", (socket) => {
-
   const userId = socket.user?.id;
+  
   if (!userId) {
     console.error("User not authenticated.");
     return;
@@ -67,25 +71,9 @@ io.on("connection", (socket) => {
   console.log(`User connected: ${userId}`);
   onlineUsers.set(userId, socket.id);
 
-  socket.on("likePost", (data) => {
-    const { postId, postOwnerId, likerId, likerName, liked } = data;
-
-    console.log(`${likerName} liked a post`);
-
-    if (liked && postOwnerId !== likerId) {
-      const ownerSocketId = onlineUsers.get(postOwnerId);
-      if (ownerSocketId) {
-        io.to(ownerSocketId).emit("notifyLike", {
-          postId,
-          likerId,
-          message: `${likerName} liked your post!`,
-        });
-      }
-    }
-  });
-
   socket.on("disconnect", () => {
     console.log(`User disconnected: ${userId}`);
+    onlineUsers.delete(userId.toString());
   });
 });
 

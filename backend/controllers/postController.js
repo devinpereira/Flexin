@@ -4,6 +4,7 @@ import Comment from "../models/Comment.js";
 import Follow from "../models/Follow.js";
 import ProfileData from "../models/ProfileData.js";
 import User from "../models/User.js";
+import Notification from "../models/Notification.js";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
 // Get Feed Posts
@@ -260,6 +261,7 @@ export const likePost = async (req, res) => {
   try {
     const { id: postId } = req.params;
     const userId = req.user._id;
+    const io = req.app.get("io");
 
     const existingLike = await Like.findOne({ postId, userId });
 
@@ -267,16 +269,28 @@ export const likePost = async (req, res) => {
     if (!post) return res.status(404).json({ message: "Post not found" });
 
     const postOwnerId = post.userId;
+    const imageUrl = post.content[0] ? `${BASE_URL}/${post.content[0]}` : "/src/assets/profile1.png";
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const likerName = user.fullName;
+    const likerProfileImage = user.profileImageUrl
+      ? `${BASE_URL}/${user.profileImageUrl}`
+      : "/src/assets/profile1.png";
 
     if (existingLike) {
       // Unlike the post
       await Like.deleteOne({ postId, userId });
       await Post.findByIdAndUpdate(postId, { $inc: { likes: -1 } });
+
+      // Delete like notification
+      await Notification.findOneAndDelete({
+        userId: postOwnerId,
+        fromUser: userId,
+        type: "like",
+        postId,
+      });
 
       return res.json({ message: "Post unliked" });
     }
@@ -285,13 +299,27 @@ export const likePost = async (req, res) => {
     await new Like({ postId, userId }).save();
     await Post.findByIdAndUpdate(postId, { $inc: { likes: 1 } });
 
-    socket.emit("likePost", {
+    // Add Notification to the post owner
+    await Notification.create({
+      userId: postOwnerId,
+      type: "like",
+      fromUser: userId,
       postId,
-      postOwnerId,
-      likerId: userId,
-      likerName: likerName,
-      liked: true,
+      message: `liked your post`,
     });
+
+    // Emit like event to the post owner
+    const onlineUsers = req.app.get("onlineUsers");
+    const ownerSocketId = onlineUsers.get(postOwnerId.toString());
+    if (ownerSocketId && postOwnerId.toString() !== userId.toString()) {
+      io.to(ownerSocketId).emit("likePostNotify", {
+        postId,
+        likerName,
+        likerProfileImage: likerProfileImage,
+        message: `liked your post`,
+        postImage: imageUrl,
+      });
+    }
 
     res.json({ message: "Post liked" });
   } catch (err) {

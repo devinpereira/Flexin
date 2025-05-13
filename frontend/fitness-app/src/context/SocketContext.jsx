@@ -1,27 +1,28 @@
 // context/SocketContext.jsx
-import { createContext, useEffect, useRef } from "react";
+import { createContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { BASE_URL } from "../utils/apiPaths";
 
-export const SocketContext = createContext();
+export const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-  const socketRef = useRef();
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    socketRef.current = io(BASE_URL, {
+    const newSocket = io(BASE_URL, {
       auth: {
         token: localStorage.getItem("token"),
       },
     });
+    setSocket(newSocket);
 
     return () => {
-      socketRef.current.disconnect();
+      newSocket.disconnect();
     };
   }, []);
 
   return (
-    <SocketContext.Provider value={socketRef.current}>
+    <SocketContext.Provider value={socket}>
       {children}
     </SocketContext.Provider>
   );

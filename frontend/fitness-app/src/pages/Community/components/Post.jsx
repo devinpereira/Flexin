@@ -14,8 +14,7 @@ import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
 import { SocketContext } from "../../../context/SocketContext";
 
 const Post = ({ post, onLike }) => {
-  const socket = useContext(SocketContext);
-  const [liked, setLiked] = useState(post.liked || false);
+  const [liked, setLiked] = useState(post.isliked);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [showMenu, setShowMenu] = useState(false);
   const [showComments, setShowComments] = useState(false);
