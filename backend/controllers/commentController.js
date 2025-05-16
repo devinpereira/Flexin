@@ -1,32 +1,60 @@
 import Post from "../models/Post.js";
 import Comment from "../models/Comment.js";
+import User from "../models/User.js";
+import { sendNotification } from "../utils/notificationHelper.js";
+const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
 // Add a Comment
 export const commentPost = async (req, res) => {
   try {
     const { comment } = req.body;
-    const post = await Post.findById(req.params.id);
+    const { id: postId } = req.params;
+    const userId = req.user._id;
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
+
+    const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ error: "Post not found" });
 
+    const postOwnerId = post.userId;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const imageUrl = post.content[0]
+      ? `${BASE_URL}/${post.content[0]}`
+      : "/src/assets/profile1.png";
+
     const newComment = new Comment({
-      userId: req.user._id,
-      postId: post._id,
+      userId,
+      postId,
       comment,
     });
     await newComment.save();
     post.comments += 1;
     await post.save();
-    const populatedComment = await Comment.findById(newComment._id)
-      .populate("userId", "fullName");
+
+    await sendNotification({
+      io,
+      onlineUsers,
+      recipientId: postOwnerId,
+      sender: user,
+      type: "comment",
+      postId,
+      message: "commented on your post",
+      postImage: imageUrl,
+      extraData: { comment },
+    });
 
     res.status(201).json({
-      _id: populatedComment._id,
-      comment: populatedComment.comment,
+      _id: newComment._id,
       user: {
-        _id: populatedComment.userId._id,
-        fullName: populatedComment.userId.fullName,
+        _id: userId,
+        fullName: user.fullName,
+        profileImageUrl: user.profileImageUrl,
       },
-      createdAt: populatedComment.createdAt,
+      postId,
+      comment,
+      createdAt: newComment.createdAt,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

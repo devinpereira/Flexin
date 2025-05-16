@@ -32,9 +32,8 @@ const NotificationsPanel = () => {
     if (socket) {
       socket.on('likePostNotify', (data) => {
         setNotifications((prevNotifications) => [
-          ...prevNotifications,
           {
-            id: data.postId,
+            id: data.notificationId,
             type: 'like',
             user: {
               name: data.likerName,
@@ -45,6 +44,25 @@ const NotificationsPanel = () => {
             time: new Date().toISOString(),
             read: false,
           },
+          ...prevNotifications,
+        ]);
+      });
+
+      socket.on('commentPostNotify', (data) => {
+        setNotifications((prevNotifications) => [
+          {
+            id: data.notificationId,
+            type: 'comment',
+            user: {
+              name: data.commenterName,
+              profileImage: data.commenterProfileImage,
+            },
+            content: data.message,
+            postImage: data.postImage,
+            time: new Date().toISOString(),
+            read: false,
+          },
+          ...prevNotifications,
         ]);
       });
     }
@@ -52,6 +70,7 @@ const NotificationsPanel = () => {
     return () => {
       if (socket) {
         socket.off('likePostNotify');
+        socket.off('commentPostNotify');
       }
     };
   }, [socket]);

@@ -15,7 +15,7 @@ export const sendNotification = async ({
   if (!recipientId || recipientId.toString() === sender._id.toString()) return;
 
   // 1. Save to Notification collection
-  await Notification.create({
+  const notification = await Notification.create({
     userId: recipientId,
     type,
     fromUser: sender._id,
@@ -27,7 +27,7 @@ export const sendNotification = async ({
   const recipientSocketId = onlineUsers.get(recipientId.toString());
   if (recipientSocketId) {
     io.to(recipientSocketId).emit(`${type}PostNotify`, {
-      postId,
+      notificationId: notification._id,
       [`${type === "like" ? "liker" : "commenter"}Name`]: sender.fullName,
       [`${type === "like" ? "liker" : "commenter"}ProfileImage`]: sender.profileImageUrl
         ? `${BASE_URL}/${sender.profileImageUrl}`

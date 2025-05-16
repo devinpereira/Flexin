@@ -11,7 +11,6 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import axiosInstance from "../../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
-import { SocketContext } from "../../../context/SocketContext";
 
 const Post = ({ post, onLike }) => {
   const [liked, setLiked] = useState(post.isliked);
@@ -21,6 +20,7 @@ const Post = ({ post, onLike }) => {
   const [commentText, setCommentText] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [comments, setComments] = useState([]);
+  const [commentCount, setCommentCount] = useState(post.comments);
 
   const handleLike = async () => {
     setLiked(!liked);
@@ -49,15 +49,17 @@ const Post = ({ post, onLike }) => {
       );
 
       const newComment = {
-        id: res.data._id,
-        user: {
-          name: res.data.user.fullName,
+        _id: res.data._id,
+        userId: {
+          fullName: res.data.user.fullName,
+          profileImageUrl: res.data.user.profileImageUrl,
         },
-        text: res.data.comment,
-        timestamp: new Date(res.data.createdAt).toISOString(),
+        comment: res.data.comment,
+        createdAt: new Date(res.data.createdAt).toISOString(),
       };
 
-      setComments([...comments, newComment]);
+      setCommentCount((prev) => prev + 1);
+      setComments([newComment, ...comments]);
       setCommentText("");
     } catch (err) {
       console.error("Failed to add comment:", err);
@@ -241,7 +243,7 @@ const Post = ({ post, onLike }) => {
           className="mr-4 hover:text-white"
           onClick={() => setShowComments(!showComments)}
         >
-          {post.comments} comments
+          {commentCount} comments
         </button>
       </div>
 
