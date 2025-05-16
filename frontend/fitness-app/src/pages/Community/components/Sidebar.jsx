@@ -10,13 +10,6 @@ import {
 
 const Sidebar = ({ activeSection, onSectionChange, name, username, profileImage }) => {
 
-    // Mock user data
-    const user = {
-      name: 'John Doe',
-      username: '@johndoe',
-      profileImage: '/src/assets/profile1.png'
-    };
-
   const menuItems = [
     { id: 'Home', label: 'Home', icon: <FaHome size={20} /> },
     { id: 'Search', label: 'Search', icon: <FaSearch size={20} /> },
@@ -38,8 +31,8 @@ const Sidebar = ({ activeSection, onSectionChange, name, username, profileImage 
               className="w-full h-full object-cover"
             />
           </div>
-          <h3 className="text-white text-xl font-medium">{name}</h3>
-          <p className="text-gray-400">{username}</p>
+          <h3 className="text-white text-xl font-medium">{name || "Loading..." }</h3>
+          <p className="text-gray-400">{username || "@loading"}</p>
         </div>
         
         {/* Divider */}

@@ -11,7 +11,7 @@ import {
 import axiosInstance from "../../../utils/axiosInstance";
 import { API_PATHS } from "../../../utils/apiPaths";
 
-const CreatePost = ({ onPostCreated }) => {
+const CreatePost = ({ onPostCreated, profileImage }) => {
   const [postContent, setPostContent] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [images, setImages] = useState([]);
@@ -118,7 +118,7 @@ const CreatePost = ({ onPostCreated }) => {
         <div className="flex items-start mb-4">
           <div className="w-12 h-12 rounded-full overflow-hidden mr-3 flex-shrink-0">
             <img
-              src="/src/assets/profile1.png"
+              src={profileImage}
               alt="Your profile"
               className="w-full h-full object-cover"
             />

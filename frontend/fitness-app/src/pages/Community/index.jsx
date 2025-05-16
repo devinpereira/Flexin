@@ -16,7 +16,7 @@ import { BASE_URL } from '../../utils/apiPaths';
 
 const Community = () => {
   useUserAuth();
-  const {user} = useContext(UserContext);
+  const { user, loading } = useContext(UserContext);
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);
   
@@ -33,6 +33,10 @@ const Community = () => {
     setSelectedUser(null);
   };
 
+  // if (loading) {
+  //   return <div className="text-white text-center mt-20">Loading user...</div>;
+  // }
+
   return (
     <div className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
@@ -47,7 +51,7 @@ const Community = () => {
               onSectionChange={handleSectionChange}
               name={user?.fullName}
               username={`@${user?.username}`}
-              profileImage={`${BASE_URL}/${user?.profileImageUrl}`}
+              profileImage={user?.profileImageUrl ? `${BASE_URL}/${user?.profileImageUrl}` : "src/assets/profile1.png"}
             />
           </div>
         </div>
@@ -61,7 +65,7 @@ const Community = () => {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          {activeSection === 'Home' && <PostFeed />}
+          {activeSection === 'Home' && <PostFeed profileImage={user?.profileImageUrl ? `${BASE_URL}/${user?.profileImageUrl}` : "src/assets/profile1.png"} />}
           
           {activeSection === 'Search' && !selectedUser && (
             <SearchPanel onSelectUser={handleSelectUser} />

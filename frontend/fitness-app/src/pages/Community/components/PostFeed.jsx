@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { API_PATHS, BASE_URL } from '../../../utils/apiPaths';
 import axiosInstance from '../../../utils/axiosInstance';
 
-const PostFeed = () => {
+const PostFeed = ({profileImage}) => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,7 +61,7 @@ const PostFeed = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <CreatePost onPostCreated={handleNewPost} />
+      <CreatePost onPostCreated={handleNewPost} profileImage={profileImage} />
       
       {isLoading ? (
         <div className="my-8 flex justify-center">

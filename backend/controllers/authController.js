@@ -60,9 +60,15 @@ export const loginUser = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
+        // Check for existing profile data
+        const profile = await ProfileData.findOne({ userId: user._id });
+
         res.status(200).json({
             id: user._id,
-            user,
+            user: {
+                ...user.toObject(),
+                username: profile?.username || null, // add username if exists
+            },
             token: generateToken(user._id),
         });
     } catch (err) {

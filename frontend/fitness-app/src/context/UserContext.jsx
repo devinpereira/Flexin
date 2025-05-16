@@ -4,15 +4,18 @@ export const UserContext = createContext();
 
 const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Function to update user data
   const updateUser = (userData) => {
     setUser(userData);
+    setLoading(false);
   };
 
   // Function to clear user data
   const clearUser = () => {
     setUser(null);
+    setLoading(false);
   };
 
   return (
@@ -21,6 +24,7 @@ const UserProvider = ({ children }) => {
         user,
         updateUser,
         clearUser,
+        loading,
       }}
     >
       {children}
