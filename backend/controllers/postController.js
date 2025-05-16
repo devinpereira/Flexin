@@ -6,6 +6,7 @@ import ProfileData from "../models/ProfileData.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
+import { sendNotification } from "../utils/notificationHelper.js";
 
 // Get Feed Posts
 export const getFeedPosts = async (req, res) => {
@@ -262,6 +263,7 @@ export const likePost = async (req, res) => {
     const { id: postId } = req.params;
     const userId = req.user._id;
     const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
 
     const existingLike = await Like.findOne({ postId, userId });
 
@@ -269,15 +271,10 @@ export const likePost = async (req, res) => {
     if (!post) return res.status(404).json({ message: "Post not found" });
 
     const postOwnerId = post.userId;
-    const imageUrl = post.content[0] ? `${BASE_URL}/${post.content[0]}` : "/src/assets/profile1.png";
-
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
-
-    const likerName = user.fullName;
-    const likerProfileImage = user.profileImageUrl
-      ? `${BASE_URL}/${user.profileImageUrl}`
-      : "/src/assets/profile1.png";
+    
+    const imageUrl = post.content[0] ? `${BASE_URL}/${post.content[0]}` : "/src/assets/profile1.png";
 
     if (existingLike) {
       // Unlike the post
@@ -299,27 +296,16 @@ export const likePost = async (req, res) => {
     await new Like({ postId, userId }).save();
     await Post.findByIdAndUpdate(postId, { $inc: { likes: 1 } });
 
-    // Add Notification to the post owner
-    await Notification.create({
-      userId: postOwnerId,
+    await sendNotification({
+      io,
+      onlineUsers,
+      recipientId: postOwnerId,
+      sender: user,
       type: "like",
-      fromUser: userId,
       postId,
-      message: `liked your post`,
+      message: "liked your post",
+      postImage: imageUrl,
     });
-
-    // Emit like event to the post owner
-    const onlineUsers = req.app.get("onlineUsers");
-    const ownerSocketId = onlineUsers.get(postOwnerId.toString());
-    if (ownerSocketId && postOwnerId.toString() !== userId.toString()) {
-      io.to(ownerSocketId).emit("likePostNotify", {
-        postId,
-        likerName,
-        likerProfileImage: likerProfileImage,
-        message: `liked your post`,
-        postImage: imageUrl,
-      });
-    }
 
     res.json({ message: "Post liked" });
   } catch (err) {
