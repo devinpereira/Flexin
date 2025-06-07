@@ -14,6 +14,8 @@ import commentRoutes from "./routes/commentRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import passport from "./config/passport.js";
+import session from "express-session";
 
 const port = process.env.PORT || 8000;
 const app = express();
@@ -47,6 +49,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Init middleware
 app.use(logger);
+
+// Session middleware for passport.js
+app.use(session({ secret: "sessionSecret", resave: false, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 // Connect to MongoDB
 connectDB();
