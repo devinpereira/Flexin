@@ -15,7 +15,14 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function () {
+      // Only require password if user is not using Google OAuth
+      return !this.googleId;
+    },
+    },
+    googleId: {
+    type: String,
+    default: null,
     },
     profileImageUrl: {
       type: String,
@@ -23,7 +30,10 @@ const userSchema = new mongoose.Schema(
     },
     dob: {
       type: Date,
-      required: true,
+      required: function () {
+        // Required if user is not using Google OAuth
+        return !this.googleId;
+      },
     },
     role: {
       type: String,
@@ -58,7 +68,7 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });

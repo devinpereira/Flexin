@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import ProfileData from "../models/ProfileData.js";
 import jwt from "jsonwebtoken";
 import { EMAIL_VERIFY_TEMPLATE, PASSWORD_RESET_TEMPLATE } from "../utils/emailTemplates.js";
+import transporter from "../config/nodemailer.js";
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -99,11 +100,11 @@ export const getUserInfo = async (req, res) => {
 };
 
 // Generate and send verification OTP
-export const sendVerifytOtp = async (req, res) => {
+export const sendVerifyOtp = async (req, res) => {
     try{
         const userId = req.user.id;
 
-        const user = await userModel.findById(userId);
+        const user = await User.findById(userId);
         if (user.isAccountVerified) {
             return res.status(404).json({ message: "User already verified" });
         }
@@ -112,6 +113,8 @@ export const sendVerifytOtp = async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         user.verifyOtp = otp;
         user.verifyOtpExpireAt = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
+
+        // return res.status(400).json({ message: `${otp} ${user.email} ${process.env.SENDER_EMAIL}, ${process.env.SMTP_USER}, ${process.env.SMTP_PASS}` });
 
         await user.save();
 
@@ -141,7 +144,7 @@ export const verifyEmail = async (req, res) => {
     }
 
     try {
-        const user = await userModel.findById(userId);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }

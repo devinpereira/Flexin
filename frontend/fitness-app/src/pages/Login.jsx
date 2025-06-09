@@ -4,7 +4,7 @@ import Navigation from '../components/Navigation';
 import { motion } from 'framer-motion'; // Add framer-motion for animations
 import { validateEmail } from "../utils/helper.js";
 import axiosInstance from "../utils/axiosInstance.js";
-import { API_PATHS } from "../utils/apiPaths";
+import { API_PATHS, BASE_URL } from "../utils/apiPaths";
 import { UserContext } from "../context/UserContext.jsx";
 
 
@@ -16,6 +16,19 @@ const Login = () => {
 
   const { updateUser } = useContext(UserContext);
   const navigate = useNavigate();
+
+  const handleGoogleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      window.location.href = `${BASE_URL}${API_PATHS.AUTH.GOOGLE_LOGIN}`;
+    } catch (error) {
+      setError("Failed to initiate Google login. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   // Handle Login Form Submit
   const handleLogin = async (e) => {
@@ -185,6 +198,7 @@ const Login = () => {
                 className="w-full relative bg-[#d9d9d9] rounded-sm py-2 px-4 flex items-center justify-center gap-2 
                           hover:bg-[#c0c0c0] active:bg-[#b0b0b0] transition duration-300
                           transform active:scale-[0.99]"
+                onClick={handleGoogleLogin}
               >
                 <img
                   src="/src/assets/google.svg"

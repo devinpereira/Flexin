@@ -26,6 +26,7 @@ import UserProvider from "./context/UserContext";
 import Home from "./pages/Home";
 import { NavigationProvider } from "./context/NavigationContext";
 import { SocketProvider } from "./context/SocketContext";
+import OAuthSuccess from "./pages/OAuthSuccess";
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/oauth-success" element={<OAuthSuccess />} />
             <Route path="/store" element={<Store />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/product/:productId" element={<ProductView />} />

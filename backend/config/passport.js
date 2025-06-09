@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import User from "../models/User.js"; // your existing user model
+import User from "../models/User.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -19,9 +19,13 @@ passport.use(new GoogleStrategy({
         fullName: profile.displayName,
         email: profile.emails[0].value,
         password: null, // Mark as OAuth user, skip local auth
+        googleId: profile.id,
         profileImageUrl: profile.photos[0].value,
         dob: new Date(), // Placeholder, or enhance with additional steps
+        isAccountVerified: true, // Automatically verified for OAuth users
       });
+
+      await user.save();
     }
 
     return done(null, user);

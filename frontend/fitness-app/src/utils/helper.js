@@ -3,3 +3,15 @@ export const validateEmail = (email) => {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(email);
 };
+
+export const getProfileImageUrl = (profileImageUrl) => {
+  const isAbsoluteUrl = (url) => /^https?:\/\//i.test(url);
+
+  if (!profileImageUrl) {
+    return "src/assets/profile1.png";
+  }
+
+  return isAbsoluteUrl(profileImageUrl)
+    ? profileImageUrl
+    : `${BASE_URL}/${profileImageUrl}`;
+};

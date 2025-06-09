@@ -5,6 +5,8 @@ export const API_PATHS = {
     LOGIN: "/api/v1/auth/login", // Done
     SIGNUP: "/api/v1/auth/signup", // Done
     GET_USER_INFO: "/api/v1/auth/getUserInfo", // Done
+    GOOGLE_LOGIN: "/api/v1/auth/google", // Done
+    GOOGLE_CALLBACK: "/api/v1/auth/google/callback",
   },
   POST: {
     GET_FEED_POSTS: "/api/v1/posts/feed", // Done
