@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const FLASK_API_URL = 'http://localhost:5000/predict';
+const FLASK_API_URL = 'http://localhost:5000/generate';
 
 export const getWorkoutPlan = async (req, res) => {
   try {

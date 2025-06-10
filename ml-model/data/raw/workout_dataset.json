@@ -1,0 +1,173 @@
+[
+  {
+    "age": 25,
+    "goal": "muscle_gain",
+    "experience": "intermediate",
+    "days_per_week": 4,
+    "equipment": ["dumbbells", "bench"],
+    "current_state": "active",
+    "workout_history": [
+      {
+        "day": "Monday",
+        "exercises": [
+          { "id": "E001", "name": "Bodyweight Squats", "sets": 4, "reps": "15-20", "body_part": "quads", "difficulty": "medium" },
+          { "id": "E002", "name": "Split Squats", "sets": 3, "reps": "10 each leg", "body_part": "quads", "difficulty": "medium" },
+          { "id": "E003", "name": "Glute Bridges", "sets": 3, "reps": "15-20", "body_part": "glutes", "difficulty": "medium" }
+        ],
+        "intensity": "medium"
+      },
+      {
+        "day": "Wednesday",
+        "exercises": [
+          { "id": "E006", "name": "Push-Ups", "sets": 4, "reps": "10-15", "body_part": "chest", "difficulty": "medium" },
+          { "id": "E008", "name": "Triceps Dips", "sets": 3, "reps": "10-12", "body_part": "triceps", "difficulty": "medium" }
+        ],
+        "intensity": "medium"
+      }
+    ],
+    "weekly_schedule": [
+      {
+        "day": "Monday",
+        "focus": "Upper Body Push",
+        "exercises": [
+          { "id": "E006", "name": "Push-Ups", "sets": 4, "reps": "10-15", "body_part": "chest", "difficulty": "medium" },
+          { "id": "E007", "name": "Incline Push-Ups", "sets": 3, "reps": "8-10", "body_part": "chest", "difficulty": "medium" }
+        ]
+      },
+      {
+        "day": "Tuesday",
+        "focus": "Lower Body",
+        "exercises": [
+          { "id": "E001", "name": "Bodyweight Squats", "sets": 4, "reps": "15-20", "body_part": "quads", "difficulty": "medium" },
+          { "id": "E002", "name": "Split Squats", "sets": 3, "reps": "10 each leg", "body_part": "quads", "difficulty": "medium" }
+        ]
+      }
+    ]
+  },
+  {
+    "age": 32,
+    "goal": "fat_loss",
+    "experience": "beginner",
+    "days_per_week": 3,
+    "equipment": ["resistance_bands"],
+    "current_state": "sedentary",
+    "workout_history": [
+      {
+        "day": "Tuesday",
+        "exercises": [
+          { "id": "E021", "name": "Band Squats", "sets": 4, "reps": "12-15", "body_part": "quads", "difficulty": "low" },
+          { "id": "E022", "name": "Band Deadlifts", "sets": 3, "reps": "10-12", "body_part": "hamstrings", "difficulty": "low" }
+        ],
+        "intensity": "low"
+      }
+    ],
+    "weekly_schedule": [
+      {
+        "day": "Monday",
+        "focus": "Cardio + Full Body",
+        "exercises": [
+          { "id": "E025", "name": "Jump Rope", "sets": 5, "reps": "1 min", "body_part": "cardio", "difficulty": "medium" }
+        ]
+      },
+      {
+        "day": "Wednesday",
+        "focus": "Lower Body",
+        "exercises": [
+          { "id": "E021", "name": "Band Squats", "sets": 4, "reps": "12-15", "body_part": "quads", "difficulty": "low" }
+        ]
+      }
+    ]
+  },
+  {
+    "age": 40,
+    "goal": "endurance",
+    "experience": "advanced",
+    "days_per_week": 5,
+    "equipment": ["treadmill", "dumbbells"],
+    "current_state": "active",
+    "workout_history": [
+      {
+        "day": "Monday",
+        "exercises": [
+          { "id": "E030", "name": "Treadmill Running", "sets": 1, "reps": "30 min", "body_part": "cardio", "difficulty": "medium" }
+        ],
+        "intensity": "high"
+      }
+    ],
+    "weekly_schedule": [
+      {
+        "day": "Monday",
+        "focus": "Cardio Endurance",
+        "exercises": [
+          { "id": "E030", "name": "Treadmill Running", "sets": 1, "reps": "30 min", "body_part": "cardio", "difficulty": "medium" }
+        ]
+      },
+      {
+        "day": "Wednesday",
+        "focus": "Upper Body Strength",
+        "exercises": [
+          { "id": "E006", "name": "Push-Ups", "sets": 4, "reps": "12-15", "body_part": "chest", "difficulty": "medium" }
+        ]
+      }
+    ]
+  },
+  {
+    "age": 29,
+    "goal": "flexibility",
+    "experience": "beginner",
+    "days_per_week": 3,
+    "equipment": ["yoga_mat"],
+    "current_state": "active",
+    "workout_history": [
+      {
+        "day": "Friday",
+        "exercises": [
+          { "id": "E040", "name": "Yoga Stretch", "sets": 3, "reps": "15 min", "body_part": "full_body", "difficulty": "low" }
+        ],
+        "intensity": "low"
+      }
+    ],
+    "weekly_schedule": [
+      {
+        "day": "Monday",
+        "focus": "Flexibility",
+        "exercises": [
+          { "id": "E040", "name": "Yoga Stretch", "sets": 3, "reps": "15 min", "body_part": "full_body", "difficulty": "low" }
+        ]
+      }
+    ]
+  },
+  {
+    "age": 35,
+    "goal": "weight_maintenance",
+    "experience": "intermediate",
+    "days_per_week": 4,
+    "equipment": ["kettlebell", "resistance_bands"],
+    "current_state": "active",
+    "workout_history": [
+      {
+        "day": "Thursday",
+        "exercises": [
+          { "id": "E050", "name": "Kettlebell Swings", "sets": 4, "reps": "12-15", "body_part": "full_body", "difficulty": "medium" }
+        ],
+        "intensity": "medium"
+      }
+    ],
+    "weekly_schedule": [
+      {
+        "day": "Tuesday",
+        "focus": "Full Body",
+        "exercises": [
+          { "id": "E050", "name": "Kettlebell Swings", "sets": 4, "reps": "12-15", "body_part": "full_body", "difficulty": "medium" }
+        ]
+      },
+      {
+        "day": "Thursday",
+        "focus": "Resistance Training",
+        "exercises": [
+          { "id": "E022", "name": "Band Deadlifts", "sets": 3, "reps": "10-12", "body_part": "hamstrings", "difficulty": "low" }
+        ]
+      }
+    ]
+  }
+]
