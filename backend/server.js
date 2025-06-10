@@ -14,6 +14,7 @@ import commentRoutes from "./routes/commentRoutes.js";
 import followRoutes from "./routes/followRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import workoutRoutes from "./routes/workoutRoutes.js";
 import passport from "./config/passport.js";
 import session from "express-session";
 
@@ -66,6 +67,7 @@ app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/friends", followRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/workouts", workoutRoutes);
 
 // Real-time Event Handling
 io.on("connection", (socket) => {
