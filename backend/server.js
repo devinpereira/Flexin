@@ -5,6 +5,7 @@ import cors from "cors";
 import path from "path";
 import { Server } from "socket.io";
 import http from "http";
+import cron from 'node-cron';
 import socketAuth from "./middleware/socketAuth.js";
 import logger from "./middleware/logger.js";
 import connectDB from "./config/db.js";
@@ -17,6 +18,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import workoutRoutes from "./routes/workoutRoutes.js";
 import passport from "./config/passport.js";
 import session from "express-session";
+import generateSchedulesForAllUsers from "./jobs/scheduleGenerator.js";
 
 const port = process.env.PORT || 8000;
 const app = express();
@@ -68,6 +70,12 @@ app.use("/api/v1/friends", followRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/workouts", workoutRoutes);
+
+// Run the schedule generator every Monday at 7 AM
+cron.schedule('0 7 * * 1', () => {
+  console.log('Weekly job running...');
+  generateSchedulesForAllUsers();
+});
 
 // Real-time Event Handling
 io.on("connection", (socket) => {
