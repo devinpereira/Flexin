@@ -1,6 +1,7 @@
 import os
 import pickle
 import numpy as np
+import pandas as pd
 
 BASE_DIR = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(BASE_DIR, '../../models/workout_model.pkl')
@@ -29,7 +30,16 @@ def preprocess_input(data):
     equip_vec = equip_enc.transform([equipment_list])[0]
 
     features = np.array([goal_val, exp_val, age, days])
-    return np.concatenate((features, equip_vec)).reshape(1, -1)
+
+    # Create combined feature vector
+    combined = np.concatenate((features, equip_vec)).reshape(1, -1)
+
+    # Get the original feature names (in training order)
+    columns = ['goal_encoded', 'experience_encoded', 'age', 'days_per_week'] + list(equip_enc.classes_)
+
+    # Return as DataFrame with column names
+    return pd.DataFrame(combined, columns=columns)
+
 
 def predict_plan(data):
     x = preprocess_input(data)

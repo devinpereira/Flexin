@@ -1,28 +1,205 @@
 {
-  "E001": { "name": "Bodyweight Squats", "body_part": "quads", "difficulty": "medium", "reps": 12, "sets": 4 },
-  "E002": { "name": "Split Squats", "body_part": "quads", "difficulty": "medium", "reps": 10, "sets": 3 },
-  "E003": { "name": "Glute Bridges", "body_part": "glutes", "difficulty": "medium", "reps": 15, "sets": 3 },
-  "E004": { "name": "Wall Sit", "body_part": "quads", "difficulty": "low", "reps": 30, "sets": 3 }, 
-  "E005": { "name": "Calf Raises", "body_part": "calves", "difficulty": "medium", "reps": 20, "sets": 4 },
-  "E006": { "name": "Push-Ups", "body_part": "chest", "difficulty": "medium", "reps": 12, "sets": 4 },
-  "E007": { "name": "Incline Push-Ups", "body_part": "chest", "difficulty": "medium", "reps": 10, "sets": 3 },
-  "E008": { "name": "Triceps Dips", "body_part": "triceps", "difficulty": "medium", "reps": 12, "sets": 3 },
-  "E009": { "name": "Plank Shoulder Taps", "body_part": "shoulders", "difficulty": "medium", "reps": 20, "sets": 3 },
-  "E010": { "name": "Wall Angels", "body_part": "shoulders", "difficulty": "low", "reps": 15, "sets": 2 },
-  "E011": { "name": "Doorframe Rows", "body_part": "back", "difficulty": "medium", "reps": 12, "sets": 3 },
-  "E012": { "name": "Reverse Snow Angels", "body_part": "back", "difficulty": "low", "reps": 15, "sets": 3 },
-  "E013": { "name": "Pike Push-Ups", "body_part": "shoulders", "difficulty": "high", "reps": 8, "sets": 4 },
-  "E014": { "name": "Superman Hold", "body_part": "lower_back", "difficulty": "medium", "reps": 30, "sets": 3 },
-  "E015": { "name": "Hollow Body Hold", "body_part": "core", "difficulty": "medium", "reps": 30, "sets": 3 },
-  "E016": { "name": "Jump Squats", "body_part": "quads", "difficulty": "high", "reps": 10, "sets": 3 },
-  "E017": { "name": "Step-Ups", "body_part": "quads", "difficulty": "medium", "reps": 12, "sets": 3 },
-  "E018": { "name": "Glute March", "body_part": "glutes", "difficulty": "medium", "reps": 15, "sets": 3 },
-  "E019": { "name": "Russian Twists", "body_part": "core", "difficulty": "medium", "reps": 20, "sets": 3 },
-  "E020": { "name": "Plank", "body_part": "core", "difficulty": "low", "reps": 45, "sets": 2 },
-  "E021": { "name": "Band Squats", "body_part": "quads", "difficulty": "low", "reps": 15, "sets": 3 },
-  "E022": { "name": "Band Deadlifts", "body_part": "hamstrings", "difficulty": "low", "reps": 12, "sets": 3 },
-  "E023": { "name": "Band Rows", "body_part": "back", "difficulty": "low", "reps": 12, "sets": 3 },
-  "E024": { "name": "Standing Band Press", "body_part": "chest", "difficulty": "low", "reps": 12, "sets": 3 },
-  "E025": { "name": "Jump Rope", "body_part": "cardio", "difficulty": "medium", "reps": 60, "sets": 3 },
-  "E026": { "name": "Burpees", "body_part": "full_body", "difficulty": "high", "reps": 10, "sets": 3 }
+  "E001": {
+    "name": "Bodyweight Squats",
+    "body_part": "quads",
+    "difficulty": "medium",
+    "reps": 12,
+    "sets": 4
+  },
+  "E002": {
+    "name": "Split Squats",
+    "body_part": "quads",
+    "difficulty": "medium",
+    "reps": 10,
+    "sets": 3
+  },
+  "E003": {
+    "name": "Glute Bridges",
+    "body_part": "glutes",
+    "difficulty": "medium",
+    "reps": 15,
+    "sets": 3
+  },
+  "E004": {
+    "name": "Wall Sit",
+    "body_part": "quads",
+    "difficulty": "low",
+    "reps": 30,
+    "sets": 3
+  },
+  "E005": {
+    "name": "Calf Raises",
+    "body_part": "calves",
+    "difficulty": "medium",
+    "reps": 20,
+    "sets": 4
+  },
+  "E006": {
+    "name": "Push-Ups",
+    "body_part": "chest",
+    "difficulty": "medium",
+    "reps": 12,
+    "sets": 4
+  },
+  "E007": {
+    "name": "Incline Push-Ups",
+    "body_part": "chest",
+    "difficulty": "medium",
+    "reps": 10,
+    "sets": 3
+  },
+  "E008": {
+    "name": "Triceps Dips",
+    "body_part": "triceps",
+    "difficulty": "medium",
+    "reps": 12,
+    "sets": 3
+  },
+  "E009": {
+    "name": "Plank Shoulder Taps",
+    "body_part": "shoulders",
+    "difficulty": "medium",
+    "reps": 20,
+    "sets": 3
+  },
+  "E010": {
+    "name": "Wall Angels",
+    "body_part": "shoulders",
+    "difficulty": "low",
+    "reps": 15,
+    "sets": 2
+  },
+  "E011": {
+    "name": "Doorframe Rows",
+    "body_part": "back",
+    "difficulty": "medium",
+    "reps": 12,
+    "sets": 3
+  },
+  "E012": {
+    "name": "Reverse Snow Angels",
+    "body_part": "back",
+    "difficulty": "low",
+    "reps": 15,
+    "sets": 3
+  },
+  "E013": {
+    "name": "Pike Push-Ups",
+    "body_part": "shoulders",
+    "difficulty": "high",
+    "reps": 8,
+    "sets": 4
+  },
+  "E014": {
+    "name": "Superman Hold",
+    "body_part": "lower_back",
+    "difficulty": "medium",
+    "reps": 30,
+    "sets": 3
+  },
+  "E015": {
+    "name": "Hollow Body Hold",
+    "body_part": "core",
+    "difficulty": "medium",
+    "reps": 30,
+    "sets": 3
+  },
+  "E016": {
+    "name": "Jump Squats",
+    "body_part": "quads",
+    "difficulty": "high",
+    "reps": 10,
+    "sets": 3
+  },
+  "E017": {
+    "name": "Step-Ups",
+    "body_part": "quads",
+    "difficulty": "medium",
+    "reps": 12,
+    "sets": 3
+  },
+  "E018": {
+    "name": "Glute March",
+    "body_part": "glutes",
+    "difficulty": "medium",
+    "reps": 15,
+    "sets": 3
+  },
+  "E019": {
+    "name": "Russian Twists",
+    "body_part": "core",
+    "difficulty": "medium",
+    "reps": 20,
+    "sets": 3
+  },
+  "E020": {
+    "name": "Plank",
+    "body_part": "core",
+    "difficulty": "low",
+    "reps": 45,
+    "sets": 2
+  },
+  "E021": {
+    "name": "Band Squats",
+    "body_part": "quads",
+    "difficulty": "low",
+    "reps": 15,
+    "sets": 3
+  },
+  "E022": {
+    "name": "Band Deadlifts",
+    "body_part": "hamstrings",
+    "difficulty": "low",
+    "reps": 12,
+    "sets": 3
+  },
+  "E023": {
+    "name": "Band Rows",
+    "body_part": "back",
+    "difficulty": "low",
+    "reps": 12,
+    "sets": 3
+  },
+  "E024": {
+    "name": "Standing Band Press",
+    "body_part": "chest",
+    "difficulty": "low",
+    "reps": 12,
+    "sets": 3
+  },
+  "E025": {
+    "name": "Jump Rope",
+    "body_part": "cardio",
+    "difficulty": "medium",
+    "reps": 60,
+    "sets": 3
+  },
+  "E026": {
+    "name": "Burpees",
+    "body_part": "full_body",
+    "difficulty": "high",
+    "reps": 10,
+    "sets": 3
+  },
+  "E040": {
+    "name": "Yoga Stretch",
+    "body_part": "full_body",
+    "difficulty": "low",
+    "reps": "unknown",
+    "sets": "unknown"
+  },
+  "E050": {
+    "name": "Kettlebell Swings",
+    "body_part": "full_body",
+    "difficulty": "medium",
+    "reps": "unknown",
+    "sets": "unknown"
+  },
+  "E030": {
+    "name": "Treadmill Running",
+    "body_part": "cardio",
+    "difficulty": "medium",
+    "reps": "unknown",
+    "sets": "unknown"
+  }
 }
