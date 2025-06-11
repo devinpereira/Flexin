@@ -17,15 +17,10 @@ y_list = []
 
 for day in weekdays:
     path = os.path.join(BASE_DIR, f'../../data/processed/y_{day}.csv')
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Missing file: {path}")
-    if os.path.getsize(path) == 0:
-        raise ValueError(f"Empty target file: {path}")
     y_list.append(pd.read_csv(path))
 
 y_combined = pd.concat(y_list, axis=1)
 
-# Optimization: use RandomForest
 clf = MultiOutputClassifier(RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42))
 clf.fit(X, y_combined)
 

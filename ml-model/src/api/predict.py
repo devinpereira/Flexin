@@ -13,33 +13,18 @@ with open(ENCODERS_PATH, 'rb') as f:
     encoders = pickle.load(f)
 
 goal_enc = encoders['goal']
-equip_enc = encoders['equipment']
 day_encoders = encoders['days']
 
 exp_map = {'beginner': 0, 'intermediate': 1, 'advanced': 2}
 
 def preprocess_input(data):
-    g = data['goal']
-    e = data['experience']
+    goal_val = goal_enc.transform([data['goal']])[0]
+    exp_val = exp_map.get(data['experience'], 0)
     age = data.get('age', 25)
     days = data.get('days_per_week', 3)
-    equipment_list = data.get('equipment', [])
-
-    goal_val = goal_enc.transform([g])[0]
-    exp_val = exp_map.get(e, 0)
-    equip_vec = equip_enc.transform([equipment_list])[0]
-
-    features = np.array([goal_val, exp_val, age, days])
-
-    # Create combined feature vector
-    combined = np.concatenate((features, equip_vec)).reshape(1, -1)
-
-    # Get the original feature names (in training order)
-    columns = ['goal_encoded', 'experience_encoded', 'age', 'days_per_week'] + list(equip_enc.classes_)
-
-    # Return as DataFrame with column names
-    return pd.DataFrame(combined, columns=columns)
-
+    features = np.array([[goal_val, exp_val, age, days]])
+    columns = ['goal_encoded', 'experience_encoded', 'age', 'days_per_week']
+    return pd.DataFrame(features, columns=columns)
 
 def predict_plan(data):
     x = preprocess_input(data)

@@ -2,7 +2,7 @@ import pandas as pd
 import json
 import os
 import pickle
-from sklearn.preprocessing import LabelEncoder, MultiLabelBinarizer
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 BASE_DIR = os.path.dirname(__file__)
 RAW_PATH = os.path.join(BASE_DIR, '../../data/raw/workout_dataset.json')
@@ -14,34 +14,31 @@ with open(RAW_PATH, 'r') as f:
 
 df = pd.json_normalize(raw_data)
 
+# Encode goal
 goal_enc = LabelEncoder()
 df['goal_encoded'] = goal_enc.fit_transform(df['goal'])
 
+# Encode experience
 exp_map = {'beginner': 0, 'intermediate': 1, 'advanced': 2}
 df['experience_encoded'] = df['experience'].map(exp_map)
 
-df['age'] = df['age']
-df['days_per_week'] = df['days_per_week']
+# Basic features
+X = df[['goal_encoded', 'experience_encoded', 'age', 'days_per_week']]
 
-equip_enc = MultiLabelBinarizer()
-equipment_matrix = equip_enc.fit_transform(df['equipment'])
-
-X = pd.concat([
-    df[['goal_encoded', 'experience_encoded', 'age', 'days_per_week']],
-    pd.DataFrame(equipment_matrix, columns=equip_enc.classes_)
-], axis=1)
-
+# Extract focus per day
 weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-day_encoders = {}
-targets = {}
 
 def extract_focus_list(entry_list, day_name):
-    for item in entry_list:
-        if item['day'].strip().lower() == day_name.lower():
-            return [item['focus']]
-    return []
+    focuses = [item['focus'] for item in entry_list if item['day'].strip().lower() == day_name.lower()]
+    return list(set(focuses))
 
 df_focus = {day: df['weekly_schedule'].apply(lambda week: extract_focus_list(week, day)) for day in weekdays}
+
+# Target encoding
+from sklearn.preprocessing import MultiLabelBinarizer
+
+targets = {}
+day_encoders = {}
 
 for day in weekdays:
     lists = df_focus[day].tolist()
@@ -61,7 +58,6 @@ for day in weekdays:
 
 encoders_to_save = {
     'goal': goal_enc,
-    'equipment': equip_enc,
     'days': {day: enc for day, enc in day_encoders.items() if enc}
 }
 

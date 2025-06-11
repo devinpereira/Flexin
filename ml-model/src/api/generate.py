@@ -1,8 +1,8 @@
-# generate.py
 import json
 import os
 import pickle
 import numpy as np
+import pandas as pd
 
 BASE_DIR = os.path.dirname(__file__)
 EX_DB_PATH = os.path.join(BASE_DIR, '../../models/exercise_db.json')
@@ -13,21 +13,23 @@ with open(EX_DB_PATH, 'r') as f:
 
 with open(SETS_REPS_MODEL_PATH, 'rb') as f:
     sets_reps_model = pickle.load(f)
+    
 
-# Mapping from focus tags to relevant body parts
 FOCUS_TO_BODY_PART = {
     "upper body push": ["chest", "shoulders", "triceps"],
     "upper body pull": ["back", "biceps"],
     "lower body": ["quads", "hamstrings", "glutes", "calves"],
-    "full body": ["chest", "back", "legs", "arms", "core"],
+    "full body": ["chest", "back", "lower_back", "legs", "arms", "core"],
     "core": ["core", "abs"],
     "cardio": ["cardio"],
-    "arms": ["biceps", "triceps"],
+    "arms": ["triceps", "biceps"],
     "legs": ["quads", "hamstrings", "calves", "glutes"],
-    "back": ["back"],
+    "back": ["back", "lower_back"],
     "chest": ["chest"],
     "shoulders": ["shoulders"],
+    "flexibility": ["full_body", "legs", "core"]
 }
+
 
 def get_smart_days(days_per_week):
     week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -38,38 +40,47 @@ def get_smart_days(days_per_week):
     selected_indices = day_indices.get(days_per_week, list(range(days_per_week)))
     return [week[i] for i in selected_indices]
 
+def get_age_group(age):
+    if 18 <= age <= 25:
+        return 0
+    elif age <= 35:
+        return 1
+    elif age <= 45:
+        return 2
+    elif age <= 55:
+        return 3
+    else:
+        return 4
 
 def format_schedule(predicted_focus, days_per_week, user_profile=None):
     selected = get_smart_days(days_per_week)
-
     schedule = []
+
     for day in selected:
         focuses = predicted_focus.get(day, [])
         exercises = []
-
         for focus_tag in focuses:
-            focus_key = focus_tag.lower()
-            matched_parts = FOCUS_TO_BODY_PART.get(focus_key, [])
-
+            matched_parts = FOCUS_TO_BODY_PART.get(focus_tag.lower(), [])
             for ex_id, ex_info in exercise_db.items():
                 if ex_info["body_part"].lower() in matched_parts:
-                    sets, reps = 3, 10  # default
+                    sets, reps = 3, 10
                     if user_profile:
                         try:
-                            pred_input = np.array([[
-                                user_profile.get('goal_enc', 0),
-                                user_profile.get('exp_enc', 0),
-                                user_profile.get('age', 25),
-                                user_profile.get('days_per_week', 3),
-                                ex_info.get("body_part_enc", 0),
-                                ex_info.get("difficulty_enc", 0)
-                            ]])
+                            age_group = get_age_group(user_profile.get('age', 25))
+                            pred_input = pd.DataFrame([{
+                                'goal_enc': user_profile.get('goal_enc', 0),
+                                'exp_enc': user_profile.get('exp_enc', 0),
+                                'age_group': age_group,
+                                'days_per_week': user_profile.get('days_per_week', 3),
+                                'body_part_enc': ex_info.get("body_part_enc", 0),
+                                'difficulty_enc': ex_info.get("difficulty_enc", 0)
+                            }])
+                            
                             pred = sets_reps_model.predict(pred_input)[0]
                             sets = int(round(pred[0]))
                             reps = int(round(pred[1]))
                         except Exception as e:
-                            pass
-
+                            print(f"[PREDICTION ERROR] {e}")
                     exercises.append({
                         "id": ex_id,
                         "name": ex_info["name"],
@@ -78,11 +89,13 @@ def format_schedule(predicted_focus, days_per_week, user_profile=None):
                         "body_part": ex_info["body_part"],
                         "difficulty": ex_info["difficulty"]
                     })
-
+        if not exercises:
+            print(f"[WARNING] No exercises found for {day} with focuses: {focuses}")
+            with open("empty_focus_log.txt", "a") as log_file:
+                log_file.write(f"No exercises found for {day} with focuses: {focuses}\n")
         schedule.append({
             "day": day,
             "focus": focuses,
-            "exercises": exercises[:6]  # limit to 6 exercises max
+            "exercises": exercises[:6]
         })
-
     return schedule

@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+import numpy as np
 import pickle
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
@@ -19,10 +20,9 @@ for user in users:
         for ex in schedule.get('exercises', []):
             reps = ex.get('reps')
             try:
-                # Try to extract a numeric rep value (e.g., "15-20" -> 17.5)
                 reps_num = sum(map(int, reps.replace("each leg", "").replace("min", "").split('-'))) / 2 if '-' in reps else int(''.join(filter(str.isdigit, reps)))
             except:
-                reps_num = 10  # default fallback
+                reps_num = 10
 
             rows.append({
                 'goal': goal,
@@ -35,10 +35,7 @@ for user in users:
                 'reps': reps_num
             })
 
-# Convert to DataFrame
 df = pd.DataFrame(rows)
-
-# Drop unknown or missing rows
 df = df[df['body_part'] != 'unknown']
 
 # Encode categorical values
@@ -49,18 +46,21 @@ df['exp_enc'] = df['experience'].map({'beginner': 0, 'intermediate': 1, 'advance
 df['body_part_enc'] = df['body_part'].astype('category').cat.codes
 df['difficulty_enc'] = df['difficulty'].map({'low': 0, 'medium': 1, 'high': 2})
 
+# Age binning for 18–70, including values below 18 in lowest and above 70 in highest
+bins = [-np.inf, 25, 35, 45, 55, np.inf]
+labels = [0, 1, 2, 3, 4]
+df['age_group'] = pd.cut(df['age'], bins=bins, labels=labels, right=True, include_lowest=True).astype(int)
+
+
 # Feature matrix and target
-X = df[['goal_enc', 'exp_enc', 'age', 'days_per_week', 'body_part_enc', 'difficulty_enc']]
+X = df[['goal_enc', 'exp_enc', 'age_group', 'days_per_week', 'body_part_enc', 'difficulty_enc']]
 y = df[['sets', 'reps']]
 
-# Train/test split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train model
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# Save model
 with open('../../models/sets_reps_model.pkl', 'wb') as f:
     pickle.dump(model, f)
 
