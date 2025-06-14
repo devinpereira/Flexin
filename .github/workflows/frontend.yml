@@ -1,0 +1,27 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - 'frontend/fitness-app/**'
+  pull_request:
+    paths:
+      - 'frontend/fitness-app/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/fitness-app
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test || echo "No test script"
