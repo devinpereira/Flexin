@@ -27,6 +27,7 @@ import Home from "./pages/Home";
 import { NavigationProvider } from "./context/NavigationContext";
 import { SocketProvider } from "./context/SocketContext";
 import OAuthSuccess from "./pages/OAuthSuccess";
+import Logout from "./pages/Logout";
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/logout" element={<Logout />} />
             <Route path="/oauth-success" element={<OAuthSuccess />} />
             <Route path="/store" element={<Store />} />
             <Route path="/checkout" element={<Checkout />} />

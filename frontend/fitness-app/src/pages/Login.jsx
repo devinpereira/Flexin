@@ -56,6 +56,7 @@ const Login = () => {
 
       if (token) {
         localStorage.setItem("token", token);
+        window.dispatchEvent(new Event("login"));
         updateUser(user);
         
         // Check if there's a saved redirect path

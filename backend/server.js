@@ -20,8 +20,8 @@ const io = new Server(server, {
 app.set("io", io);
 app.set("onlineUsers", new Map());
 
-setupSocket(io, app); // 👈 Centralized socket logic
-cronJobs(); // 👈 Initialize all cron jobs
+setupSocket(io, app);
+cronJobs();
 
 server.listen(port, () => {
   console.log(`Server running on port ${port}`);

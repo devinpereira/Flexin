@@ -15,3 +15,9 @@ export const getProfileImageUrl = (profileImageUrl) => {
     ? profileImageUrl
     : `${BASE_URL}/${profileImageUrl}`;
 };
+
+export const logout = () => {
+  localStorage.removeItem("token");
+  window.dispatchEvent(new Event("logout"));
+  window.location.href = "/login";
+}
