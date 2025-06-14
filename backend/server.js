@@ -1,31 +1,15 @@
 import dotenv from "dotenv";
 dotenv.config();
-import express from "express";
-import cors from "cors";
-import path from "path";
-import { Server } from "socket.io";
 import http from "http";
-import cron from 'node-cron';
-import socketAuth from "./middleware/socketAuth.js";
-import logger from "./middleware/logger.js";
-import connectDB from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js";
-import postRoutes from "./routes/postRoutes.js";
-import commentRoutes from "./routes/commentRoutes.js";
-import followRoutes from "./routes/followRoutes.js";
-import profileRoutes from "./routes/profileRoutes.js";
-import notificationRoutes from "./routes/notificationRoutes.js";
-import workoutRoutes from "./routes/workoutRoutes.js";
-import passport from "./config/passport.js";
-import session from "express-session";
-import generateSchedulesForAllUsers from "./jobs/scheduleGenerator.js";
+import app from "./app.js";
+import { Server } from "socket.io";
+import setupSocket from "./sockets/index.js";
+import cronJobs from "./jobs/scheduleJob.js";
 
 const port = process.env.PORT || 8000;
-const app = express();
 const server = http.createServer(app);
-const onlineUsers = new Map();
 
-// Initialize socket.io with CORS handled in socketAuth middleware
+// Socket.io setup
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:5173",
@@ -34,69 +18,11 @@ const io = new Server(server, {
   },
 });
 app.set("io", io);
-app.set("onlineUsers", onlineUsers);
-socketAuth(io);
+app.set("onlineUsers", new Map());
 
-// Enable CORS for Express API routes
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+setupSocket(io, app); // 👈 Centralized socket logic
+cronJobs(); // 👈 Initialize all cron jobs
 
-// Bodyparser middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Init middleware
-app.use(logger);
-
-// Session middleware for passport.js
-app.use(session({ secret: "sessionSecret", resave: false, saveUninitialized: true }));
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-// Connect to MongoDB
-connectDB();
-
-// Setup routes
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/posts", postRoutes);
-app.use("/api/v1/comments", commentRoutes);
-app.use("/api/v1/friends", followRoutes);
-app.use("/api/v1/profile", profileRoutes);
-app.use("/api/v1/notifications", notificationRoutes);
-app.use("/api/v1/workouts", workoutRoutes);
-
-// Run the schedule generator every Monday at 7 AM
-cron.schedule('0 7 * * 1', () => {
-  console.log('Weekly job running...');
-  generateSchedulesForAllUsers();
+server.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
-
-// Real-time Event Handling
-io.on("connection", (socket) => {
-  const userId = socket.user?.id;
-  
-  if (!userId) {
-    console.error("User not authenticated.");
-    return;
-  }
-
-  console.log(`User connected: ${userId}`);
-  onlineUsers.set(userId, socket.id);
-
-  socket.on("disconnect", () => {
-    console.log(`User disconnected: ${userId}`);
-    onlineUsers.delete(userId.toString());
-  });
-});
-
-// Serve uploads folder
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-// Start server
-server.listen(port, () => console.log(`Server running on port ${port}`));
