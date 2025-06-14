@@ -1,7 +1,7 @@
 import Post from "../models/Post.js";
 import Comment from "../models/Comment.js";
 import User from "../models/User.js";
-import { sendNotification } from "../utils/notificationHelper.js";
+import { deleteNotification, sendNotification } from "../utils/notificationHelper.js";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
 // Add a Comment
@@ -42,7 +42,10 @@ export const commentPost = async (req, res) => {
       postId,
       message: "commented on your post",
       postImage: imageUrl,
-      extraData: { comment },
+      extraData: {
+        comment: comment,
+        commentId: newComment._id,
+      },
     });
 
     res.status(201).json({
@@ -66,6 +69,8 @@ export const deleteComment = async (req, res) => {
   try {
     const { id: postId, commentId } = req.params;
     const comment = await Comment.findById(commentId);
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
 
     if (!comment) {
       return res.status(404).json({ error: "Comment not found" });
@@ -79,9 +84,18 @@ export const deleteComment = async (req, res) => {
 
     const post = await Post.findById(postId);
     if (post) {
-      post.comments -= 1;
+      post.comments = Math.max(0, post.comments - 1);
       await post.save();
     }
+
+    deleteNotification({
+      io,
+      onlineUsers,
+      type: "comment",
+      postId,
+      fromUser: req.user._id,
+      extraData: { commentId },
+    });
 
     res.json({ message: "Comment deleted" });
   } catch (err) {
@@ -93,7 +107,9 @@ export const deleteComment = async (req, res) => {
 export const getComments = async (req, res) => {
   try {
     const { id: postId } = req.params;
-    const comments = await Comment.find({ postId }).sort({ createdAt: -1 }).populate('userId', 'fullName profileImageUrl');
+    const comments = await Comment.find({ postId })
+      .sort({ createdAt: -1 })
+      .populate("userId", "fullName profileImageUrl");
     res.status(200).json(comments);
   } catch (err) {
     res.status(500).json({ error: err.message });

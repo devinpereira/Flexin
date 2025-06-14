@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 BASE_DIR = os.path.dirname(__file__)
-EX_DB_PATH = os.path.join(BASE_DIR, '../../models/exercise_db.json')
+EX_DB_PATH = os.path.join(BASE_DIR, '../../data/raw/exercise_db.json')
 SETS_REPS_MODEL_PATH = os.path.join(BASE_DIR, '../../models/sets_reps_model.pkl')
 
 with open(EX_DB_PATH, 'r') as f:

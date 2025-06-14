@@ -6,7 +6,7 @@ import ProfileData from "../models/ProfileData.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
-import { sendNotification } from "../utils/notificationHelper.js";
+import { deleteNotification, sendNotification } from "../utils/notificationHelper.js";
 
 // Get Feed Posts
 export const getFeedPosts = async (req, res) => {
@@ -282,11 +282,12 @@ export const likePost = async (req, res) => {
       await Post.findByIdAndUpdate(postId, { $inc: { likes: -1 } });
 
       // Delete like notification
-      await Notification.findOneAndDelete({
-        userId: postOwnerId,
-        fromUser: userId,
+      deleteNotification({
+        io,
+        onlineUsers,
         type: "like",
         postId,
+        fromUser: userId,
       });
 
       return res.json({ message: "Post unliked" });
