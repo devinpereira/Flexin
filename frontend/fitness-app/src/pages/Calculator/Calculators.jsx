@@ -5,19 +5,61 @@ import {
   FaPlay
 } from 'react-icons/fa';
 import CalculatorLayout from '../../components/Calculator/CalculatorLayout';
+import FitnessProfileWizard from '../../components/Wizard/FitnessProfileWizard';
 
 const Calculators = () => {
+  // Add state for the wizard visibility
+  const [showWizard, setShowWizard] = useState(false);
+  const [fitnessProfile, setFitnessProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  
+  // Existing state and variables
   const [selectedDay, setSelectedDay] = useState('Monday');
-
-  // For modals
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
-
-  // Custom alert state
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState('success'); // success, error, warning, info
+  const [alertType, setAlertType] = useState('success');
+
+  // Check if user has completed fitness profile setup
+  useEffect(() => {
+    const checkFitnessProfile = () => {
+      try {
+        // Attempt to load fitness profile from local storage
+        const savedProfile = localStorage.getItem('fitnessProfileData');
+        
+        if (savedProfile) {
+          const profileData = JSON.parse(savedProfile);
+          setFitnessProfile(profileData);
+          setShowWizard(false);
+        } else {
+          // No profile found, show wizard
+          setShowWizard(true);
+        }
+      } catch (error) {
+        console.error("Error loading fitness profile:", error);
+        setShowWizard(true);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+    
+    // Simulate an API call delay
+    setTimeout(checkFitnessProfile, 1000);
+  }, []);
+
+  // Handle wizard completion
+  const handleWizardComplete = (userData) => {
+    setFitnessProfile(userData);
+    setShowWizard(false);
+    
+    // Show success message
+    showAlert('Fitness profile successfully created!', 'success');
+    
+    // In a real app, this would send the data to the backend
+    console.log("Profile data to be sent to backend:", userData);
+  };
 
   // Function to show custom alert
   const showAlert = (message, type = 'success') => {
@@ -29,6 +71,13 @@ const Calculators = () => {
     setTimeout(() => {
       setAlertOpen(false);
     }, 3000);
+  };
+
+  // Reset fitness profile (for testing purposes)
+  const resetFitnessProfile = () => {
+    localStorage.removeItem('fitnessProfileData');
+    setFitnessProfile(null);
+    setShowWizard(true);
   };
 
   // Mock training schedule data
@@ -70,13 +119,69 @@ const Calculators = () => {
 
   // Mock BMI and BMR data
   const userStats = {
-    bmi: 23.4,
-    bmrCalories: 1850,
-    weight: 75, // kg
-    height: 178, // cm
-    age: 28,
-    gender: 'Male'
+    bmi: fitnessProfile ? calculateBMI(fitnessProfile.weight, fitnessProfile.height, fitnessProfile.weightUnit, fitnessProfile.heightUnit) : 23.4,
+    bmrCalories: fitnessProfile ? calculateBMR(fitnessProfile) : 1850,
+    weight: fitnessProfile ? convertWeight(fitnessProfile.weight, fitnessProfile.weightUnit) : 75,
+    height: fitnessProfile ? convertHeight(fitnessProfile.height, fitnessProfile.heightUnit) : 178,
+    age: fitnessProfile ? fitnessProfile.age : 28,
+    gender: fitnessProfile ? fitnessProfile.gender : 'Male'
   };
+
+  // Helper function to calculate BMI
+  function calculateBMI(weight, height, weightUnit, heightUnit) {
+    // Convert weight to kg if needed
+    const weightInKg = weightUnit === 'lbs' ? weight * 0.45359237 : weight;
+    
+    // Convert height to meters
+    let heightInMeters;
+    if (heightUnit === 'ft') {
+      heightInMeters = height * 0.3048;
+    } else {
+      heightInMeters = height / 100;
+    }
+    
+    // Calculate BMI: weight (kg) / height² (m)
+    const bmi = weightInKg / (heightInMeters * heightInMeters);
+    return parseFloat(bmi.toFixed(1));
+  }
+
+  // Helper function to calculate BMR
+  function calculateBMR(profile) {
+    const weight = convertWeight(profile.weight, profile.weightUnit);
+    const height = convertHeight(profile.height, profile.heightUnit);
+    const age = profile.age;
+    const gender = profile.gender;
+    
+    // Mifflin-St Jeor Equation
+    let bmr;
+    if (gender === 'male') {
+      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
+    
+    // Apply activity level multiplier
+    const activityMultipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      active: 1.725,
+      very_active: 1.9
+    };
+    
+    const adjustedBmr = Math.round(bmr * activityMultipliers[profile.activityLevel]);
+    return adjustedBmr;
+  }
+
+  // Helper function to convert weight to kg
+  function convertWeight(weight, unit) {
+    return unit === 'lbs' ? weight * 0.45359237 : weight;
+  }
+
+  // Helper function to convert height to cm
+  function convertHeight(height, unit) {
+    return unit === 'ft' ? height * 30.48 : height;
+  }
 
   // Handler to view exercise details
   const handleViewExercise = (exercise) => {
@@ -92,13 +197,41 @@ const Calculators = () => {
 
   // Handler to start workout
   const handleStartWorkout = (day) => {
-    // In a real app, this would navigate to a workout session page
     console.log(`Starting workout for ${day}`);
     showAlert(`Starting workout for ${day}`, 'success');
   };
 
+  // Display loading state while checking profile
+  if (isLoadingProfile) {
+    return (
+      <CalculatorLayout pageTitle="Training">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#f67a45]"></div>
+        </div>
+      </CalculatorLayout>
+    );
+  }
+
   return (
     <CalculatorLayout pageTitle="Training">
+      {/* Show wizard if needed */}
+      {showWizard && (
+        <FitnessProfileWizard 
+          onComplete={handleWizardComplete} 
+          onCancel={() => setShowWizard(false)}
+        />
+      )}
+
+      {/* Debug button for testing - remove in production */}
+      {!showWizard && process.env.NODE_ENV === 'development' && (
+        <button 
+          onClick={resetFitnessProfile} 
+          className="mb-4 px-3 py-1 bg-red-500 text-white rounded-md text-sm"
+        >
+          Reset Profile (Debug)
+        </button>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 max-w-full">
         {/* Left column - Training Schedule - Full width on mobile, 2/3 on large screens */}
         <div className="w-full lg:w-2/3 min-w-0">
