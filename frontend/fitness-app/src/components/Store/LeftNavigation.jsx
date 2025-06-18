@@ -4,24 +4,90 @@ import { AiFillCaretDown, AiFillCaretUp } from 'react-icons/ai';
 import { MdKeyboardArrowRight } from 'react-icons/md';
 
 const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItemsCount, isMobileNavOpen, setIsMobileNavOpen }) => {
-  const [categoryOpen, setCategoryOpen] = useState(true);
+  const [expandedCategories, setExpandedCategories] = useState({});
   
-  // Categories for products
+  // Categories for products - improved with more subcategories and better organization
   const categories = [
-    { id: 'supplements', name: 'Supplements', subcategories: ['Protein', 'Pre-Workout', 'Vitamins', 'Weight Gainers'] },
-    { id: 'equipment', name: 'Equipment', subcategories: ['Dumbbells', 'Resistance Bands', 'Benches', 'Bars'] },
-    { id: 'apparel', name: 'Apparel', subcategories: ['Men\'s', 'Women\'s', 'Footwear', 'Accessories'] },
-    { id: 'nutrition', name: 'Nutrition', subcategories: ['Healthy Snacks', 'Meal Replacements', 'Superfoods'] }
+    { 
+      id: 'supplements', 
+      name: 'Supplements', 
+      subcategories: [
+        'Protein Powders', 
+        'Pre-Workout', 
+        'Vitamins & Minerals', 
+        'Weight Gainers',
+        'Amino Acids',
+        'Creatine',
+        'Fat Burners'
+      ] 
+    },
+    { 
+      id: 'equipment', 
+      name: 'Equipment', 
+      subcategories: [
+        'Dumbbells', 
+        'Resistance Bands', 
+        'Benches', 
+        'Bars',
+        'Weight Sets',
+        'Yoga Mats',
+        'Kettlebells'
+      ] 
+    },
+    { 
+      id: 'apparel', 
+      name: 'Apparel', 
+      subcategories: [
+        'Men\'s Clothing', 
+        'Women\'s Clothing', 
+        'Footwear', 
+        'Accessories',
+        'Compression Wear',
+        'Workout Gloves'
+      ] 
+    },
+    { 
+      id: 'nutrition', 
+      name: 'Nutrition', 
+      subcategories: [
+        'Healthy Snacks', 
+        'Meal Replacements', 
+        'Superfoods',
+        'Energy Bars',
+        'Protein Bars',
+        'Sports Drinks'
+      ] 
+    },
+    {
+      id: 'accessories',
+      name: 'Accessories',
+      subcategories: [
+        'Gym Bags',
+        'Water Bottles',
+        'Fitness Trackers',
+        'Lifting Belts',
+        'Workout Towels'
+      ]
+    }
   ];
   
   // Toggle category dropdown
-  const toggleCategoryDropdown = () => {
-    setCategoryOpen(!categoryOpen);
+  const toggleCategory = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
   };
   
   // Handle category click
   const handleCategoryClick = (category) => {
     onCategorySelect(category);
+    setIsMobileNavOpen(false);
+  };
+  
+  // Handle subcategory click
+  const handleSubcategoryClick = (category, subcategory) => {
+    onCategorySelect({ ...category, selectedSubcategory: subcategory });
     setIsMobileNavOpen(false);
   };
   
@@ -54,9 +120,9 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
       {/* Navigation Sidebar - Hidden on mobile unless toggled open */}
       <div className={`fixed lg:relative z-40 lg:z-0 inset-y-0 left-0 w-72 bg-[#121225] border-r border-gray-700 lg:border-none transform ${
         isMobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } transition-transform duration-300 ease-in-out lg:transition-none overflow-y-auto`}>
+      } transition-transform duration-300 ease-in-out lg:transition-none overflow-y-auto h-screen lg:h-auto`}>
         
-        <div className="p-6">
+        <div className="p-6 pb-20 lg:pb-6 overflow-y-auto max-h-screen">
           {/* Main Navigation Items */}
           <div className="space-y-3 mb-8">
             <button
@@ -95,42 +161,89 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
             </button>
           </div>
           
-          {/* Categories Section */}
-          <div>
-            <div 
-              className="flex items-center justify-between text-white mb-4 cursor-pointer"
-              onClick={toggleCategoryDropdown}
-            >
+          {/* Categories Section - Improved with expandable/collapsible sections */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between text-white mb-4">
               <h3 className="font-bold text-lg">Categories</h3>
-              {categoryOpen ? <AiFillCaretUp /> : <AiFillCaretDown />}
             </div>
             
-            {categoryOpen && (
-              <div className="space-y-1">
-                {categories.map(category => (
-                  <div key={category.id} className="mb-3">
-                    <button
-                      className="w-full text-left px-4 py-2 rounded-lg text-white hover:bg-[#1e1e35]"
-                      onClick={() => handleCategoryClick(category)}
-                    >
-                      {category.name}
-                    </button>
-                    
-                    <div className="ml-4 mt-1 space-y-1">
+            <div className="space-y-2">
+              {categories.map(category => (
+                <div key={category.id} className="rounded-lg overflow-hidden bg-[#1a1a2f]/50">
+                  <button
+                    className="w-full text-left flex items-center justify-between px-4 py-3 text-white hover:bg-[#1e1e35]"
+                    onClick={() => toggleCategory(category.id)}
+                  >
+                    <span>{category.name}</span>
+                    {expandedCategories[category.id] ? <AiFillCaretUp /> : <AiFillCaretDown />}
+                  </button>
+                  
+                  {/* Subcategories - Animated collapse/expand */}
+                  <div 
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      expandedCategories[category.id] ? 'max-h-96' : 'max-h-0'
+                    }`}
+                  >
+                    <div className="ml-4 py-2 border-l border-gray-700 space-y-1">
+                      {/* All Category Items option */}
+                      <button
+                        className="w-full text-left px-4 py-1.5 text-sm rounded-lg text-white hover:text-[#f67a45] hover:bg-[#1e1e35] flex items-center"
+                        onClick={() => handleCategoryClick(category)}
+                      >
+                        <span className="mr-2">•</span>
+                        All {category.name}
+                      </button>
+                      
+                      {/* Individual subcategories */}
                       {category.subcategories.map(sub => (
                         <button
                           key={sub}
-                          className="w-full text-left px-4 py-1.5 text-sm rounded-lg text-gray-400 hover:text-white hover:bg-[#1e1e35]"
-                          onClick={() => handleCategoryClick({ ...category, selectedSubcategory: sub })}
+                          className="w-full text-left px-4 py-1.5 text-sm rounded-lg text-gray-400 hover:text-white hover:bg-[#1e1e35] flex items-center"
+                          onClick={() => handleSubcategoryClick(category, sub)}
                         >
+                          <span className="mr-2">•</span>
                           {sub}
                         </button>
                       ))}
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Recently Viewed (Only for desktop) */}
+          <div className="hidden lg:block">
+            <h3 className="font-bold text-lg text-white mb-3">Recently Viewed</h3>
+            <div className="space-y-3">
+              <div className="flex items-center p-2 bg-[#1a1a2f] rounded-lg">
+                <div className="w-12 h-12 bg-gray-700/30 rounded-lg mr-3">
+                  <img 
+                    src="/src/assets/products/product1.png" 
+                    alt="Recent product" 
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
+                <div>
+                  <p className="text-white text-sm">Premium Protein Powder</p>
+                  <p className="text-[#f67a45] text-xs">$49.99</p>
+                </div>
               </div>
-            )}
+              
+              <div className="flex items-center p-2 bg-[#1a1a2f] rounded-lg">
+                <div className="w-12 h-12 bg-gray-700/30 rounded-lg mr-3">
+                  <img 
+                    src="/src/assets/products/product2.png" 
+                    alt="Recent product" 
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
+                <div>
+                  <p className="text-white text-sm">Fitness Tracker Watch</p>
+                  <p className="text-[#f67a45] text-xs">$89.99</p>
+                </div>
+              </div>
+            </div>
           </div>
           
           {/* Cart Button - Mobile Only */}

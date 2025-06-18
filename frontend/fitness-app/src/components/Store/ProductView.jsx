@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import Navigation from '../Navigation';
 import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiFillStar, AiOutlineCheckCircle, AiOutlineClose } from 'react-icons/ai';
 import { FiShoppingCart } from 'react-icons/fi';
 
@@ -137,8 +138,12 @@ const ProductView = () => {
   // If product data is still loading
   if (!product) {
     return (
-      <div className="container mx-auto mt-10 px-4 text-white">
-        Loading product details...
+      <div className="min-h-screen bg-cover bg-center bg-fixed"
+        style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
+        <Navigation />
+        <div className="container mx-auto mt-10 px-4 text-white">
+          Loading product details...
+        </div>
       </div>
     );
   }
@@ -146,6 +151,7 @@ const ProductView = () => {
   return (
     <div className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
+      <Navigation />
       
       {/* Back button and navigation */}
       <div className="container mx-auto pt-6 px-4">
