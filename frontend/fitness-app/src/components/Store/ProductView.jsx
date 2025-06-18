@@ -15,7 +15,7 @@ const ProductView = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [showNotification, setShowNotification] = useState(false);
-  
+
   // Product images (in a real app, these would come from the product data)
   const productImages = [
     '/src/assets/products/product1.png',
@@ -23,7 +23,7 @@ const ProductView = () => {
     '/src/assets/products/product3.png',
     '/src/assets/products/product4.png'
   ];
-  
+
   // Fetch product data if not available from location state
   useEffect(() => {
     if (!product) {
@@ -61,7 +61,7 @@ const ProductView = () => {
       });
     }
   }, [productId, product]);
-  
+
   // Sample reviews data
   const reviews = [
     { id: 1, name: "John Doe", rating: 5, comment: "Great product! I've been using it for a month and seeing good results.", date: "2023-03-15" },
@@ -70,22 +70,22 @@ const ProductView = () => {
     { id: 4, name: "Sarah Williams", rating: 3, comment: "It's okay. The flavor is a bit too sweet for my taste.", date: "2022-12-05" },
     { id: 5, name: "Chris Brown", rating: 5, comment: "Perfect post-workout supplement. I've noticed faster recovery times.", date: "2022-11-22" }
   ];
-  
+
   // Handle the back button click
   const handleBack = () => {
     navigate(-1);
   };
-  
+
   // Handle changing the current product image
   const handleImageChange = (index) => {
     setCurrentImageIndex(index);
   };
-  
+
   // Handle the favorite button click
   const handleToggleFavorite = () => {
     setIsFavorite(!isFavorite);
   };
-  
+
   // Handle quantity changes
   const handleQuantityChange = (amount) => {
     const newQuantity = quantity + amount;
@@ -93,21 +93,21 @@ const ProductView = () => {
       setQuantity(newQuantity);
     }
   };
-  
+
   // Handle adding the product to the cart
   const handleAddToCart = () => {
     // In a real app, you'd update your cart state or send the data to your API
     console.log(`Added ${quantity} of ${product.name} to cart`);
-    
+
     // Show notification
     setShowNotification(true);
-    
+
     // Hide notification after 3 seconds
     setTimeout(() => {
       setShowNotification(false);
     }, 3000);
   };
-  
+
   // Handle new review input changes
   const handleReviewInputChange = (e) => {
     const { name, value } = e.target;
@@ -116,7 +116,7 @@ const ProductView = () => {
       [name]: value
     });
   };
-  
+
   // Handle setting the rating for a new review
   const handleSetRating = (rating) => {
     setNewReview({
@@ -124,17 +124,17 @@ const ProductView = () => {
       rating
     });
   };
-  
+
   // Handle submitting a new review
   const handleSubmitReview = (e) => {
     e.preventDefault();
     // In a real app, you'd send this to your API
     console.log("New review:", newReview);
-    
+
     // Reset the form
     setNewReview({ rating: 0, comment: '', name: '' });
   };
-  
+
   // If product data is still loading
   if (!product) {
     return (
@@ -152,7 +152,7 @@ const ProductView = () => {
     <div className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
-      
+
       {/* Back button and navigation */}
       <div className="container mx-auto pt-6 px-4">
         <button
@@ -164,32 +164,32 @@ const ProductView = () => {
           </svg>
           Back to Store
         </button>
-        
+
         {/* Product Details */}
-        <div className="flex flex-col lg:flex-row gap-8 mb-12">
+        <div className="flex flex-col lg:flex-row gap-8 mb-12 max-w-full">
           {/* Product Images */}
-          <div className="lg:w-1/2">
+          <div className="lg:w-1/2 min-w-0">
             <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
               {/* Main product image */}
-              <div className="bg-gray-700/30 rounded-lg mb-4 overflow-hidden h-80 flex items-center justify-center">
-                <img 
-                  src={product.images[currentImageIndex]} 
-                  alt={product.name} 
+              <div className="bg-gray-700/30 rounded-lg mb-4 overflow-hidden h-80 flex items-center justify-center max-w-full">
+                <img
+                  src={product.images[currentImageIndex]}
+                  alt={product.name}
                   className="max-h-full max-w-full object-contain"
                 />
               </div>
-              
+
               {/* Thumbnail images */}
               <div className="flex space-x-2 overflow-x-auto pb-2">
                 {product.images.map((image, index) => (
-                  <div 
+                  <div
                     key={index}
                     className={`w-16 h-16 flex-shrink-0 rounded-md overflow-hidden cursor-pointer ${currentImageIndex === index ? 'ring-2 ring-[#f67a45]' : ''}`}
                     onClick={() => handleImageChange(index)}
                   >
-                    <img 
-                      src={image} 
-                      alt={`${product.name} - view ${index + 1}`} 
+                    <img
+                      src={image}
+                      alt={`${product.name} - view ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -197,12 +197,12 @@ const ProductView = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Product Info */}
-          <div className="lg:w-1/2">
+          <div className="lg:w-1/2 min-w-0">
             <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
               <h1 className="text-white text-2xl font-bold mb-2">{product.name}</h1>
-              
+
               {/* Rating */}
               <div className="flex items-center mb-4">
                 <div className="flex text-[#f67a45]">
@@ -221,15 +221,15 @@ const ProductView = () => {
                 <span className="text-white ml-2">{product.rating}</span>
                 <span className="text-gray-400 ml-1">({product.reviewCount} reviews)</span>
               </div>
-              
+
               {/* Price */}
               <div className="mb-6">
                 <span className="text-[#f67a45] text-2xl font-bold">${product.price}</span>
               </div>
-              
+
               {/* Description */}
               <p className="text-white mb-6">{product.description}</p>
-              
+
               {/* Features */}
               <div className="mb-6">
                 <h3 className="text-white font-semibold mb-2">Key Features:</h3>
@@ -242,7 +242,7 @@ const ProductView = () => {
                   ))}
                 </ul>
               </div>
-              
+
               {/* Stock */}
               <div className="mb-6">
                 <span className="text-white">Availability: </span>
@@ -250,11 +250,11 @@ const ProductView = () => {
                   {product.stock > 0 ? `In Stock (${product.stock} left)` : "Out of Stock"}
                 </span>
               </div>
-              
+
               {/* Quantity selector and Add to cart */}
               <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
                 <div className="flex items-center bg-[#1e1e35] rounded-lg">
-                  <button 
+                  <button
                     className="px-4 py-2 text-white hover:text-[#f67a45]"
                     onClick={() => handleQuantityChange(-1)}
                     disabled={quantity <= 1}
@@ -262,7 +262,7 @@ const ProductView = () => {
                     -
                   </button>
                   <span className="px-4 py-2 text-white">{quantity}</span>
-                  <button 
+                  <button
                     className="px-4 py-2 text-white hover:text-[#f67a45]"
                     onClick={() => handleQuantityChange(1)}
                     disabled={quantity >= product.stock}
@@ -270,8 +270,8 @@ const ProductView = () => {
                     +
                   </button>
                 </div>
-                
-                <button 
+
+                <button
                   className="flex-1 bg-[#f67a45] text-white py-2 px-6 rounded-lg hover:bg-[#e56d3d] transition-colors flex items-center justify-center gap-2"
                   onClick={handleAddToCart}
                   disabled={product.stock <= 0}
@@ -279,8 +279,8 @@ const ProductView = () => {
                   <FiShoppingCart />
                   <span>Add to Cart</span>
                 </button>
-                
-                <button 
+
+                <button
                   className="bg-transparent border border-[#f67a45]/50 text-white p-2 rounded-lg hover:bg-[#f67a45]/10 transition-colors"
                   onClick={handleToggleFavorite}
                 >
@@ -291,13 +291,13 @@ const ProductView = () => {
                   )}
                 </button>
               </div>
-              
+
               {/* Specifications */}
               <div>
                 <h3 className="text-white font-semibold mb-2">Specifications:</h3>
                 <div className="bg-[#1a1a2f] rounded-lg overflow-hidden">
                   {Object.entries(product.specifications).map(([key, value], index) => (
-                    <div 
+                    <div
                       key={key}
                       className={`flex py-2 px-4 ${index % 2 === 0 ? 'bg-[#1e1e35]' : ''}`}
                     >
@@ -310,11 +310,11 @@ const ProductView = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Reviews Section */}
         <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 mb-12">
           <h2 className="text-white text-xl font-bold mb-6">Customer Reviews</h2>
-          
+
           {/* Reviews list */}
           <div className="space-y-6 mb-8">
             {(showAllReviews ? reviews : reviews.slice(0, 3)).map(review => (
@@ -336,11 +336,11 @@ const ProductView = () => {
               </div>
             ))}
           </div>
-          
+
           {/* Show more/less reviews button */}
           {reviews.length > 3 && (
             <div className="text-center mb-8">
-              <button 
+              <button
                 className="text-[#f67a45] hover:underline"
                 onClick={() => setShowAllReviews(!showAllReviews)}
               >
@@ -348,7 +348,7 @@ const ProductView = () => {
               </button>
             </div>
           )}
-          
+
           {/* Add a review form */}
           <div>
             <h3 className="text-white font-bold mb-4">Write a Review</h3>
@@ -364,7 +364,7 @@ const ProductView = () => {
                   required
                 />
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-white mb-2">Rating</label>
                 <div className="flex text-2xl">
@@ -384,7 +384,7 @@ const ProductView = () => {
                   ))}
                 </div>
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-white mb-2">Your Review</label>
                 <textarea
@@ -395,7 +395,7 @@ const ProductView = () => {
                   required
                 ></textarea>
               </div>
-              
+
               <button
                 type="submit"
                 className="bg-[#f67a45] text-white py-2 px-6 rounded-lg hover:bg-[#e56d3d] transition-colors"
@@ -406,7 +406,7 @@ const ProductView = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Notification */}
       {showNotification && (
         <div className="fixed bottom-4 right-4 bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 shadow-lg flex items-center gap-3 animate-fade-in-up">
@@ -415,7 +415,7 @@ const ProductView = () => {
             <p className="text-white font-medium">Added to Cart!</p>
             <p className="text-gray-400 text-sm">{quantity} x {product.name}</p>
           </div>
-          <button 
+          <button
             onClick={() => setShowNotification(false)}
             className="text-gray-400 hover:text-white p-1"
           >

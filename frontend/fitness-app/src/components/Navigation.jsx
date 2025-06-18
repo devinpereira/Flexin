@@ -10,10 +10,10 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useNavigationHistory();
-  
+
   // Check if current page is login or signup page
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
-  
+
   // Close menu when location changes (user navigates to new page)
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -22,17 +22,17 @@ const Navbar = () => {
   // Handle clicks outside menu to close it
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (mobileMenuOpen && 
-          menuRef.current && 
-          !menuRef.current.contains(event.target) &&
-          !buttonRef.current.contains(event.target)) {
+      if (mobileMenuOpen &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        !buttonRef.current.contains(event.target)) {
         setMobileMenuOpen(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchstart', handleClickOutside);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
@@ -48,7 +48,7 @@ const Navbar = () => {
     if (requiresAuth && !isAuthenticated) {
       // Save the intended destination for redirect after login
       sessionStorage.setItem('redirectAfterLogin', path);
-      navigate('/login');
+      navigate('/auth/login');
     } else {
       navigate(path);
     }
@@ -58,7 +58,7 @@ const Navbar = () => {
     <>
       {/* Spacer to prevent content from hiding behind fixed navbar */}
       <div className="h-[60px] md:h-[90px]"></div>
-      
+
       {/* Fixed navigation bar */}
       <nav className="fixed top-0 md:top-5 left-0 right-0 z-50 bg-black/30 rounded-none md:rounded-[15px] backdrop-blur-[10.25px] p-2 md:mx-4 lg:mx-8">
         <div className="container mx-auto flex items-center justify-between">
@@ -67,7 +67,7 @@ const Navbar = () => {
             <Link to="/" className="py-2">
               <img src="/src/assets/logo.svg" alt="Logo" width="100" height="40" className="cursor-pointer" />
             </Link>
-            
+
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex space-x-4 lg:space-x-8 ml-4 md:ml-10 lg:ml-20">
               <Link to="/" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
@@ -95,10 +95,10 @@ const Navbar = () => {
               {isAuthPage ? (
                 // Show login/signup buttons only on auth pages
                 <>
-                  <Link to="/login" className="text-white hover:text-[#f67a45] border border-white/30 rounded-full px-6 py-1.5 transition-colors">
+                  <Link to="/auth/login" className="text-white hover:text-[#f67a45] border border-white/30 rounded-full px-6 py-1.5 transition-colors">
                     Login
                   </Link>
-                  <Link to="/signup" className="bg-[#f67a45] text-white rounded-full px-6 py-1.5 hover:bg-[#e56d3d] transition-colors">
+                  <Link to="/auth/signup" className="bg-[#f67a45] text-white rounded-full px-6 py-1.5 hover:bg-[#e56d3d] transition-colors">
                     Sign Up
                   </Link>
                 </>
@@ -112,11 +112,11 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Mobile menu toggle button */}
-            <button 
+            <button
               ref={buttonRef}
-              className="md:hidden text-white p-2 touch-manipulation" 
+              className="md:hidden text-white p-2 touch-manipulation"
               onClick={toggleMobileMenu}
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
@@ -125,9 +125,9 @@ const Navbar = () => {
             </button>
           </div>
         </div>
-        
+
         {/* Mobile menu dropdown */}
-        <div 
+        <div
           ref={menuRef}
           className={`${mobileMenuOpen ? 'max-h-110 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} 
             md:hidden overflow-hidden transition-all duration-300 ease-in-out absolute left-0 right-0 bg-black/95 backdrop-blur-md`}
@@ -149,11 +149,11 @@ const Navbar = () => {
             <Link to="/community" className="block text-white hover:text-[#f67a45] py-3 text-lg">
               COMMUNITY
             </Link>
-            
+
             <div className="flex space-x-3 pt-3">
               {isAuthPage ? (
                 // Show only signup button
-                <Link to="/signup" className="bg-[#f67a45] text-white rounded-full px-4 py-2.5 hover:bg-[#e56d3d] transition-colors text-base w-full text-center">
+                <Link to="/auth/signup" className="bg-[#f67a45] text-white rounded-full px-4 py-2.5 hover:bg-[#e56d3d] transition-colors text-base w-full text-center">
                   Sign Up
                 </Link>
               ) : (

@@ -4,38 +4,43 @@ import { FaEdit, FaTrash, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 const DayExercises = ({ exercises, day, onUpdate, onDelete }) => {
   const [editingExercise, setEditingExercise] = useState(null);
 
+  // Handle edit button click
   const handleEditClick = (exercise) => {
     setEditingExercise({ ...exercise });
   };
 
-  const handleSaveEdit = () => {
-    if (editingExercise) {
-      onUpdate(day, editingExercise.id, editingExercise);
-      setEditingExercise(null);
-    }
-  };
-
+  // Handle cancel edit
   const handleCancelEdit = () => {
     setEditingExercise(null);
   };
 
+  // Handle save edit
+  const handleSaveEdit = () => {
+    if (editingExercise) {
+      onUpdate(day, editingExercise.id, {
+        name: editingExercise.name,
+        sets: parseInt(editingExercise.sets),
+        reps: parseInt(editingExercise.reps)
+      });
+      setEditingExercise(null);
+    }
+  };
+
+  // Handle input change in edit mode
   const handleInputChange = (field, value) => {
-    if (!editingExercise) return;
-    
-    setEditingExercise(prevState => ({
-      ...prevState,
-      [field]: field === 'sets' || field === 'reps' ? parseInt(value, 10) || 0 : value
+    setEditingExercise(prev => ({
+      ...prev,
+      [field]: value
     }));
   };
 
   return (
     <div className="space-y-3 sm:space-y-4">
       {exercises.map((exercise, index) => (
-        <div 
-          key={exercise.id} 
-          className={`bg-[#1A1A2F] rounded-lg p-3 sm:p-4 ${
-            editingExercise?.id === exercise.id ? 'border-2 border-[#f67a45]' : ''
-          }`}
+        <div
+          key={exercise.id}
+          className={`bg-[#1A1A2F] rounded-lg p-3 sm:p-4 ${editingExercise?.id === exercise.id ? 'border-2 border-[#f67a45]' : ''
+            }`}
         >
           {editingExercise?.id === exercise.id ? (
             // Edit Mode - Responsive layout
@@ -49,7 +54,7 @@ const DayExercises = ({ exercises, day, onUpdate, onDelete }) => {
                   className="w-full bg-[#121225] border border-gray-700 rounded-lg px-3 py-2 text-sm sm:text-base text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-3">
                 <div>
                   <label className="block text-white/70 text-xs sm:text-sm mb-1">Sets</label>
@@ -72,7 +77,7 @@ const DayExercises = ({ exercises, day, onUpdate, onDelete }) => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-2 mt-4">
                 <button
                   onClick={handleCancelEdit}
@@ -93,9 +98,9 @@ const DayExercises = ({ exercises, day, onUpdate, onDelete }) => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center flex-1 mb-3 sm:mb-0">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden mr-3 sm:mr-4 flex-shrink-0">
-                  <img 
-                    src={exercise.image} 
-                    alt={exercise.name} 
+                  <img
+                    src={exercise.image}
+                    alt={exercise.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -103,7 +108,7 @@ const DayExercises = ({ exercises, day, onUpdate, onDelete }) => {
                     }}
                   />
                 </div>
-                
+
                 <div className="flex-1">
                   <h4 className="text-white font-bold text-sm sm:text-base">{exercise.name}</h4>
                   <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-1">
@@ -121,7 +126,7 @@ const DayExercises = ({ exercises, day, onUpdate, onDelete }) => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2 justify-end">
                 <div className="flex flex-row sm:flex-col">
                   {index > 0 && (
