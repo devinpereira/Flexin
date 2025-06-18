@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import CalculatorLayout from '../../components/Calculator/CalculatorLayout';
-import { 
-  FaChartLine, 
-  FaWeight, 
-  FaFireAlt, 
-  FaCalendarCheck, 
+import {
+  FaChartLine,
+  FaWeight,
+  FaFireAlt,
+  FaCalendarCheck,
   FaDumbbell,
   FaDownload,
   FaFilter,
@@ -61,14 +61,14 @@ const Reports = () => {
       // Generate sample data based on selected time range
       const daysInRange = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 90;
       const now = new Date();
-      
+
       // Generate dates for the range
       const dates = Array.from({ length: daysInRange }, (_, i) => {
         const date = new Date();
         date.setDate(now.getDate() - (daysInRange - i - 1));
         return date.toISOString().split('T')[0]; // YYYY-MM-DD format
       });
-      
+
       // Sample BMI data with realistic fluctuation
       const bmiData = dates.map(date => {
         // Base BMI with small random fluctuations
@@ -80,7 +80,7 @@ const Reports = () => {
           category: getCategoryForBMI(parseFloat((baseBmi + fluctuation).toFixed(1)))
         };
       });
-      
+
       // Sample BMR data
       const bmrData = dates.map(date => {
         // Base BMR with small random fluctuations
@@ -92,7 +92,7 @@ const Reports = () => {
           goal: 2200 // Calorie goal
         };
       });
-      
+
       // Sample workout data (not every day has a workout)
       const workoutData = dates.filter(() => Math.random() > 0.4).map(date => {
         return {
@@ -102,7 +102,7 @@ const Reports = () => {
           type: ['Strength', 'Cardio', 'HIIT', 'Yoga'][Math.floor(Math.random() * 4)]
         };
       });
-      
+
       // Weight history
       const weightData = dates.map(date => {
         // Base weight with small random fluctuations
@@ -113,7 +113,7 @@ const Reports = () => {
           value: parseFloat((baseWeight + fluctuation).toFixed(1))
         };
       });
-      
+
       // Schedule adherence - percent of scheduled workouts completed
       const scheduleData = {
         Monday: { scheduled: 4, completed: 3 },
@@ -124,7 +124,7 @@ const Reports = () => {
         Saturday: { scheduled: 4, completed: 2 },
         Sunday: { scheduled: 4, completed: 1 }
       };
-      
+
       // Calorie intake data
       const calorieData = dates.map(date => {
         return {
@@ -136,7 +136,7 @@ const Reports = () => {
           fat: Math.round(50 + Math.random() * 30) // 50-80g fat
         };
       });
-      
+
       // Update state with the generated data
       setUserData({
         bmiHistory: bmiData,
@@ -148,7 +148,7 @@ const Reports = () => {
       });
     }, 800);
   }, [timeRange]);
-  
+
   // Helper function to get BMI category
   const getCategoryForBMI = (bmi) => {
     if (bmi < 18.5) return 'Underweight';
@@ -156,35 +156,35 @@ const Reports = () => {
     if (bmi < 30) return 'Overweight';
     return 'Obese';
   };
-  
+
   // Helper function to format dates
   const formatDate = (dateString) => {
     const options = { month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-  
+
   // Generate summary statistics
   const generateSummary = () => {
     if (!userData.bmiHistory.length) return null;
-    
+
     // Calculate BMI change
     const firstBMI = userData.bmiHistory[0]?.value || 0;
     const lastBMI = userData.bmiHistory[userData.bmiHistory.length - 1]?.value || 0;
     const bmiChange = (lastBMI - firstBMI).toFixed(1);
-    
+
     // Calculate weight change
     const firstWeight = userData.weightHistory[0]?.value || 0;
     const lastWeight = userData.weightHistory[userData.weightHistory.length - 1]?.value || 0;
     const weightChange = (lastWeight - firstWeight).toFixed(1);
-    
+
     // Calculate workout stats
     const totalWorkouts = userData.workoutHistory.length;
     const totalDuration = userData.workoutHistory.reduce((sum, workout) => sum + workout.duration, 0);
     const totalCaloriesBurned = userData.workoutHistory.reduce((sum, workout) => sum + workout.caloriesBurned, 0);
-    
+
     // Calculate average daily calories
     const avgCalories = userData.calorieIntake.reduce((sum, day) => sum + day.intake, 0) / userData.calorieIntake.length;
-    
+
     return {
       bmiChange,
       weightChange,
@@ -194,14 +194,14 @@ const Reports = () => {
       avgCalories: Math.round(avgCalories)
     };
   };
-  
+
   const summary = generateSummary();
-  
+
   // Filter button handler
   const toggleFilter = () => {
     setIsFilterOpen(!isFilterOpen);
   };
-  
+
   // Toggle filter options
   const toggleFilterOption = (option) => {
     setFilterOptions(prev => ({
@@ -209,12 +209,12 @@ const Reports = () => {
       [option]: !prev[option]
     }));
   };
-  
+
   // Handle time range change
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);
   };
-  
+
   // Handle export reports
   const handleExport = (format) => {
     // In a real app, this would generate and download a report
@@ -245,7 +245,7 @@ const Reports = () => {
             3 Months
           </button>
         </div>
-        
+
         <div className="flex gap-2">
           <div className="relative">
             <button
@@ -255,14 +255,14 @@ const Reports = () => {
               <FaFilter size={14} />
               <span className="hidden sm:inline">Filter</span>
             </button>
-            
+
             {isFilterOpen && (
               <div className="absolute right-0 mt-2 bg-[#1A1A2F] border border-[#f67a45]/30 rounded-lg p-3 shadow-lg z-10 w-48">
                 <h4 className="text-white font-medium mb-2 text-sm">Show/Hide</h4>
                 <div className="space-y-2">
                   <label className="flex items-center text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={filterOptions.showBMI}
                       onChange={() => toggleFilterOption('showBMI')}
                       className="mr-2 accent-[#f67a45]"
@@ -270,8 +270,8 @@ const Reports = () => {
                     BMI Data
                   </label>
                   <label className="flex items-center text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={filterOptions.showBMR}
                       onChange={() => toggleFilterOption('showBMR')}
                       className="mr-2 accent-[#f67a45]"
@@ -279,8 +279,8 @@ const Reports = () => {
                     BMR & Calories
                   </label>
                   <label className="flex items-center text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={filterOptions.showWorkouts}
                       onChange={() => toggleFilterOption('showWorkouts')}
                       className="mr-2 accent-[#f67a45]"
@@ -288,8 +288,8 @@ const Reports = () => {
                     Workout Data
                   </label>
                   <label className="flex items-center text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={filterOptions.showWeight}
                       onChange={() => toggleFilterOption('showWeight')}
                       className="mr-2 accent-[#f67a45]"
@@ -300,26 +300,26 @@ const Reports = () => {
               </div>
             )}
           </div>
-          
+
           <div className="relative group">
             <button className="bg-[#1A1A2F] text-white px-3 py-2 rounded-lg flex items-center gap-2 hover:bg-[#1A1A2F]/70">
               <FaDownload size={14} />
               <span className="hidden sm:inline">Export</span>
             </button>
             <div className="absolute right-0 mt-2 bg-[#1A1A2F] border border-[#f67a45]/30 rounded-lg shadow-lg z-10 w-32 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200">
-              <button 
+              <button
                 className="block w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/20 rounded-t-lg"
                 onClick={() => handleExport('pdf')}
               >
                 PDF
               </button>
-              <button 
+              <button
                 className="block w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/20"
                 onClick={() => handleExport('csv')}
               >
                 CSV
               </button>
-              <button 
+              <button
                 className="block w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/20 rounded-b-lg"
                 onClick={() => handleExport('image')}
               >
@@ -329,7 +329,7 @@ const Reports = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Tabs Navigation */}
       <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden mb-6">
         <div className="flex overflow-x-auto">
@@ -370,7 +370,7 @@ const Reports = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Summary Stats Cards */}
       {activeTab === 'overview' && summary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -384,7 +384,7 @@ const Reports = () => {
             </p>
             <p className="text-white/50 text-xs">Over the last {timeRange === 'week' ? '7' : timeRange === 'month' ? '30' : '90'} days</p>
           </div>
-          
+
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-white/70 text-sm">Workouts Completed</h3>
@@ -395,7 +395,7 @@ const Reports = () => {
             </p>
             <p className="text-white/50 text-xs">Total duration: {Math.floor(summary.totalDuration / 60)}h {summary.totalDuration % 60}m</p>
           </div>
-          
+
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-white/70 text-sm">Calories Burned</h3>
@@ -406,7 +406,7 @@ const Reports = () => {
             </p>
             <p className="text-white/50 text-xs">From {summary.totalWorkouts} workouts</p>
           </div>
-          
+
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-white/70 text-sm">Avg. Daily Calories</h3>
@@ -419,7 +419,7 @@ const Reports = () => {
           </div>
         </div>
       )}
-      
+
       {/* Content based on active tab */}
       {activeTab === 'overview' && (
         <>
@@ -433,13 +433,13 @@ const Reports = () => {
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fill: '#fff' }}
                     tickFormatter={formatDate}
                     stroke="#666"
                   />
-                  <YAxis 
+                  <YAxis
                     yAxisId="left"
                     tick={{ fill: '#fff' }}
                     stroke="#666"
@@ -448,44 +448,44 @@ const Reports = () => {
                       Math.max(...userData.bmiHistory.map(d => d.value)) + 1
                     ]}
                   />
-                  <YAxis 
-                    yAxisId="right" 
-                    orientation="right" 
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
                     tick={{ fill: '#fff' }}
                     stroke="#666"
                     domain={[0, Math.max(...userData.weightHistory.map(d => d.value)) + 5]}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
                   />
                   <Legend />
                   {filterOptions.showBMI && (
-                    <Line 
+                    <Line
                       yAxisId="left"
-                      type="monotone" 
-                      dataKey="value" 
-                      name="BMI" 
-                      stroke="#f67a45" 
-                      activeDot={{ r: 8 }} 
+                      type="monotone"
+                      dataKey="value"
+                      name="BMI"
+                      stroke="#f67a45"
+                      activeDot={{ r: 8 }}
                     />
                   )}
                   {filterOptions.showWeight && (
-                    <Line 
+                    <Line
                       yAxisId="right"
-                      type="monotone" 
-                      dataKey="value" 
+                      type="monotone"
+                      dataKey="value"
                       data={userData.weightHistory}
-                      name="Weight (kg)" 
-                      stroke="#4ade80" 
-                      activeDot={{ r: 8 }} 
+                      name="Weight (kg)"
+                      stroke="#4ade80"
+                      activeDot={{ r: 8 }}
                     />
                   )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Recent Workout Activity */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 mb-6">
             <h3 className="text-white font-bold mb-4">Recent Workout Activity</h3>
@@ -512,7 +512,7 @@ const Reports = () => {
               </table>
             </div>
           </div>
-          
+
           {/* Schedule Adherence Overview */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <h3 className="text-white font-bold mb-4">Weekly Schedule Adherence</h3>
@@ -530,7 +530,7 @@ const Reports = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis dataKey="day" tick={{ fill: '#fff' }} stroke="#666" />
                   <YAxis tick={{ fill: '#fff' }} stroke="#666" />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
                   />
@@ -543,7 +543,7 @@ const Reports = () => {
           </div>
         </>
       )}
-      
+
       {activeTab === 'bmi' && (
         <>
           {/* BMI History Chart */}
@@ -557,18 +557,18 @@ const Reports = () => {
                 >
                   <defs>
                     <linearGradient id="colorBmi" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f67a45" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f67a45" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#f67a45" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#f67a45" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fill: '#fff' }}
                     tickFormatter={formatDate}
                     stroke="#666"
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fill: '#fff' }}
                     stroke="#666"
                     domain={[
@@ -576,24 +576,24 @@ const Reports = () => {
                       Math.max(...userData.bmiHistory.map(d => d.value)) + 1
                     ]}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
                     formatter={(value, name) => [`${value} ${name === 'BMI' ? '' : 'kg'}`, name]}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    name="BMI" 
-                    stroke="#f67a45" 
-                    fillOpacity={1} 
-                    fill="url(#colorBmi)" 
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    name="BMI"
+                    stroke="#f67a45"
+                    fillOpacity={1}
+                    fill="url(#colorBmi)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Weight History Chart */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 mb-6">
             <h3 className="text-white font-bold mb-4">Weight History</h3>
@@ -605,18 +605,18 @@ const Reports = () => {
                 >
                   <defs>
                     <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#4ade80" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#4ade80" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fill: '#fff' }}
                     tickFormatter={formatDate}
                     stroke="#666"
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fill: '#fff' }}
                     stroke="#666"
                     domain={[
@@ -624,24 +624,24 @@ const Reports = () => {
                       Math.max(...userData.weightHistory.map(d => d.value)) + 1
                     ]}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
                     formatter={(value, name) => [`${value} kg`, name]}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    name="Weight" 
-                    stroke="#4ade80" 
-                    fillOpacity={1} 
-                    fill="url(#colorWeight)" 
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    name="Weight"
+                    stroke="#4ade80"
+                    fillOpacity={1}
+                    fill="url(#colorWeight)"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* BMI Log Table */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <h3 className="text-white font-bold mb-4">BMI Log</h3>
@@ -659,13 +659,13 @@ const Reports = () => {
                 <tbody>
                   {userData.bmiHistory.slice(-10).reverse().map((entry, index, array) => {
                     const weightEntry = userData.weightHistory.find(w => w.date === entry.date);
-                    const prevWeightEntry = index < array.length - 1 
+                    const prevWeightEntry = index < array.length - 1
                       ? userData.weightHistory.find(w => w.date === array[index + 1].date)
                       : null;
-                    const weightChange = prevWeightEntry 
+                    const weightChange = prevWeightEntry
                       ? (weightEntry.value - prevWeightEntry.value).toFixed(1)
                       : '0.0';
-                    
+
                     return (
                       <tr key={entry.date} className="border-b border-gray-700 hover:bg-[#1A1A2F]">
                         <td className="px-4 py-3">{formatDate(entry.date)}</td>
@@ -674,8 +674,8 @@ const Reports = () => {
                           <span className={`px-2 py-1 rounded-full text-xs
                             ${entry.category === 'Underweight' ? 'bg-blue-500/20 text-blue-300' :
                               entry.category === 'Normal' ? 'bg-green-500/20 text-green-300' :
-                              entry.category === 'Overweight' ? 'bg-yellow-500/20 text-yellow-300' :
-                              'bg-red-500/20 text-red-300'
+                                entry.category === 'Overweight' ? 'bg-yellow-500/20 text-yellow-300' :
+                                  'bg-red-500/20 text-red-300'
                             }`}>
                             {entry.category}
                           </span>
@@ -695,7 +695,7 @@ const Reports = () => {
           </div>
         </>
       )}
-      
+
       {activeTab === 'calories' && (
         <>
           {/* Calorie Intake Chart */}
@@ -708,17 +708,17 @@ const Reports = () => {
                   margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fill: '#fff' }}
                     tickFormatter={formatDate}
                     stroke="#666"
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fill: '#fff' }}
                     stroke="#666"
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
                   />
@@ -729,7 +729,7 @@ const Reports = () => {
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Macro Distribution Chart */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 mb-6">
             <h3 className="text-white font-bold mb-4">Average Macro Distribution</h3>
@@ -756,7 +756,7 @@ const Reports = () => {
                       <Cell key="carbs" fill="#3b82f6" />
                       <Cell key="fat" fill="#f59e0b" />
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                       formatter={(value) => [`${Math.round(value)} calories`, '']}
                     />
@@ -797,7 +797,7 @@ const Reports = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Calorie Log Table */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <h3 className="text-white font-bold mb-4">Nutrition Log</h3>
@@ -834,7 +834,7 @@ const Reports = () => {
           </div>
         </>
       )}
-      
+
       {activeTab === 'workouts' && (
         <>
           {/* Workout Frequency Chart */}
@@ -858,7 +858,7 @@ const Reports = () => {
                           const week = Math.ceil((date.getDate()) / 7);
                           key = `Week ${week}`;
                         }
-                        
+
                         if (!acc[key]) acc[key] = { period: key, count: 0, duration: 0 };
                         acc[key].count += 1;
                         acc[key].duration += workout.duration;
@@ -872,7 +872,7 @@ const Reports = () => {
                   <XAxis dataKey="period" tick={{ fill: '#fff' }} stroke="#666" />
                   <YAxis yAxisId="left" tick={{ fill: '#fff' }} stroke="#666" />
                   <YAxis yAxisId="right" orientation="right" tick={{ fill: '#fff' }} stroke="#666" />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
                   />
@@ -883,7 +883,7 @@ const Reports = () => {
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Workout Types Distribution */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 mb-6">
             <h3 className="text-white font-bold mb-4">Workout Types</h3>
@@ -916,7 +916,7 @@ const Reports = () => {
                         ))
                       }
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     />
                   </PieChart>
@@ -934,8 +934,8 @@ const Reports = () => {
                     }, {})
                   ).map(([type, data], index) => (
                     <div key={type} className="flex items-center">
-                      <div className={`w-4 h-4 rounded-full mr-3`} 
-                        style={{backgroundColor: ['#f67a45', '#4ade80', '#3b82f6', '#9333ea'][index % 4]}}></div>
+                      <div className={`w-4 h-4 rounded-full mr-3`}
+                        style={{ backgroundColor: ['#f67a45', '#4ade80', '#3b82f6', '#9333ea'][index % 4] }}></div>
                       <div>
                         <p className="text-white font-medium">{type}</p>
                         <p className="text-white/60 text-sm">
@@ -948,7 +948,7 @@ const Reports = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Workout Log Table */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <h3 className="text-white font-bold mb-4">Workout Log</h3>
@@ -971,8 +971,8 @@ const Reports = () => {
                         <span className={`px-2 py-1 rounded-full text-xs
                           ${workout.type === 'Strength' ? 'bg-[#f67a45]/20 text-[#f67a45]' :
                             workout.type === 'Cardio' ? 'bg-green-500/20 text-green-300' :
-                            workout.type === 'HIIT' ? 'bg-blue-500/20 text-blue-300' :
-                            'bg-purple-500/20 text-purple-300'
+                              workout.type === 'HIIT' ? 'bg-blue-500/20 text-blue-300' :
+                                'bg-purple-500/20 text-purple-300'
                           }`}>
                           {workout.type}
                         </span>
@@ -981,8 +981,8 @@ const Reports = () => {
                       <td className="px-4 py-3">{workout.caloriesBurned} cal</td>
                       <td className="px-4 py-3">
                         <div className="w-24 bg-gray-700 rounded-full h-2.5">
-                          <div 
-                            className="bg-[#f67a45] h-2.5 rounded-full" 
+                          <div
+                            className="bg-[#f67a45] h-2.5 rounded-full"
                             style={{ width: `${(workout.caloriesBurned / workout.duration) * 10}%` }}
                           ></div>
                         </div>
@@ -995,7 +995,7 @@ const Reports = () => {
           </div>
         </>
       )}
-      
+
       {activeTab === 'adherence' && (
         <>
           {/* Schedule Adherence Chart */}
@@ -1015,7 +1015,7 @@ const Reports = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                   <XAxis dataKey="day" tick={{ fill: '#fff' }} stroke="#666" />
                   <YAxis tick={{ fill: '#fff' }} stroke="#666" />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#1A1A2F', borderColor: '#f67a45', color: '#fff' }}
                     labelStyle={{ color: '#fff' }}
                     formatter={(value, name) => [name === 'adherenceRate' ? `${value}%` : value, name === 'adherenceRate' ? 'Adherence Rate' : name]}
@@ -1028,7 +1028,7 @@ const Reports = () => {
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Daily Schedule Summary */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 mb-6">
             <h3 className="text-white font-bold mb-4">Daily Schedule Summary</h3>
@@ -1054,12 +1054,11 @@ const Reports = () => {
                     </div>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-2.5 mb-1">
-                    <div 
-                      className={`h-2.5 rounded-full ${
-                        (data.completed / data.scheduled) >= 0.8 ? 'bg-green-500' :
-                        (data.completed / data.scheduled) >= 0.6 ? 'bg-yellow-500' :
-                        'bg-red-500'
-                      }`}
+                    <div
+                      className={`h-2.5 rounded-full ${(data.completed / data.scheduled) >= 0.8 ? 'bg-green-500' :
+                          (data.completed / data.scheduled) >= 0.6 ? 'bg-yellow-500' :
+                            'bg-red-500'
+                        }`}
                       style={{ width: `${(data.completed / data.scheduled) * 100}%` }}
                     ></div>
                   </div>
@@ -1067,7 +1066,7 @@ const Reports = () => {
               ))}
             </div>
           </div>
-          
+
           {/* Missed Workouts Analysis */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4">
             <h3 className="text-white font-bold mb-4">Missed Workouts Analysis</h3>
@@ -1097,11 +1096,11 @@ const Reports = () => {
                           <span className={`px-2 py-1 rounded-full text-xs
                             ${adherenceRate >= 80 ? 'bg-green-500/20 text-green-300' :
                               adherenceRate >= 60 ? 'bg-yellow-500/20 text-yellow-300' :
-                              'bg-red-500/20 text-red-300'
+                                'bg-red-500/20 text-red-300'
                             }`}>
                             {adherenceRate >= 80 ? 'Excellent' :
                               adherenceRate >= 60 ? 'Good' :
-                              'Needs Improvement'
+                                'Needs Improvement'
                             }
                           </span>
                         </td>
