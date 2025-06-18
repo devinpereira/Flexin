@@ -34,13 +34,13 @@ export const FitnessProfileProvider = ({ children }) => {
     try {
       // Save to storage
       localStorage.setItem('fitnessProfileData', JSON.stringify(newProfileData));
-      
+
       // Update state
       setProfile(newProfileData);
-      
+
       // In a real app, this would also make an API call to update the server
       console.log('Profile data would be sent to backend:', newProfileData);
-      
+
       return true;
     } catch (error) {
       console.error('Error updating fitness profile:', error);
@@ -63,12 +63,12 @@ export const FitnessProfileProvider = ({ children }) => {
   // Calculate BMI based on profile data
   const calculateBMI = () => {
     if (!profile) return null;
-    
+
     // Convert weight to kg if needed
-    const weightInKg = profile.weightUnit === 'lbs' 
-      ? profile.weight * 0.45359237 
+    const weightInKg = profile.weightUnit === 'lbs'
+      ? profile.weight * 0.45359237
       : profile.weight;
-    
+
     // Convert height to meters
     let heightInMeters;
     if (profile.heightUnit === 'ft') {
@@ -76,7 +76,7 @@ export const FitnessProfileProvider = ({ children }) => {
     } else {
       heightInMeters = profile.height / 100;
     }
-    
+
     // Calculate BMI: weight (kg) / height² (m)
     const bmi = weightInKg / (heightInMeters * heightInMeters);
     return parseFloat(bmi.toFixed(1));
@@ -85,17 +85,17 @@ export const FitnessProfileProvider = ({ children }) => {
   // Calculate BMR based on profile data
   const calculateBMR = () => {
     if (!profile) return null;
-    
+
     // Convert weight to kg if needed
-    const weightInKg = profile.weightUnit === 'lbs' 
-      ? profile.weight * 0.45359237 
+    const weightInKg = profile.weightUnit === 'lbs'
+      ? profile.weight * 0.45359237
       : profile.weight;
-    
+
     // Convert height to cm
-    const heightInCm = profile.heightUnit === 'ft' 
-      ? profile.height * 30.48 
+    const heightInCm = profile.heightUnit === 'ft'
+      ? profile.height * 30.48
       : profile.height;
-    
+
     // Mifflin-St Jeor Equation
     let bmr;
     if (profile.gender === 'male') {
@@ -103,7 +103,7 @@ export const FitnessProfileProvider = ({ children }) => {
     } else {
       bmr = 10 * weightInKg + 6.25 * heightInCm - 5 * profile.age - 161;
     }
-    
+
     // Apply activity level multiplier
     const activityMultipliers = {
       sedentary: 1.2,
@@ -112,7 +112,7 @@ export const FitnessProfileProvider = ({ children }) => {
       active: 1.725,
       very_active: 1.9
     };
-    
+
     const adjustedBmr = Math.round(bmr * activityMultipliers[profile.activityLevel]);
     return adjustedBmr;
   };

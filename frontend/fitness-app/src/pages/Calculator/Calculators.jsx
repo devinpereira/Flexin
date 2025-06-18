@@ -12,7 +12,7 @@ const Calculators = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [fitnessProfile, setFitnessProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  
+
   // Existing state and variables
   const [selectedDay, setSelectedDay] = useState('Monday');
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -28,7 +28,7 @@ const Calculators = () => {
       try {
         // Attempt to load fitness profile from local storage
         const savedProfile = localStorage.getItem('fitnessProfileData');
-        
+
         if (savedProfile) {
           const profileData = JSON.parse(savedProfile);
           setFitnessProfile(profileData);
@@ -44,7 +44,7 @@ const Calculators = () => {
         setIsLoadingProfile(false);
       }
     };
-    
+
     // Simulate an API call delay
     setTimeout(checkFitnessProfile, 1000);
   }, []);
@@ -53,10 +53,10 @@ const Calculators = () => {
   const handleWizardComplete = (userData) => {
     setFitnessProfile(userData);
     setShowWizard(false);
-    
+
     // Show success message
     showAlert('Fitness profile successfully created!', 'success');
-    
+
     // In a real app, this would send the data to the backend
     console.log("Profile data to be sent to backend:", userData);
   };
@@ -131,7 +131,7 @@ const Calculators = () => {
   function calculateBMI(weight, height, weightUnit, heightUnit) {
     // Convert weight to kg if needed
     const weightInKg = weightUnit === 'lbs' ? weight * 0.45359237 : weight;
-    
+
     // Convert height to meters
     let heightInMeters;
     if (heightUnit === 'ft') {
@@ -139,7 +139,7 @@ const Calculators = () => {
     } else {
       heightInMeters = height / 100;
     }
-    
+
     // Calculate BMI: weight (kg) / height² (m)
     const bmi = weightInKg / (heightInMeters * heightInMeters);
     return parseFloat(bmi.toFixed(1));
@@ -151,7 +151,7 @@ const Calculators = () => {
     const height = convertHeight(profile.height, profile.heightUnit);
     const age = profile.age;
     const gender = profile.gender;
-    
+
     // Mifflin-St Jeor Equation
     let bmr;
     if (gender === 'male') {
@@ -159,7 +159,7 @@ const Calculators = () => {
     } else {
       bmr = 10 * weight + 6.25 * height - 5 * age - 161;
     }
-    
+
     // Apply activity level multiplier
     const activityMultipliers = {
       sedentary: 1.2,
@@ -168,7 +168,7 @@ const Calculators = () => {
       active: 1.725,
       very_active: 1.9
     };
-    
+
     const adjustedBmr = Math.round(bmr * activityMultipliers[profile.activityLevel]);
     return adjustedBmr;
   }
@@ -216,16 +216,16 @@ const Calculators = () => {
     <CalculatorLayout pageTitle="Training">
       {/* Show wizard if needed */}
       {showWizard && (
-        <FitnessProfileWizard 
-          onComplete={handleWizardComplete} 
+        <FitnessProfileWizard
+          onComplete={handleWizardComplete}
           onCancel={() => setShowWizard(false)}
         />
       )}
 
       {/* Debug button for testing - remove in production */}
       {!showWizard && process.env.NODE_ENV === 'development' && (
-        <button 
-          onClick={resetFitnessProfile} 
+        <button
+          onClick={resetFitnessProfile}
           className="mb-4 px-3 py-1 bg-red-500 text-white rounded-md text-sm"
         >
           Reset Profile (Debug)
@@ -242,8 +242,8 @@ const Calculators = () => {
                 <button
                   key={day}
                   className={`px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-sm sm:text-base ${selectedDay === day
-                      ? 'bg-[#f67a45] text-white font-medium'
-                      : 'text-white hover:bg-[#1A1A2F]'
+                    ? 'bg-[#f67a45] text-white font-medium'
+                    : 'text-white hover:bg-[#1A1A2F]'
                     }`}
                   onClick={() => setSelectedDay(day)}
                 >
@@ -375,9 +375,9 @@ const Calculators = () => {
       {alertOpen && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-up">
           <div className={`rounded-lg shadow-lg px-4 sm:px-6 py-3 sm:py-4 flex items-center ${alertType === 'success' ? 'bg-green-600' :
-              alertType === 'error' ? 'bg-red-600' :
-                alertType === 'warning' ? 'bg-yellow-600' :
-                  'bg-blue-600'
+            alertType === 'error' ? 'bg-red-600' :
+              alertType === 'warning' ? 'bg-yellow-600' :
+                'bg-blue-600'
             }`}>
             <div className={`mr-3 sm:mr-4 rounded-full p-1 ${alertType === 'success' ? 'bg-green-500' :
               alertType === 'error' ? 'bg-red-500' :

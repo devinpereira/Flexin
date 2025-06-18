@@ -50,27 +50,27 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
   // Handle form field changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     setUserData(prev => {
       // Handle checkboxes (multi-select)
       if (type === 'checkbox') {
         if (name === 'goals') {
           return {
             ...prev,
-            goals: checked 
+            goals: checked
               ? [...prev.goals, value]
               : prev.goals.filter(goal => goal !== value)
           };
         } else if (name === 'healthConditions') {
           return {
             ...prev,
-            healthConditions: checked 
+            healthConditions: checked
               ? [...prev.healthConditions, value]
               : prev.healthConditions.filter(condition => condition !== value)
           };
         }
       }
-      
+
       // Handle regular inputs
       return {
         ...prev,
@@ -90,29 +90,29 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
   // Validate step based on current step
   const validateStep = () => {
     let stepErrors = {};
-    
+
     switch (step) {
       case 1: // Experience level
         // No validation needed for step 1
         break;
-        
+
       case 2: // Personal metrics
         if (!userData.age) stepErrors.age = "Age is required";
         else if (userData.age < 13 || userData.age > 100) stepErrors.age = "Age must be between 13 and 100";
-        
+
         if (!userData.weight) stepErrors.weight = "Weight is required";
         else if (userData.weight <= 0) stepErrors.weight = "Weight must be greater than 0";
-        
+
         if (!userData.height) stepErrors.height = "Height is required";
         else if (userData.height <= 0) stepErrors.height = "Height must be greater than 0";
         break;
-        
+
       case 3: // Goals and activity
         if (userData.goals.length === 0) stepErrors.goals = "Select at least one fitness goal";
-        
+
         if (!userData.workoutDaysPerWeek) stepErrors.workoutDaysPerWeek = "Please select how many days per week";
         break;
-        
+
       case 4: // Final step - verify all data
         // Comprehensive validation before submission
         if (!userData.age) stepErrors.age = "Age is required";
@@ -120,11 +120,11 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
         if (!userData.height) stepErrors.height = "Height is required";
         if (userData.goals.length === 0) stepErrors.goals = "Select at least one fitness goal";
         break;
-        
+
       default:
         break;
     }
-    
+
     setErrors(stepErrors);
     return Object.keys(stepErrors).length === 0;
   };
@@ -150,13 +150,13 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
   // Submit the form data
   const submitForm = () => {
     setIsSubmitting(true);
-    
+
     // In a real app, this would be an API call
     // Simulating an API call with setTimeout
     setTimeout(() => {
       // Store in local storage to persist between sessions
       localStorage.setItem('fitnessProfileData', JSON.stringify(userData));
-      
+
       // Call the onComplete callback with the user data
       onComplete(userData);
       setIsSubmitting(false);
@@ -195,8 +195,8 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
         <div className="bg-[#1A1A2F] p-4 sm:p-6 relative">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-white text-lg sm:text-xl font-bold">Fitness Profile Setup</h2>
-            <button 
-              onClick={onCancel} 
+            <button
+              onClick={onCancel}
               className="text-white/70 hover:text-white"
               aria-label="Close"
             >
@@ -205,7 +205,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
               </svg>
             </button>
           </div>
-          
+
           <div className="relative pt-1">
             <div className="flex mb-2 items-center justify-between">
               <div>
@@ -229,7 +229,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
             </div>
           </div>
         </div>
-        
+
         {/* Form content with steps */}
         <div className="p-4 sm:p-6 overflow-y-auto max-h-[70vh]">
           <AnimatePresence mode="wait" custom={step}>
@@ -246,19 +246,18 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
               >
                 <h3 className="text-white text-xl font-bold">What's your fitness experience level?</h3>
                 <p className="text-white/70">Select the option that best describes your current fitness level</p>
-                
+
                 <div className="space-y-3 pt-2">
                   <button
                     type="button"
-                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'beginner' 
-                      ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'beginner'
+                      ? 'border-[#f67a45] bg-[#f67a45]/10'
                       : 'border-white/10 hover:bg-[#1A1A2F]'} 
                       flex items-center transition-colors`}
                     onClick={() => handleRadioChange('experience', 'beginner')}
                   >
-                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${
-                      userData.experience === 'beginner' ? 'border-[#f67a45]' : 'border-white/30'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'beginner' ? 'border-[#f67a45]' : 'border-white/30'
+                      }`}>
                       {userData.experience === 'beginner' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
                     </div>
                     <div className="flex-1 text-left">
@@ -266,18 +265,17 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                       <p className="text-white/60 text-sm">New to fitness or returning after a long break</p>
                     </div>
                   </button>
-                  
+
                   <button
                     type="button"
-                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'intermediate' 
-                      ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'intermediate'
+                      ? 'border-[#f67a45] bg-[#f67a45]/10'
                       : 'border-white/10 hover:bg-[#1A1A2F]'} 
                       flex items-center transition-colors`}
                     onClick={() => handleRadioChange('experience', 'intermediate')}
                   >
-                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${
-                      userData.experience === 'intermediate' ? 'border-[#f67a45]' : 'border-white/30'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'intermediate' ? 'border-[#f67a45]' : 'border-white/30'
+                      }`}>
                       {userData.experience === 'intermediate' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
                     </div>
                     <div className="flex-1 text-left">
@@ -285,18 +283,17 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                       <p className="text-white/60 text-sm">Exercise regularly with some experience</p>
                     </div>
                   </button>
-                  
+
                   <button
                     type="button"
-                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'advanced' 
-                      ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'advanced'
+                      ? 'border-[#f67a45] bg-[#f67a45]/10'
                       : 'border-white/10 hover:bg-[#1A1A2F]'} 
                       flex items-center transition-colors`}
                     onClick={() => handleRadioChange('experience', 'advanced')}
                   >
-                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${
-                      userData.experience === 'advanced' ? 'border-[#f67a45]' : 'border-white/30'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'advanced' ? 'border-[#f67a45]' : 'border-white/30'
+                      }`}>
                       {userData.experience === 'advanced' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
                     </div>
                     <div className="flex-1 text-left">
@@ -307,7 +304,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                 </div>
               </motion.div>
             )}
-            
+
             {step === 2 && (
               <motion.div
                 key="step2"
@@ -321,37 +318,37 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
               >
                 <h3 className="text-white text-xl font-bold">Personal Information</h3>
                 <p className="text-white/70">These metrics help us calculate your BMI, BMR and other personalized fitness recommendations</p>
-                
+
                 <div className="space-y-4 pt-2">
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">Gender</label>
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'male' 
-                          ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'male'
+                          ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           text-center transition-colors`}
                         onClick={() => handleRadioChange('gender', 'male')}
                       >
                         <span className={userData.gender === 'male' ? 'text-white' : 'text-white/70'}>Male</span>
                       </button>
-                      
+
                       <button
                         type="button"
-                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'female' 
-                          ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'female'
+                          ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           text-center transition-colors`}
                         onClick={() => handleRadioChange('gender', 'female')}
                       >
                         <span className={userData.gender === 'female' ? 'text-white' : 'text-white/70'}>Female</span>
                       </button>
-                      
+
                       <button
                         type="button"
-                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'other' 
-                          ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'other'
+                          ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           text-center transition-colors`}
                         onClick={() => handleRadioChange('gender', 'other')}
@@ -360,7 +357,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
                       Age
@@ -377,7 +374,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                     />
                     {errors.age && <p className="text-red-400 text-xs mt-1">{errors.age}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
                       Weight
@@ -403,7 +400,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                     </div>
                     {errors.weight && <p className="text-red-400 text-xs mt-1">{errors.weight}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
                       Height
@@ -432,7 +429,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                 </div>
               </motion.div>
             )}
-            
+
             {step === 3 && (
               <motion.div
                 key="step3"
@@ -446,15 +443,15 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
               >
                 <h3 className="text-white text-xl font-bold">Your Fitness Goals</h3>
                 <p className="text-white/70">Select your primary fitness goals (select all that apply)</p>
-                
+
                 <div className="space-y-4 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {fitnessGoalOptions.map(goal => (
-                      <label 
+                      <label
                         key={goal.id}
                         className={`p-4 rounded-xl border cursor-pointer 
-                          ${userData.goals.includes(goal.id) 
-                            ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                          ${userData.goals.includes(goal.id)
+                            ? 'border-[#f67a45] bg-[#f67a45]/10'
                             : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           flex items-center transition-colors`}
                       >
@@ -466,9 +463,8 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                           onChange={handleChange}
                           className="sr-only"
                         />
-                        <div className={`w-5 h-5 rounded flex items-center justify-center mr-3 ${
-                          userData.goals.includes(goal.id) ? 'bg-[#f67a45]' : 'border border-white/30'
-                        }`}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center mr-3 ${userData.goals.includes(goal.id) ? 'bg-[#f67a45]' : 'border border-white/30'
+                          }`}>
                           {userData.goals.includes(goal.id) && <FaCheck className="text-white text-xs" />}
                         </div>
                         <div className="flex items-center">
@@ -479,7 +475,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                     ))}
                   </div>
                   {errors.goals && <p className="text-red-400 text-xs mt-1">{errors.goals}</p>}
-                  
+
                   <div className="pt-2">
                     <label className="block text-white text-sm font-medium mb-2">
                       How many days per week do you want to work out?
@@ -489,8 +485,8 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                         <button
                           key={day}
                           type="button"
-                          className={`w-10 h-10 rounded-full ${userData.workoutDaysPerWeek === day 
-                            ? 'bg-[#f67a45] text-white' 
+                          className={`w-10 h-10 rounded-full ${userData.workoutDaysPerWeek === day
+                            ? 'bg-[#f67a45] text-white'
                             : 'bg-[#1A1A2F] text-white hover:bg-[#f67a45]/20'}`}
                           onClick={() => handleRadioChange('workoutDaysPerWeek', day)}
                         >
@@ -500,7 +496,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                     </div>
                     {errors.workoutDaysPerWeek && <p className="text-red-400 text-xs mt-1">{errors.workoutDaysPerWeek}</p>}
                   </div>
-                  
+
                   <div className="pt-2">
                     <label className="block text-white text-sm font-medium mb-2">
                       Preferred workout duration
@@ -515,8 +511,8 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                         <button
                           key={option.id}
                           type="button"
-                          className={`p-2 rounded-lg ${userData.preferredWorkoutDuration === option.id 
-                            ? 'bg-[#f67a45] text-white' 
+                          className={`p-2 rounded-lg ${userData.preferredWorkoutDuration === option.id
+                            ? 'bg-[#f67a45] text-white'
                             : 'bg-[#1A1A2F] text-white hover:bg-[#f67a45]/20'}`}
                           onClick={() => handleRadioChange('preferredWorkoutDuration', option.id)}
                         >
@@ -528,7 +524,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                 </div>
               </motion.div>
             )}
-            
+
             {step === 4 && (
               <motion.div
                 key="step4"
@@ -542,7 +538,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
               >
                 <h3 className="text-white text-xl font-bold">Final Details</h3>
                 <p className="text-white/70">Just a few more details to help personalize your experience</p>
-                
+
                 <div className="space-y-4 pt-2">
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">Activity Level</label>
@@ -559,22 +555,21 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                       <option value="very_active" className="bg-[#1A1A2F]">Very Active (very hard exercise & physical job)</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">Equipment Access</label>
                     <div className="flex flex-col space-y-2">
                       <button
                         type="button"
-                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'none' 
-                          ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'none'
+                          ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           transition-colors`}
                         onClick={() => handleRadioChange('equipmentAccess', 'none')}
                       >
                         <div className="flex items-center">
-                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${
-                            userData.equipmentAccess === 'none' ? 'border-[#f67a45]' : 'border-white/30'
-                          }`}>
+                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'none' ? 'border-[#f67a45]' : 'border-white/30'
+                            }`}>
                             {userData.equipmentAccess === 'none' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
                           </div>
                           <div>
@@ -583,19 +578,18 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                           </div>
                         </div>
                       </button>
-                      
+
                       <button
                         type="button"
-                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'limited' 
-                          ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'limited'
+                          ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           transition-colors`}
                         onClick={() => handleRadioChange('equipmentAccess', 'limited')}
                       >
                         <div className="flex items-center">
-                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${
-                            userData.equipmentAccess === 'limited' ? 'border-[#f67a45]' : 'border-white/30'
-                          }`}>
+                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'limited' ? 'border-[#f67a45]' : 'border-white/30'
+                            }`}>
                             {userData.equipmentAccess === 'limited' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
                           </div>
                           <div>
@@ -604,19 +598,18 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                           </div>
                         </div>
                       </button>
-                      
+
                       <button
                         type="button"
-                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'full_gym' 
-                          ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'full_gym'
+                          ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           transition-colors`}
                         onClick={() => handleRadioChange('equipmentAccess', 'full_gym')}
                       >
                         <div className="flex items-center">
-                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${
-                            userData.equipmentAccess === 'full_gym' ? 'border-[#f67a45]' : 'border-white/30'
-                          }`}>
+                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'full_gym' ? 'border-[#f67a45]' : 'border-white/30'
+                            }`}>
                             {userData.equipmentAccess === 'full_gym' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
                           </div>
                           <div>
@@ -627,16 +620,16 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">Health Conditions (if any)</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {healthConditionOptions.map(condition => (
-                        <label 
+                        <label
                           key={condition.id}
                           className={`p-2 rounded-lg border cursor-pointer 
                             ${userData.healthConditions.includes(condition.id) || (condition.id === 'none' && userData.healthConditions.length === 0)
-                              ? 'border-[#f67a45] bg-[#f67a45]/10' 
+                              ? 'border-[#f67a45] bg-[#f67a45]/10'
                               : 'border-white/10 hover:bg-[#1A1A2F]'} 
                             flex items-center transition-colors`}
                         >
@@ -660,14 +653,13 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                             }}
                             className="sr-only"
                           />
-                          <div className={`w-4 h-4 rounded flex items-center justify-center mr-2 ${
-                            (userData.healthConditions.includes(condition.id) || 
-                             (condition.id === 'none' && userData.healthConditions.length === 0))
-                              ? 'bg-[#f67a45]' 
+                          <div className={`w-4 h-4 rounded flex items-center justify-center mr-2 ${(userData.healthConditions.includes(condition.id) ||
+                              (condition.id === 'none' && userData.healthConditions.length === 0))
+                              ? 'bg-[#f67a45]'
                               : 'border border-white/30'
-                          }`}>
-                            {(userData.healthConditions.includes(condition.id) || 
-                              (condition.id === 'none' && userData.healthConditions.length === 0)) && 
+                            }`}>
+                            {(userData.healthConditions.includes(condition.id) ||
+                              (condition.id === 'none' && userData.healthConditions.length === 0)) &&
                               <FaCheck className="text-white text-xs" />}
                           </div>
                           <span className="text-white text-sm">{condition.label}</span>
@@ -676,10 +668,10 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-6 pt-4 border-t border-white/10">
                   <p className="text-white/70 text-sm mb-4">
-                    By clicking "Complete Setup", your fitness profile will be saved. 
+                    By clicking "Complete Setup", your fitness profile will be saved.
                     This data will be used to personalize your experience in the app.
                   </p>
                 </div>
@@ -687,7 +679,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
             )}
           </AnimatePresence>
         </div>
-        
+
         {/* Footer with navigation buttons */}
         <div className="bg-[#1A1A2F] p-4 sm:p-6 flex justify-between items-center border-t border-white/10">
           <button
@@ -698,7 +690,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
             <FaArrowLeft className="text-sm" />
             <span>{step > 1 ? 'Previous' : 'Cancel'}</span>
           </button>
-          
+
           <button
             type="button"
             onClick={nextStep}
