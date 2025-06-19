@@ -28,13 +28,11 @@ const Signup = () => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState('signup'); // 'signup' | 'otp'
-  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [signupPayload, setSignupPayload] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [countryCode, setCountryCode] = useState('+1');
 
   // Handle SignUp Form Submit
   const handleSignUp = async (e) => {
@@ -75,32 +73,23 @@ const Signup = () => {
       dob: `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`,
       role: 'user'
     });
+    
+    // Move to OTP step and simulate sending OTP to email
     setStep('otp');
-  };
-
-  // Simulate sending OTP (replace with real API in production)
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
-    // Validate phone number with country code
-    const fullPhone = `${countryCode}${phone.replace(/^0+/, '')}`;
-    if (!phone || !/^\d{5,15}$/.test(phone)) {
-      setError("Please enter a valid phone number");
-      return;
-    }
-    setError('');
     setIsLoading(true);
-    // Simulate API call
+    
+    // Simulate API call to send OTP to email
     setTimeout(() => {
       setOtpSent(true);
       setIsLoading(false);
     }, 800);
   };
 
-  // Simulate verifying OTP and completing signup
+  // Verify OTP and complete signup
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     if (!otp || otp.length < 4) {
-      setError("Please enter the OTP sent to your phone");
+      setError("Please enter the OTP sent to your email");
       return;
     }
     setError('');
@@ -109,10 +98,9 @@ const Signup = () => {
     // Simulate OTP verification
     setTimeout(async () => {
       try {
-        // Attach phone to signup payload and call signup API
+        // Call signup API with the collected data
         const response = await axiosInstance.post(API_PATHS.AUTH.SIGNUP, {
-          ...signupPayload,
-          phone
+          ...signupPayload
         });
         const { token, user } = response.data;
         if (token) {
@@ -342,60 +330,36 @@ const Signup = () => {
               </motion.div>
             </form>
           ) : (
-            <form className="space-y-3 sm:space-y-4" onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}>
+            <form className="space-y-3 sm:space-y-4" onSubmit={handleVerifyOtp}>
               <motion.div variants={itemVariants}>
-                <label className="block text-white text-sm font-medium mb-2">
-                  Phone Number
-                </label>
-                <div className="flex gap-2">
-                  <select
-                    value={countryCode}
-                    onChange={e => setCountryCode(e.target.value)}
-                    className="bg-transparent border border-white/30 rounded-lg px-2 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#F16436] max-w-[110px]"
-                    disabled={otpSent}
-                  >
-                    {countryCodes.map(c => (
-                      <option key={c.code} value={c.dial_code} className="bg-[#040d1a]">
-                        {c.name} {c.dial_code}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={({ target }) => setPhone(target.value.replace(/\D/g, ''))}
-                    className="flex-1 px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
-                              placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
-                              transform transition duration-300 focus:scale-[1.02]"
-                    placeholder="Enter your phone number"
-                    required
-                    disabled={otpSent}
-                  />
+                <div className="text-center mb-4">
+                  <p className="text-white">
+                    We've sent a verification code to your email:
+                  </p>
+                  <p className="text-[#f67a45] font-medium">{email}</p>
                 </div>
+
+                <label className="block text-white text-sm font-medium mb-2">
+                  Enter Verification Code
+                </label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={({ target }) => setOtp(target.value)}
+                  className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
+                          placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
+                          transform transition duration-300 focus:scale-[1.02]"
+                  placeholder="Enter OTP code"
+                  required
+                />
               </motion.div>
-              {otpSent && (
-                <motion.div variants={itemVariants}>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    OTP Code
-                  </label>
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={({ target }) => setOtp(target.value)}
-                    className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white 
-                              placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]
-                              transform transition duration-300 focus:scale-[1.02]"
-                    placeholder="Enter the OTP sent to your phone"
-                    required
-                  />
-                </motion.div>
-              )}
+              
               <motion.button
                 variants={itemVariants}
                 type="submit"
                 className="w-full bg-[#F16436] text-white py-3 px-4 rounded-lg font-medium 
-                          hover:bg-opacity-90 active:bg-opacity-100 transition duration-300
-                          transform active:scale-95 flex justify-center items-center"
+                        hover:bg-opacity-90 active:bg-opacity-100 transition duration-300
+                        transform active:scale-95 flex justify-center items-center"
                 whileTap={{ scale: 0.97 }}
                 disabled={isLoading}
               >
@@ -405,8 +369,25 @@ const Signup = () => {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 ) : null}
-                {otpSent ? (isLoading ? 'Verifying...' : 'Verify OTP') : (isLoading ? 'Sending OTP...' : 'Send OTP')}
+                {isLoading ? 'Verifying...' : 'Verify & Complete Signup'}
               </motion.button>
+              
+              <motion.div variants={itemVariants} className="text-center">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setOtp('');
+                    setIsLoading(true);
+                    setTimeout(() => {
+                      setIsLoading(false);
+                    }, 800);
+                  }}
+                  className="text-white/70 hover:text-white text-sm transition-colors duration-300"
+                >
+                  Didn't receive the code? <span className="underline">Resend</span>
+                </button>
+              </motion.div>
+              
               <motion.div
                 variants={itemVariants}
                 className="text-center"
