@@ -25,7 +25,7 @@ const Explore = () => {
         setIsMobileFiltersOpen(false);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -47,8 +47,8 @@ const Explore = () => {
 
   // Filter trainers based on search query and specialty
   const filteredTrainers = allTrainers.filter(trainer => {
-    const matchesSearch = trainer.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         trainer.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = trainer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      trainer.specialty.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSpecialty = selectedSpecialty === 'All' || trainer.specialty === selectedSpecialty;
     return matchesSearch && matchesSpecialty;
   });
@@ -76,32 +76,30 @@ const Explore = () => {
     <div className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
-      
+
       {/* Mobile Menu Toggle Button - Only visible on mobile */}
       <div className="md:hidden fixed bottom-6 right-6 z-50">
-        <button 
+        <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="bg-[#f67a45] text-white p-4 rounded-full shadow-lg"
         >
           {isMobileMenuOpen ? <FaUserFriends size={24} /> : <MdExplore size={24} />}
         </button>
       </div>
-      
+
       {/* Mobile Navigation Menu - Slide up from bottom when open */}
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${
-        isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
-      }`}>
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
+        }`}>
         <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
-        
+
         <div className="px-6 pb-8 pt-2">
           <div className="flex flex-col space-y-4">
             <a
               href="#"
-              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
-                activeSection === 'My Trainers'
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'My Trainers'
                   ? 'bg-[#f67a45] text-white font-medium'
                   : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-              }`}
+                }`}
               onClick={(e) => {
                 e.preventDefault();
                 handleNavigation('My Trainers');
@@ -110,14 +108,13 @@ const Explore = () => {
               <FaUserFriends size={20} />
               <span>My Trainers</span>
             </a>
-            
+
             <a
               href="#"
-              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
-                activeSection === 'Explore'
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'Explore'
                   ? 'bg-[#f67a45] text-white font-medium'
                   : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-              }`}
+                }`}
               onClick={(e) => {
                 e.preventDefault();
                 setActiveSection('Explore');
@@ -126,7 +123,7 @@ const Explore = () => {
               <MdExplore size={20} />
               <span>Explore</span>
             </a>
-            
+
             <div className="border-t border-white/20 pt-4 mt-4">
               <div className="flex items-center gap-3 px-6 py-2">
                 <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
@@ -136,7 +133,7 @@ const Explore = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="container mx-auto pt-4 sm:pt-8 px-4">
         <div className="flex flex-col">
           {/* Left Navigation - Hidden on mobile, visible on md screens and up */}
@@ -146,11 +143,10 @@ const Explore = () => {
                 {/* My Trainers */}
                 <a
                   href="#"
-                  className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${
-                    activeSection === 'My Trainers'
+                  className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'My Trainers'
                       ? 'bg-[#f67a45] text-white font-medium'
                       : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                  }`}
+                    }`}
                   onClick={(e) => {
                     e.preventDefault();
                     handleNavigation('My Trainers');
@@ -159,15 +155,14 @@ const Explore = () => {
                   <FaUserFriends size={20} />
                   <span>My Trainers</span>
                 </a>
-                
+
                 {/* Explore */}
                 <a
                   href="#"
-                  className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${
-                    activeSection === 'Explore'
+                  className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'Explore'
                       ? 'bg-[#f67a45] text-white font-medium'
                       : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                  }`}
+                    }`}
                   onClick={(e) => {
                     e.preventDefault();
                     setActiveSection('Explore');
@@ -186,12 +181,12 @@ const Explore = () => {
               </div>
             </nav>
           </div>
-          
+
           {/* Main Content */}
           <div className="w-full md:ml-[275px] lg:ml-[300px]">
             <div className="py-4">
               <h2 className="text-white text-xl sm:text-2xl font-bold mb-4">Discover New Trainers</h2>
-              
+
               {/* Search and Filter - Responsive version */}
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-6 mb-6">
                 {/* Mobile filter toggle */}
@@ -206,14 +201,14 @@ const Explore = () => {
                     />
                     <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm" />
                   </div>
-                  <button 
+                  <button
                     onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
                     className="ml-2 bg-[#1A1A2F] px-3 py-2 rounded-lg text-white text-sm"
                   >
                     Filter
                   </button>
                 </div>
-                
+
                 {/* Filters - collapsed on mobile unless opened */}
                 <div className={`${isMobileFiltersOpen ? 'block' : 'hidden'} md:block`}>
                   <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -227,7 +222,7 @@ const Explore = () => {
                       />
                     </div>
                     <div className="w-full md:w-auto">
-                      <select 
+                      <select
                         value={selectedSpecialty}
                         onChange={(e) => setSelectedSpecialty(e.target.value)}
                         className="w-full bg-[#1A1A2F] border border-gray-700 rounded-lg px-4 py-2 md:py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
@@ -240,14 +235,14 @@ const Explore = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Results count */}
               <div className="mb-3">
                 <p className="text-white/70 text-sm">
                   {filteredTrainers.length} trainer{filteredTrainers.length !== 1 ? 's' : ''} found
                 </p>
               </div>
-              
+
               {/* Trainers Grid - Responsive */}
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-6 mb-6 sm:mb-8">
                 {filteredTrainers.length > 0 ? (
@@ -255,13 +250,13 @@ const Explore = () => {
                     {filteredTrainers.map(trainer => (
                       <div key={trainer.id} className="bg-[#1A1A2F] rounded-lg p-3 sm:p-4 flex flex-col items-center">
                         {/* Image - responsive sizing */}
-                        <div 
+                        <div
                           className="w-full h-32 sm:h-40 mb-3 rounded-lg overflow-hidden cursor-pointer"
                           onClick={() => handleViewTrainerProfile(trainer.id)}
                         >
-                          <img 
-                            src={trainer.image} 
-                            alt={trainer.name} 
+                          <img
+                            src={trainer.image}
+                            alt={trainer.name}
                             className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
                             onError={(e) => {
                               e.target.onerror = null;
@@ -269,30 +264,30 @@ const Explore = () => {
                             }}
                           />
                         </div>
-                        
-                        <h3 
+
+                        <h3
                           className="text-white text-base sm:text-lg font-medium mb-0.5 sm:mb-1 hover:text-[#f67a45] cursor-pointer"
                           onClick={() => handleViewTrainerProfile(trainer.id)}
                         >
                           {trainer.name}
                         </h3>
-                        
+
                         <p className="text-gray-400 text-xs sm:text-sm mb-1">{trainer.specialty}</p>
-                        
+
                         <div className="flex items-center text-[#f67a45] mb-3 text-sm">
                           <span className="mr-1">★</span>
                           <span>{trainer.rating}</span>
                         </div>
-                        
+
                         {/* Buttons - stack on small mobile, side by side otherwise */}
                         <div className="flex flex-col sm:flex-row w-full gap-2">
-                          <button 
+                          <button
                             onClick={() => handleViewTrainerProfile(trainer.id)}
                             className="bg-transparent border border-[#f67a45]/50 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full hover:bg-[#f67a45]/10 transition-colors text-sm sm:text-base flex-1"
                           >
                             Profile
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleAddTrainer(trainer.id)}
                             className="bg-[#f67a45] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full hover:bg-[#e56d3d] transition-colors text-sm sm:text-base flex-1 flex items-center justify-center gap-1"
                           >
@@ -306,7 +301,7 @@ const Explore = () => {
                 ) : (
                   <div className="bg-[#1A1A2F] rounded-lg p-8 text-center">
                     <p className="text-white/70">No trainers found matching your search criteria.</p>
-                    <button 
+                    <button
                       onClick={() => {
                         setSearchQuery('');
                         setSelectedSpecialty('All');
@@ -318,7 +313,7 @@ const Explore = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* Extra padding at bottom for mobile to account for the floating button */}
               <div className="h-24 md:h-0"></div>
             </div>

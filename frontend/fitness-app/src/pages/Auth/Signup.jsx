@@ -73,11 +73,11 @@ const Signup = () => {
       dob: `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`,
       role: 'user'
     });
-    
+
     // Move to OTP step and simulate sending OTP to email
     setStep('otp');
     setIsLoading(true);
-    
+
     // Simulate API call to send OTP to email
     setTimeout(() => {
       setOtpSent(true);
@@ -353,7 +353,7 @@ const Signup = () => {
                   required
                 />
               </motion.div>
-              
+
               <motion.button
                 variants={itemVariants}
                 type="submit"
@@ -371,9 +371,9 @@ const Signup = () => {
                 ) : null}
                 {isLoading ? 'Verifying...' : 'Verify & Complete Signup'}
               </motion.button>
-              
+
               <motion.div variants={itemVariants} className="text-center">
-                <button 
+                <button
                   type="button"
                   onClick={() => {
                     setOtp('');
@@ -387,7 +387,7 @@ const Signup = () => {
                   Didn't receive the code? <span className="underline">Resend</span>
                 </button>
               </motion.div>
-              
+
               <motion.div
                 variants={itemVariants}
                 className="text-center"

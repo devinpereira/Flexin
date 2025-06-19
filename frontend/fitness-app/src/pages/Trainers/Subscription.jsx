@@ -25,7 +25,7 @@ const Subscription = () => {
     { id: 1, userName: 'Alex Johnson', rating: 4.5, text: 'Great trainer! Very knowledgeable and motivating.', date: '2025-03-01' },
     { id: 2, userName: 'Sarah Miller', rating: 5, text: 'John has helped me achieve my fitness goals faster than I expected. Highly recommended!', date: '2025-02-15' }
   ]);
-  
+
   // Trainer data state (now with useState to allow updates)
   const [trainer, setTrainer] = useState({
     id: trainerId,
@@ -74,7 +74,7 @@ const Subscription = () => {
       ]
     }
   };
-  
+
   // Handle window resize to close mobile menu on larger screens
   useEffect(() => {
     const handleResize = () => {
@@ -82,7 +82,7 @@ const Subscription = () => {
         setIsMobileMenuOpen(false);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -97,7 +97,7 @@ const Subscription = () => {
     // In a real app, this would interact with a payment API
     setSuccessMessage(`You've successfully subscribed to the ${subscriptionPackages[selectedPackage].name}!`);
     setShowSuccessModal(true);
-    
+
     // Update trainer data
     setTrainer(prev => ({
       ...prev,
@@ -111,7 +111,7 @@ const Subscription = () => {
     setSuccessMessage('Your subscription has been cancelled successfully.');
     setShowCancelModal(false);
     setShowSuccessModal(true);
-    
+
     // Update trainer data
     setTrainer(prev => ({
       ...prev,
@@ -122,7 +122,7 @@ const Subscription = () => {
   // Handle review submission
   const handleSubmitReview = () => {
     if (rating === 0 || !reviewText.trim()) return;
-    
+
     const newReview = {
       id: reviews.length + 1,
       userName: 'You', // In a real app, this would be the logged-in user's name
@@ -130,18 +130,18 @@ const Subscription = () => {
       text: reviewText,
       date: new Date().toISOString().substring(0, 10)
     };
-    
+
     setReviews([newReview, ...reviews]);
     setShowReviewModal(false);
     setSuccessMessage('Your review has been submitted successfully!');
     setShowSuccessModal(true);
     setRating(0);
     setReviewText('');
-    
+
     // Update trainer rating
     const totalRatings = trainer.reviewCount + 1;
     const newRating = ((trainer.rating * trainer.reviewCount) + rating) / totalRatings;
-    
+
     setTrainer(prev => ({
       ...prev,
       rating: parseFloat(newRating.toFixed(1)),
@@ -154,7 +154,7 @@ const Subscription = () => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
-    
+
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(<FaStar key={i} className="text-[#f67a45]" />);
@@ -164,7 +164,7 @@ const Subscription = () => {
         stars.push(<FaRegStar key={i} className="text-[#f67a45]" />);
       }
     }
-    
+
     return <div className="flex">{stars}</div>;
   };
 
@@ -179,32 +179,30 @@ const Subscription = () => {
     <div className="min-h-screen bg-cover bg-center bg-fixed"
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
-      
+
       {/* Mobile Menu Toggle Button - Only visible on mobile */}
       <div className="md:hidden fixed bottom-6 right-6 z-50">
-        <button 
+        <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="bg-[#f67a45] text-white p-4 rounded-full shadow-lg"
         >
           <FaBars size={24} />
         </button>
       </div>
-      
+
       {/* Mobile Navigation Menu - Slide up from bottom when open */}
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${
-        isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
-      }`}>
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
+        }`}>
         <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
-        
+
         <div className="px-6 pb-8 pt-2">
           <div className="flex flex-col space-y-4">
             <a
               href="#"
-              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
-                activeSection === 'My Trainers'
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'My Trainers'
                   ? 'bg-[#f67a45] text-white font-medium'
                   : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-              }`}
+                }`}
               onClick={(e) => {
                 e.preventDefault();
                 navigate('/trainers');
@@ -214,14 +212,13 @@ const Subscription = () => {
               <FaUserFriends size={20} />
               <span>My Trainers</span>
             </a>
-            
+
             <a
               href="#"
-              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
-                activeSection === 'Explore'
+              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'Explore'
                   ? 'bg-[#f67a45] text-white font-medium'
                   : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-              }`}
+                }`}
               onClick={(e) => {
                 e.preventDefault();
                 navigate('/explore');
@@ -231,7 +228,7 @@ const Subscription = () => {
               <MdExplore size={20} />
               <span>Explore</span>
             </a>
-            
+
             <div className="border-t border-white/20 pt-4 mt-4">
               <div className="flex items-center gap-3 px-6 py-2">
                 <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
@@ -241,7 +238,7 @@ const Subscription = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="container mx-auto pt-4 sm:pt-8 px-4">
         {/* Left Navigation - Hidden on mobile, visible on md screens and up */}
         <div className="hidden md:block fixed left-0 top-50 z-10 h-screen">
@@ -250,11 +247,10 @@ const Subscription = () => {
               {/* My Trainers */}
               <a
                 href="#"
-                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${
-                  activeSection === 'My Trainers'
+                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'My Trainers'
                     ? 'bg-[#f67a45] text-white font-medium'
                     : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                }`}
+                  }`}
                 onClick={(e) => {
                   e.preventDefault();
                   navigate('/trainers');
@@ -263,15 +259,14 @@ const Subscription = () => {
                 <FaUserFriends size={20} />
                 <span>My Trainers</span>
               </a>
-              
+
               {/* Explore */}
               <a
                 href="#"
-                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${
-                  activeSection === 'Explore'
+                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'Explore'
                     ? 'bg-[#f67a45] text-white font-medium'
                     : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                }`}
+                  }`}
                 onClick={(e) => {
                   e.preventDefault();
                   navigate('/explore');
@@ -290,10 +285,10 @@ const Subscription = () => {
             </div>
           </nav>
         </div>
-        
+
         {/* Main Content with responsive margins */}
         <div className="w-full md:ml-[275px] lg:ml-[300px]">
-          <button 
+          <button
             onClick={() => navigate(`/schedule/${trainerId}`)}
             className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
           >
@@ -307,9 +302,9 @@ const Subscription = () => {
               {/* Current Subscription */}
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
                 <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Your Current Subscription</h2>
-                
+
                 {trainer.currentSubscription ? (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-[#1A1A2F] rounded-lg p-4 sm:p-6"
@@ -322,8 +317,8 @@ const Subscription = () => {
                       <h4 className="text-white font-medium mb-2">Benefits:</h4>
                       <ul className="space-y-2">
                         {subscriptionPackages[trainer.currentSubscription].benefits.map((benefit, index) => (
-                          <motion.li 
-                            key={index} 
+                          <motion.li
+                            key={index}
                             className="flex items-start text-white text-sm sm:text-base"
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -335,7 +330,7 @@ const Subscription = () => {
                         ))}
                       </ul>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setShowCancelModal(true)}
                       className="text-red-400 hover:text-red-300 font-medium text-sm sm:text-base"
                     >
@@ -343,7 +338,7 @@ const Subscription = () => {
                     </button>
                   </motion.div>
                 ) : (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="bg-[#1A1A2F] rounded-lg p-4 sm:p-6 text-center"
@@ -353,21 +348,20 @@ const Subscription = () => {
                   </motion.div>
                 )}
               </div>
-              
+
               {/* Available Packages */}
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
                 <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Available Packages</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
                   {/* Silver Package */}
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.02 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${
-                      selectedPackage === 'silver' 
-                        ? 'border-[#f67a45] bg-[#1A1A2F]' 
+                    className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${selectedPackage === 'silver'
+                        ? 'border-[#f67a45] bg-[#1A1A2F]'
                         : 'border-gray-700 bg-[#121225] hover:border-[#f67a45]/50'
-                    }`}
+                      }`}
                     onClick={() => handlePackageChange('silver')}
                   >
                     <h3 className="text-white text-base sm:text-lg font-bold mb-1 sm:mb-2">Silver Package</h3>
@@ -386,16 +380,15 @@ const Subscription = () => {
                       </div>
                     )}
                   </motion.div>
-                  
+
                   {/* Gold Package */}
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.02 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${
-                      selectedPackage === 'gold' 
-                        ? 'border-[#f67a45] bg-[#1A1A2F]' 
+                    className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${selectedPackage === 'gold'
+                        ? 'border-[#f67a45] bg-[#1A1A2F]'
                         : 'border-gray-700 bg-[#121225] hover:border-[#f67a45]/50'
-                    }`}
+                      }`}
                     onClick={() => handlePackageChange('gold')}
                   >
                     <h3 className="text-white text-base sm:text-lg font-bold mb-1 sm:mb-2">Gold Package</h3>
@@ -414,18 +407,16 @@ const Subscription = () => {
                       </div>
                     )}
                   </motion.div>
-                  
+
                   {/* Ultimate Package */}
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.02 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${
-                      selectedPackage === 'ultimate' 
-                        ? 'border-[#f67a45] bg-[#1A1A2F]' 
+                    className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${selectedPackage === 'ultimate'
+                        ? 'border-[#f67a45] bg-[#1A1A2F]'
                         : 'border-gray-700 bg-[#121225] hover:border-[#f67a45]/50'
-                    } ${
-                      selectedPackage !== 'ultimate' ? 'relative overflow-hidden' : ''
-                    }`}
+                      } ${selectedPackage !== 'ultimate' ? 'relative overflow-hidden' : ''
+                      }`}
                     onClick={() => handlePackageChange('ultimate')}
                   >
                     {selectedPackage !== 'ultimate' && (
@@ -450,17 +441,16 @@ const Subscription = () => {
                     )}
                   </motion.div>
                 </div>
-                
+
                 <div className="mt-6 sm:mt-8 flex justify-center">
-                  <motion.button 
+                  <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleConfirmSubscription}
                     disabled={trainer.currentSubscription === selectedPackage}
-                    className={`bg-[#f67a45] text-white px-6 sm:px-10 py-2 sm:py-3 rounded-full transition-colors font-medium text-sm sm:text-base ${
-                      trainer.currentSubscription === selectedPackage
+                    className={`bg-[#f67a45] text-white px-6 sm:px-10 py-2 sm:py-3 rounded-full transition-colors font-medium text-sm sm:text-base ${trainer.currentSubscription === selectedPackage
                         ? 'opacity-50 cursor-not-allowed'
                         : 'hover:bg-[#e56d3d]'
-                    }`}
+                      }`}
                   >
                     {trainer.currentSubscription === selectedPackage
                       ? 'Current Subscription'
@@ -470,7 +460,7 @@ const Subscription = () => {
                   </motion.button>
                 </div>
               </div>
-              
+
               {/* Reviews and Ratings */}
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
@@ -484,7 +474,7 @@ const Subscription = () => {
                     Write a Review
                   </motion.button>
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 bg-[#1A1A2F] p-4 rounded-lg">
                   <div className="text-[#f67a45] text-3xl sm:text-4xl font-bold text-center sm:text-left">{trainer.rating}</div>
                   <div>
@@ -494,12 +484,12 @@ const Subscription = () => {
                     <div className="text-white/70 text-sm sm:text-base text-center sm:text-left">Based on {trainer.reviewCount} reviews</div>
                   </div>
                 </div>
-                
+
                 {/* Review List */}
                 <div className="space-y-4 sm:space-y-6">
                   {reviews.map((review, index) => (
-                    <motion.div 
-                      key={review.id} 
+                    <motion.div
+                      key={review.id}
                       className="border-b border-gray-700 pb-4 sm:pb-6"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -518,15 +508,15 @@ const Subscription = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Right side - Trainer info and actions - Stacked on mobile */}
             <div className="lg:col-span-1 space-y-4">
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6">
                 <div className="flex flex-col items-center mb-4 sm:mb-6">
                   <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-3 sm:mb-4 border-2 border-[#f67a45]/30">
-                    <img 
-                      src={trainer.image} 
-                      alt={trainer.name} 
+                    <img
+                      src={trainer.image}
+                      alt={trainer.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
@@ -536,39 +526,39 @@ const Subscription = () => {
                   </div>
                   <h3 className="text-white text-lg sm:text-xl font-medium">{trainer.name}</h3>
                   <p className="text-gray-400 mb-2 text-sm sm:text-base">{trainer.specialty}</p>
-                  <a 
+                  <a
                     onClick={() => navigate(`/trainer-profile/${trainerId}`)}
                     className="text-[#f67a45] hover:underline text-sm cursor-pointer"
                   >
-                  View Profile
+                    View Profile
                   </a>
                 </div>
-                
+
                 <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 sm:space-y-3">
-                  <button 
+                  <button
                     onClick={() => navigate(`/schedule/${trainerId}`)}
                     className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     <BsCalendarWeek size={14} sm:size={16} />
                     <span>Schedule</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => navigate(`/meal-plan/${trainerId}`)}
                     className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     <GiMeal size={14} sm:size={16} />
                     <span>Meal Plan</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => navigate(`/chat/${trainerId}`)}
                     className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     <BiChat size={14} sm:size={16} />
                     <span>Chat</span>
                   </button>
-                  
+
                   <button className="bg-[#f67a45] text-white py-2 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center justify-center gap-2 text-sm">
                     <RiVipDiamondLine size={14} sm:size={16} />
                     <span>Subscription</span>
@@ -579,7 +569,7 @@ const Subscription = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Cancel Subscription Modal - Responsive */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -590,15 +580,15 @@ const Subscription = () => {
           >
             <h3 className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4">Cancel Subscription</h3>
             <p className="text-white/80 mb-4 sm:mb-6 text-sm sm:text-base">Are you sure you want to cancel your subscription to {subscriptionPackages[trainer.currentSubscription].name}? You will lose access to all premium features at the end of your current billing period.</p>
-            
+
             <div className="flex justify-end gap-2 sm:gap-3">
-              <button 
+              <button
                 onClick={() => setShowCancelModal(false)}
                 className="px-3 sm:px-6 py-1.5 sm:py-2 border border-gray-600 rounded-lg text-white hover:bg-[#1e1e35] text-sm sm:text-base"
               >
                 Keep Subscription
               </button>
-              <button 
+              <button
                 onClick={handleCancelSubscription}
                 className="px-3 sm:px-6 py-1.5 sm:py-2 bg-red-600 rounded-lg text-white hover:bg-red-700 text-sm sm:text-base"
               >
@@ -608,7 +598,7 @@ const Subscription = () => {
           </motion.div>
         </div>
       )}
-      
+
       {/* Review Modal - Responsive */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -618,13 +608,13 @@ const Subscription = () => {
             className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 max-w-md w-full"
           >
             <h3 className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4">Write a Review</h3>
-            
+
             <div className="mb-3 sm:mb-4">
               <label className="block text-white mb-1 sm:mb-2 text-sm sm:text-base">Rating</label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <motion.button 
-                    key={star} 
+                  <motion.button
+                    key={star}
                     onClick={() => setRating(star)}
                     whileHover={{ scale: 1.2 }}
                     whileTap={{ scale: 0.9 }}
@@ -635,7 +625,7 @@ const Subscription = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="mb-4 sm:mb-6">
               <label className="block text-white mb-1 sm:mb-2 text-sm sm:text-base">Review</label>
               <textarea
@@ -645,15 +635,15 @@ const Subscription = () => {
                 placeholder="Share your experience with this trainer..."
               ></textarea>
             </div>
-            
+
             <div className="flex justify-end gap-2 sm:gap-3">
-              <button 
+              <button
                 onClick={() => setShowReviewModal(false)}
                 className="px-3 sm:px-6 py-1.5 sm:py-2 border border-gray-600 rounded-lg text-white hover:bg-[#1e1e35] text-sm sm:text-base"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSubmitReview}
                 className="px-3 sm:px-6 py-1.5 sm:py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d] text-sm sm:text-base"
                 disabled={rating === 0 || !reviewText.trim()}
@@ -664,7 +654,7 @@ const Subscription = () => {
           </motion.div>
         </div>
       )}
-      
+
       {/* Success Modal - Responsive */}
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -674,18 +664,18 @@ const Subscription = () => {
             className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 max-w-md w-full"
           >
             <div className="flex flex-col items-center text-center">
-              <motion.div 
+              <motion.div
                 className="bg-[#f67a45]/20 p-3 sm:p-4 rounded-full mb-3 sm:mb-4"
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 0.5 }}
               >
                 <MdCheckCircle className="text-[#f67a45] text-3xl sm:text-4xl" />
               </motion.div>
-              
+
               <h3 className="text-white text-lg sm:text-xl font-bold mb-1 sm:mb-2">Success!</h3>
               <p className="text-white/80 mb-4 sm:mb-6 text-sm sm:text-base">{successMessage}</p>
-              
-              <button 
+
+              <button
                 onClick={() => setShowSuccessModal(false)}
                 className="px-6 sm:px-8 py-1.5 sm:py-2 bg-[#f67a45] rounded-full text-white hover:bg-[#e56d3d] transition-colors text-sm sm:text-base"
               >
