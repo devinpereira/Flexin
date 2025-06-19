@@ -7,7 +7,6 @@ import { UserContext } from "../../context/UserContext.jsx";
 import axiosInstance from "../../utils/axiosInstance.js";
 import { API_PATHS } from "../../utils/apiPaths";
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import countryCodes from '../../utils/countryCodes.json'; // Add a country code JSON file in utils (see note below)
 
 const Signup = () => {
   const [fullName, setFullName] = useState('');
@@ -64,31 +63,51 @@ const Signup = () => {
 
     setError("");
 
-    // Save signup data for OTP step
-    setSignupPayload({
-      fullName,
-      email,
-      password,
-      profileImageUrl,
-      dob: `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`,
-      role: 'user'
-    });
+    const dob = `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`;
+    const role = 'user';
 
-    // Move to OTP step and simulate sending OTP to email
+    // SignUp API Call
+    try {
+      const response = await axiosInstance.post(API_PATHS.AUTH.SIGNUP, {
+        fullName,
+        email,
+        password,
+        profileImageUrl,
+        dob,
+        role
+      });
+      const { token, user } = response.data;
+
+      if (token) {
+        localStorage.setItem("token", token);
+        updateUser(user);
+      }
+    } catch (error) {
+      if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Something went wrong. Please try again later");
+      }
+    }
+    
+    try {
+      const response = await axiosInstance.post(API_PATHS.AUTH.SEND_OTP);
+    } catch (error) {
+      if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Something went wrong. Please try again later");
+      }
+    }
+
     setStep('otp');
-    setIsLoading(true);
-
-    // Simulate API call to send OTP to email
-    setTimeout(() => {
-      setOtpSent(true);
-      setIsLoading(false);
-    }, 800);
+    setOtpSent(true);
   };
 
   // Verify OTP and complete signup
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    if (!otp || otp.length < 4) {
+    if (!otp || otp.length < 6) {
       setError("Please enter the OTP sent to your email");
       return;
     }
@@ -96,18 +115,15 @@ const Signup = () => {
     setIsLoading(true);
 
     // Simulate OTP verification
-    setTimeout(async () => {
       try {
-        // Call signup API with the collected data
-        const response = await axiosInstance.post(API_PATHS.AUTH.SIGNUP, {
-          ...signupPayload
+        const response = await axiosInstance.post(API_PATHS.AUTH.VERIFY_OTP, {
+          otp
         });
-        const { token, user } = response.data;
-        if (token) {
-          localStorage.setItem("token", token);
-          updateUser(user);
+
+        if (response.data.data) {
           navigate("/calculators");
         }
+        
       } catch (error) {
         setError(
           error.response && error.response.data.message
@@ -117,7 +133,6 @@ const Signup = () => {
       } finally {
         setIsLoading(false);
       }
-    }, 1000);
   };
 
   // Animation variants

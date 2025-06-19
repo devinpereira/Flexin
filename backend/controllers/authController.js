@@ -114,8 +114,6 @@ export const sendVerifyOtp = async (req, res) => {
         user.verifyOtp = otp;
         user.verifyOtpExpireAt = Date.now() + 10 * 60 * 1000; // OTP valid for 10 minutes
 
-        // return res.status(400).json({ message: `${otp} ${user.email} ${process.env.SENDER_EMAIL}, ${process.env.SMTP_USER}, ${process.env.SMTP_PASS}` });
-
         await user.save();
 
         const mailOption = {
@@ -167,7 +165,7 @@ export const verifyEmail = async (req, res) => {
 
         await user.save();
 
-        return res.status(200).json({ message: "Email verified successfully" });
+        return res.status(200).json({ data: true, message: "Email verified successfully" });
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }

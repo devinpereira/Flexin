@@ -6,7 +6,11 @@ export const API_PATHS = {
     SIGNUP: "/api/v1/auth/signup", // Done
     GET_USER_INFO: "/api/v1/auth/getUserInfo", // Done
     GOOGLE_LOGIN: "/api/v1/auth/google", // Done
-    GOOGLE_CALLBACK: "/api/v1/auth/google/callback",
+    GOOGLE_CALLBACK: "/api/v1/auth/google/callback", // Done
+    SEND_OTP: "api/v1/auth/send-verify-otp", // Done
+    VERIFY_OTP: "api/v1/auth/verify-otp", // Done
+    FORGOT_PASSWORD: "/api/v1/auth/forgot-password",
+    RESET_PASSWORD: "/api/v1/auth/reset-password",
   },
   POST: {
     GET_FEED_POSTS: "/api/v1/posts/feed", // Done
