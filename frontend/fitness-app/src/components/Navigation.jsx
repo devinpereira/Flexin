@@ -76,7 +76,6 @@ const Navbar = () => {
               <Link to="/store" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
                 STORE
               </Link>
-              {/* Changed from custom handler to direct Link for development */}
               <Link to="/trainers" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
                 TRAINERS
               </Link>
@@ -139,7 +138,6 @@ const Navbar = () => {
             <Link to="/store" className="block text-white hover:text-[#f67a45] py-3 text-lg">
               STORE
             </Link>
-            {/* Changed from custom handler to direct Link for development */}
             <Link to="/trainers" className="block text-white hover:text-[#f67a45] py-3 text-lg">
               TRAINERS
             </Link>

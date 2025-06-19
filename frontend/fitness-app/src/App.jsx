@@ -5,13 +5,15 @@ import { Login, Signup, Logout, OAuthSuccess } from "./pages/Auth";
 import Store from "./pages/Store/index";
 import Checkout from "./pages/Store/Checkout";
 import ProductView from "./components/Store/ProductView";
-import Trainers from "./pages/Trainers";
-import Explore from "./pages/Explore";
-import Schedule from "./pages/Schedule";
-import MealPlan from "./pages/MealPlan";
-import Chat from "./pages/Chat";
-import Subscription from "./pages/Subscription";
-import TrainerProfile from "./pages/TrainerProfile";
+import {
+  Trainers,
+  Explore,
+  Schedule,
+  MealPlan,
+  Chat,
+  Subscription,
+  TrainerProfile
+} from "./pages/Trainers";
 import Calculators from "./pages/Calculator/Calculators";
 import CustomSchedules from "./pages/Calculator/CustomSchedules";
 import AddSchedule from "./pages/Calculator/AddSchedule";
