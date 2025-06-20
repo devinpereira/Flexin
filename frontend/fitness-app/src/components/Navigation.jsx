@@ -48,7 +48,7 @@ const Navbar = () => {
     if (requiresAuth && !isAuthenticated) {
       // Save the intended destination for redirect after login
       sessionStorage.setItem('redirectAfterLogin', path);
-      navigate('/auth/login');
+      navigate('/login');
     } else {
       navigate(path);
     }
@@ -94,10 +94,10 @@ const Navbar = () => {
               {isAuthPage ? (
                 // Show login/signup buttons only on auth pages
                 <>
-                  <Link to="/auth/login" className="text-white hover:text-[#f67a45] border border-white/30 rounded-full px-6 py-1.5 transition-colors">
+                  <Link to="/login" className="text-white hover:text-[#f67a45] border border-white/30 rounded-full px-6 py-1.5 transition-colors">
                     Login
                   </Link>
-                  <Link to="/auth/signup" className="bg-[#f67a45] text-white rounded-full px-6 py-1.5 hover:bg-[#e56d3d] transition-colors">
+                  <Link to="/signup" className="bg-[#f67a45] text-white rounded-full px-6 py-1.5 hover:bg-[#e56d3d] transition-colors">
                     Sign Up
                   </Link>
                 </>

@@ -11,7 +11,7 @@ const Logout = () => {
     clearUser();
     window.dispatchEvent(new Event("logout"));
 
-    navigate("/auth/login");
+    navigate("/login");
   }, [navigate]);
 
   return null;

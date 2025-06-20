@@ -2,8 +2,8 @@ export const BASE_URL = "http://localhost:8000";
 
 export const API_PATHS = {
   AUTH: {
-    LOGIN: "/api/v1/auth/login", // Done
-    SIGNUP: "/api/v1/auth/signup", // Done
+    LOGIN: "/api/v1/login", // Done
+    SIGNUP: "/api/v1/signup", // Done
     GET_USER_INFO: "/api/v1/auth/getUserInfo", // Done
     GOOGLE_LOGIN: "/api/v1/auth/google", // Done
     GOOGLE_CALLBACK: "/api/v1/auth/google/callback", // Done

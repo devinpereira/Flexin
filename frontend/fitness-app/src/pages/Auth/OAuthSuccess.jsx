@@ -33,11 +33,11 @@ const OAuthSuccess = () => {
       } catch (err) {
         setError('Failed to process authentication data');
         console.error(err);
-        setTimeout(() => navigate('/auth/login'), 2000);
+        setTimeout(() => navigate('/login'), 2000);
       }
     } else {
       setError('Authentication failed');
-      setTimeout(() => navigate('/auth/login'), 2000);
+      setTimeout(() => navigate('/login'), 2000);
     }
   }, [location, navigate, updateUser]);
 
