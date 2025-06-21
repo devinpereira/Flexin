@@ -1,0 +1,97 @@
+import React, { forwardRef } from 'react';
+import { format } from 'date-fns';
+
+const PrintableInvoice = forwardRef(({ order }, ref) => {
+  const calculateSubtotal = (items) => {
+    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
+  return (
+    <div ref={ref} className="p-8 bg-white text-black">
+      {/* Company Header */}
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">PulsePlus Fitness</h1>
+          <p className="text-gray-600">123 Fitness Street</p>
+          <p className="text-gray-600">Colombo, Sri Lanka</p>
+          <p className="text-gray-600">Tel: +94 11 234 5678</p>
+          <p className="text-gray-600">Email: sales@pulseplus.com</p>
+        </div>
+        <div className="text-right">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">INVOICE</h2>
+          <p className="text-gray-600">Invoice #: {order.id}</p>
+          <p className="text-gray-600">Date: {format(new Date(order.date), 'dd/MM/yyyy')}</p>
+          <p className="text-gray-600">Payment Status: {order.paymentStatus}</p>
+          <p className="text-gray-600">Order Status: {order.status}</p>
+        </div>
+      </div>
+
+      {/* Customer Information */}
+      <div className="mb-8">
+        <h3 className="text-gray-800 font-bold mb-2">Bill To:</h3>
+        <p className="text-gray-600">{order.customerName}</p>
+        <p className="text-gray-600">{order.email}</p>
+        <p className="text-gray-600">{order.shippingAddress.street}</p>
+        <p className="text-gray-600">
+          {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zip}
+        </p>
+        <p className="text-gray-600">{order.shippingAddress.country}</p>
+      </div>
+
+      {/* Order Items Table */}
+      <table className="w-full mb-8">
+        <thead>
+          <tr className="border-b-2 border-gray-300">
+            <th className="py-2 text-left text-gray-800">Item</th>
+            <th className="py-2 text-center text-gray-800">Quantity</th>
+            <th className="py-2 text-right text-gray-800">Price</th>
+            <th className="py-2 text-right text-gray-800">Total</th>
+          </tr>
+        </thead>
+        <tbody className="text-gray-600">
+          {order.items.map((item, index) => (
+            <tr key={index} className="border-b border-gray-200">
+              <td className="py-2 text-left">{item.name}</td>
+              <td className="py-2 text-center">{item.quantity}</td>
+              <td className="py-2 text-right">${item.price.toFixed(2)}</td>
+              <td className="py-2 text-right">${item.total.toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Order Summary */}
+      <div className="flex justify-end mb-8">
+        <div className="w-64">
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-600">Subtotal:</span>
+            <span className="text-gray-800">${order.subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-600">Tax:</span>
+            <span className="text-gray-800">${order.tax.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-600">Shipping:</span>
+            <span className="text-gray-800">${order.shipping.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between font-bold border-t border-gray-300 pt-2">
+            <span className="text-gray-800">Total:</span>
+            <span className="text-gray-800">${order.total.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Notes and Terms */}
+      <div className="border-t border-gray-300 pt-4">
+        <p className="text-gray-600 text-sm mb-2">{order.notes}</p>
+        <p className="text-gray-600 text-sm mb-2">Payment Method: {order.paymentMethod.replace('_', ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</p>
+        <p className="text-gray-600 text-sm">Thank you for your business!</p>
+      </div>
+    </div>
+  );
+});
+
+PrintableInvoice.displayName = 'PrintableInvoice';
+
+export default PrintableInvoice;
