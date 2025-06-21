@@ -1,16 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { FaChartBar, FaDumbbell, FaUserFriends, FaShoppingCart, FaUsers, FaCog, FaTimes, FaBars } from 'react-icons/fa';
 import Navigation from '../Navigation';
-import {
-  FaChartBar,
-  FaDumbbell,
-  FaUserFriends,
-  FaShoppingCart,
-  FaUsers,
-  FaCog,
-  FaBars,
-  FaTimes
-} from 'react-icons/fa';
 
 const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
   const navigate = useNavigate();
@@ -22,7 +13,7 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
     const path = location.pathname;
     if (path === '/admin') return 'Dashboard';
     if (path.startsWith('/admin/fitness')) return 'Fitness';
-    if (path === '/admin/trainers') return 'Trainers';
+    if (path.startsWith('/admin/trainers')) return 'Trainers';
     if (path === '/admin/store') return 'Store';
     if (path === '/admin/community') return 'Community';
     if (path === '/admin/settings') return 'Settings';
@@ -39,14 +30,14 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
   // Handle window resize to close mobile menu on larger screens
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 768 && isMobileMenuOpen) {
         setIsMobileMenuOpen(false);
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isMobileMenuOpen]);
 
   // Navigation items with icons and paths
   const navItems = [
@@ -61,7 +52,18 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
         { id: 'Edit Exercise', path: '/admin/fitness/edit-exercise' }
       ]
     },
-    { id: 'Trainers', icon: <FaUserFriends size={20} />, path: '/admin/trainers' },
+    {
+      id: 'Trainers',
+      icon: <FaUserFriends size={20} />,
+      path: '/admin/trainers',
+      subItems: [
+        { id: 'View Trainers', path: '/admin/trainers' },
+        { id: 'Edit Trainers', path: '/admin/trainers/edit-trainer' },
+        { id: 'Approve Trainers', path: '/admin/trainers/approve-trainers' },
+        { id: 'Payments', path: '/admin/trainers/payments' },
+        { id: 'Reports', path: '/admin/trainers/reports' }
+      ]
+    },
     { id: 'Store', icon: <FaShoppingCart size={20} />, path: '/admin/store' },
     { id: 'Community', icon: <FaUsers size={20} />, path: '/admin/community' },
     { id: 'Settings', icon: <FaCog size={20} />, path: '/admin/settings' }
@@ -93,7 +95,8 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
       {/* Mobile Navigation Menu - Slide up from bottom when open */}
       <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
         }`}>
-        <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>          <div className="px-6 pb-8 pt-2">
+        <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
+        <div className="px-6 pb-8 pt-2">
           <div className="flex flex-col space-y-4">
             {navItems.map(item => (
               <div key={item.id}>
@@ -122,8 +125,8 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
                         key={subItem.id}
                         href="#"
                         className={`block text-sm py-2 px-4 transition-colors rounded-md ${location.pathname === subItem.path
-                            ? 'text-[#f67a45] font-medium bg-[#f67a45]/10'
-                            : 'text-white/80 hover:text-[#f67a45] hover:bg-[#1A1A2F]'
+                          ? 'text-[#f67a45] font-medium bg-[#f67a45]/10'
+                          : 'text-white/80 hover:text-[#f67a45] hover:bg-[#1A1A2F]'
                           }`}
                         onClick={(e) => {
                           e.preventDefault();
@@ -185,8 +188,8 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
                           key={subItem.id}
                           href="#"
                           className={`block text-sm py-2 px-4 transition-colors rounded-md ${location.pathname === subItem.path
-                              ? 'text-[#f67a45] font-medium bg-[#f67a45]/10'
-                              : 'text-white/80 hover:text-[#f67a45] hover:bg-[#1A1A2F]'
+                            ? 'text-[#f67a45] font-medium bg-[#f67a45]/10'
+                            : 'text-white/80 hover:text-[#f67a45] hover:bg-[#1A1A2F]'
                             }`}
                           onClick={(e) => {
                             e.preventDefault();
@@ -214,21 +217,17 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
           </nav>
         </div>
 
-        {/* Main Content with responsive margins */}
         <div className="w-full md:pl-[220px] lg:pl-[275px] pr-0">
           <div className="max-w-full overflow-x-hidden">
-            {/* Page Header - Responsive */}
             <div className="mb-4 sm:mb-6">
               <h2 className="text-white text-xl sm:text-2xl font-bold">{pageTitle}</h2>
             </div>
 
-            {/* Page Content */}
             {children}
           </div>
         </div>
       </div>
 
-      {/* Extra padding at the bottom for mobile to account for the floating button */}
       <div className="h-24 md:h-0"></div>
     </div>
   );
