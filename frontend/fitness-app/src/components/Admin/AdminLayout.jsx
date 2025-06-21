@@ -11,13 +11,13 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
   // Determine active section based on current path
   const getActiveSection = useCallback(() => {
     const path = location.pathname;
-    if (path === '/admin') return 'Dashboard';
-    if (path.startsWith('/admin/fitness')) return 'Fitness';
     if (path.startsWith('/admin/trainers')) return 'Trainers';
-    if (path === '/admin/store') return 'Store';
-    if (path === '/admin/community') return 'Community';
-    if (path === '/admin/settings') return 'Settings';
-    return 'Dashboard'; // Default
+    if (path.startsWith('/admin/fitness')) return 'Fitness';
+    if (path.startsWith('/admin/store')) return 'Store';
+    if (path.startsWith('/admin/community')) return 'Community';
+    if (path.startsWith('/admin/settings')) return 'Settings';
+    if (path === '/admin') return 'Dashboard';
+    return 'Dashboard';
   }, [location.pathname]);
 
   const [activeSection, setActiveSection] = useState(() => getActiveSection());
@@ -38,6 +38,35 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isMobileMenuOpen]);
+
+  // Check if specific path is active (for subitems highlighting)
+  const isPathActive = (path) => {
+    // For exact matches
+    if (location.pathname === path) return true;
+    // Store Products: highlight for add/edit/view
+    if (path === '/admin/store/products' &&
+      (location.pathname.startsWith('/admin/store/products/add') ||
+        location.pathname.startsWith('/admin/store/products/edit') ||
+        location.pathname.startsWith('/admin/store/products/view'))
+    ) {
+      return true;
+    }
+    // Store Add Product
+    if (path === '/admin/store/products/add' && location.pathname.startsWith('/admin/store/products/add')) {
+      return true;
+    }
+    // Store Orders: highlight for order details
+    if (path === '/admin/store/orders' &&
+      (location.pathname.startsWith('/admin/store/orders/') || location.pathname === '/admin/store/orders')
+    ) {
+      return true;
+    }
+    // Store Inventory: highlight for inventory subpages
+    if (path === '/admin/store/inventory' && location.pathname.startsWith('/admin/store/inventory')) {
+      return true;
+    }
+    return false;
+  };
 
   // Navigation items with icons and paths
   const navItems = [
@@ -64,7 +93,16 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
         { id: 'Reports', path: '/admin/trainers/reports' }
       ]
     },
-    { id: 'Store', icon: <FaShoppingCart size={20} />, path: '/admin/store' },
+    {
+      id: 'Store',
+      icon: <FaShoppingCart size={20} />,
+      path: '/admin/store',
+      subItems: [
+        { id: 'Product Management', path: '/admin/store/products' },
+        { id: 'View Orders', path: '/admin/store/orders' },
+        { id: 'Inventory Management', path: '/admin/store/inventory' }
+      ]
+    },
     { id: 'Community', icon: <FaUsers size={20} />, path: '/admin/community' },
     { id: 'Settings', icon: <FaCog size={20} />, path: '/admin/settings' }
   ];
