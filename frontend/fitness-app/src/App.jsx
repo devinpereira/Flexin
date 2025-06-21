@@ -30,42 +30,80 @@ import Home from "./pages/Home";
 import { NavigationProvider } from "./context/NavigationContext";
 import { SocketProvider } from "./context/SocketContext";
 
+// Import Admin pages
+import AdminDashboard from "./pages/Admin/Dashboard";
+import AdminTrainers from "./pages/Admin/Trainers";
+import AdminStore from "./pages/Admin/Store";
+import AdminCommunity from "./pages/Admin/Community";
+import AdminFitness from "./pages/Admin/Fitness";
+import AdminAddExercise from "./pages/Admin/Fitness/AddExercise";
+import AdminEditExercise from "./pages/Admin/Fitness/EditExercise";
+import AdminSettings from "./pages/Admin/Settings";
+
+import { NotificationProvider } from "./context/NotificationContext";
+
 function App() {
   return (
     <UserProvider>
       <SocketProvider>
         <FitnessProfileProvider>
-          <Router>
-            <NavigationProvider>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/logout" element={<Logout />} />
-                <Route path="/oauth-success" element={<OAuthSuccess />} />
-                <Route path="/store" element={<Store />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/product/:productId" element={<ProductView />} />
-                <Route path="/trainers" element={<Trainers />} />
-                <Route path="/explore" element={<Explore />} />
-                <Route path="/schedule/:trainerId" element={<Schedule />} />
-                <Route path="/meal-plan/:trainerId" element={<MealPlan />} />
-                <Route path="/chat/:trainerId" element={<Chat />} />
-                <Route path="/subscription/:trainerId" element={<Subscription />} />
-                <Route path="/trainer-profile/:trainerId" element={<TrainerProfile />} />
-                <Route path="/calculators" element={<Calculators />} />
-                <Route path="/custom-schedules" element={<CustomSchedules />} />
-                <Route path="/add-schedule" element={<AddSchedule />} />
-                <Route path="/edit-schedule/:scheduleId" element={<EditSchedule />} />
-                <Route path="/view-schedule/:scheduleId" element={<ViewSchedule />} />
-                <Route path="/search-exercises" element={<SearchExercisesPage />} />
-                <Route path="/fitness-calculators" element={<FitnessCalculators />} />
-                <Route path="/exercise" element={<Exercise />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/community" element={<Community />} />
-              </Routes>
-            </NavigationProvider>
-          </Router>
+          <NotificationProvider>
+            <Router>
+              <NavigationProvider>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/logout" element={<Logout />} />
+                  <Route path="/oauth-success" element={<OAuthSuccess />} />
+                  <Route path="/store" element={<Store />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/product/:productId" element={<ProductView />} />
+                  <Route path="/trainers" element={<Trainers />} />
+                  <Route path="/explore" element={<Explore />} />
+                  <Route path="/schedule/:trainerId" element={<Schedule />} />
+                  <Route path="/meal-plan/:trainerId" element={<MealPlan />} />
+                  <Route path="/chat/:trainerId" element={<Chat />} />
+                  <Route path="/subscription/:trainerId" element={<Subscription />} />
+                  <Route path="/trainer-profile/:trainerId" element={<TrainerProfile />} />
+                  <Route path="/calculators" element={<Calculators />} />
+                  <Route path="/custom-schedules" element={<CustomSchedules />} />
+                  <Route path="/add-schedule" element={<AddSchedule />} />
+                  <Route path="/edit-schedule/:scheduleId" element={<EditSchedule />} />
+                  <Route path="/view-schedule/:scheduleId" element={<ViewSchedule />} />
+                  <Route path="/search-exercises" element={<SearchExercisesPage />} />
+                  <Route path="/fitness-calculators" element={<FitnessCalculators />} />
+                  <Route path="/exercise" element={<Exercise />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/community" element={<Community />} />
+
+                  {/* Admin Routes - No Role Protection for Development */}
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/admin/trainers" element={<AdminTrainers />} />
+                  <Route path="/admin/store" element={<AdminStore />} />
+                  <Route path="/admin/community" element={<AdminCommunity />} />
+                  <Route path="/admin/fitness" element={<AdminFitness />} />
+                  <Route path="/admin/fitness/add-exercise" element={<AdminAddExercise />} />
+                  <Route path="/admin/fitness/edit-exercise" element={<AdminEditExercise />} />
+                  <Route path="/admin/settings" element={<AdminSettings />} />
+
+                  {/* Fallback route for unauthorized access */}
+                  <Route path="/unauthorized" element={<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A0A1F] to-[#1A1A2F]">
+                    <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-8 max-w-md text-center">
+                      <h1 className="text-white text-2xl font-bold mb-4">Access Denied</h1>
+                      <p className="text-white/70 mb-6">You don't have permission to access this page.</p>
+                      <button
+                        onClick={() => window.history.back()}
+                        className="bg-[#f67a45] text-white px-4 py-2 rounded-lg hover:bg-[#e56d3d]"
+                      >
+                        Go Back
+                      </button>
+                    </div>
+                  </div>} />
+                </Routes>
+              </NavigationProvider>
+            </Router>
+          </NotificationProvider>
         </FitnessProfileProvider>
       </SocketProvider>
     </UserProvider>
