@@ -8,9 +8,8 @@ const postSchema = new mongoose.Schema(
       ref: "User",
     },
     content: {
-        type: [String],
-        required: true,
-      },
+      type: [String],
+    },
     description: {
       type: String,
     },

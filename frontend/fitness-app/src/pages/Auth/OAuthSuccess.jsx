@@ -1,45 +1,39 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { UserContext } from '../../context/UserContext';
+import { useEffect, useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { UserContext } from "../../context/UserContext";
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS } from "../../utils/apiPaths";
 
 const OAuthSuccess = () => {
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
-  const location = useLocation();
   const { updateUser } = useContext(UserContext);
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const token = searchParams.get('token');
-    const userData = searchParams.get('user');
+    const fetchUser = async () => {
+      const query = new URLSearchParams(window.location.search);
+      const token = query.get("token");
 
-    if (token && userData) {
-      try {
-        const user = JSON.parse(decodeURIComponent(userData));
+      if (token) {
+        localStorage.setItem("token", token);
 
-        // Store token and update user context
-        localStorage.setItem('token', token);
-        updateUser(user);
+        try {
+          const { data } = await axiosInstance.get(API_PATHS.AUTH.GET_USER_INFO);
 
-        // Check if there's a redirect destination
-        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-
-        if (redirectPath) {
-          sessionStorage.removeItem('redirectAfterLogin');
-          navigate(redirectPath);
-        } else {
-          navigate('/calculators');
+          updateUser(data);
+          navigate("/calculators");
+        } catch (err) {
+          setError("Failed to fetch user info");
+          navigate("/login");
         }
-      } catch (err) {
-        setError('Failed to process authentication data');
-        console.error(err);
-        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setError("Token not found");
+        navigate("/login");
       }
-    } else {
-      setError('Authentication failed');
-      setTimeout(() => navigate('/login'), 2000);
-    }
-  }, [location, navigate, updateUser]);
+    };
+
+    fetchUser();
+  }, [navigate, updateUser]);
 
   return <p>{error || "Logging in..."}</p>;
 };
