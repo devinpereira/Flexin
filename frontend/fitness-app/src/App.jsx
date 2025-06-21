@@ -33,6 +33,10 @@ import { SocketProvider } from "./context/SocketContext";
 // Import Admin pages
 import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminTrainers from "./pages/Admin/Trainers";
+import AdminEditTrainer from "./pages/Admin/Trainers/EditTrainer";
+import AdminApproveTrainers from "./pages/Admin/Trainers/ApproveTrainers";
+import AdminTrainerPayments from "./pages/Admin/Trainers/Payments";
+import AdminTrainerReports from "./pages/Admin/Trainers/Reports";
 import AdminStore from "./pages/Admin/Store";
 import AdminCommunity from "./pages/Admin/Community";
 import AdminFitness from "./pages/Admin/Fitness";
@@ -80,6 +84,10 @@ function App() {
                   {/* Admin Routes - No Role Protection for Development */}
                   <Route path="/admin" element={<AdminDashboard />} />
                   <Route path="/admin/trainers" element={<AdminTrainers />} />
+                  <Route path="/admin/trainers/edit-trainer" element={<AdminEditTrainer />} />
+                  <Route path="/admin/trainers/approve-trainers" element={<AdminApproveTrainers />} />
+                  <Route path="/admin/trainers/payments" element={<AdminTrainerPayments />} />
+                  <Route path="/admin/trainers/reports" element={<AdminTrainerReports />} />
                   <Route path="/admin/store" element={<AdminStore />} />
                   <Route path="/admin/community" element={<AdminCommunity />} />
                   <Route path="/admin/fitness" element={<AdminFitness />} />
