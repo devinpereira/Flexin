@@ -38,11 +38,18 @@ import AdminApproveTrainers from "./pages/Admin/Trainers/ApproveTrainers";
 import AdminTrainerPayments from "./pages/Admin/Trainers/Payments";
 import AdminTrainerReports from "./pages/Admin/Trainers/Reports";
 import AdminStore from "./pages/Admin/Store";
+import AdminProducts from "./pages/Admin/Store/Products";
+import AdminAddProduct from "./pages/Admin/Store/AddProduct";
+import AdminEditProduct from "./pages/Admin/Store/EditProduct";
+import AdminOrders from "./pages/Admin/Store/Orders";
+import AdminOrderDetails from "./pages/Admin/Store/OrderDetails";
+import AdminInventory from "./pages/Admin/Store/Inventory";
 import AdminCommunity from "./pages/Admin/Community";
 import AdminFitness from "./pages/Admin/Fitness";
 import AdminAddExercise from "./pages/Admin/Fitness/AddExercise";
 import AdminEditExercise from "./pages/Admin/Fitness/EditExercise";
 import AdminSettings from "./pages/Admin/Settings";
+import AdminProductView from "./pages/Admin/Store/ProductView";
 
 import { NotificationProvider } from "./context/NotificationContext";
 
@@ -89,6 +96,13 @@ function App() {
                   <Route path="/admin/trainers/payments" element={<AdminTrainerPayments />} />
                   <Route path="/admin/trainers/reports" element={<AdminTrainerReports />} />
                   <Route path="/admin/store" element={<AdminStore />} />
+                  <Route path="/admin/store/products" element={<AdminProducts />} />
+                  <Route path="/admin/store/products/add" element={<AdminAddProduct />} />
+                  <Route path="/admin/store/products/edit/:productId" element={<AdminEditProduct />} />
+                  <Route path="/admin/store/products/view/:productId" element={<AdminProductView />} />
+                  <Route path="/admin/store/orders" element={<AdminOrders />} />
+                  <Route path="/admin/store/orders/:orderId" element={<AdminOrderDetails />} />
+                  <Route path="/admin/store/inventory" element={<AdminInventory />} />
                   <Route path="/admin/community" element={<AdminCommunity />} />
                   <Route path="/admin/fitness" element={<AdminFitness />} />
                   <Route path="/admin/fitness/add-exercise" element={<AdminAddExercise />} />
