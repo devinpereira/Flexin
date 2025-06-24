@@ -5,7 +5,7 @@ import { BASE_URL } from "./apiPaths";
 let socket = null;
 
 export const connectSocket = (token) => {
-  if (socket) socket.disconnect(); // force reconnect
+  if (socket) socket.disconnect();
   socket = io(BASE_URL, {
     auth: { token },
     transports: ["websocket"],

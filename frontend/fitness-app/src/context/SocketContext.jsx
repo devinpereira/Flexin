@@ -1,4 +1,3 @@
-// SocketProvider.jsx
 import { createContext, useEffect, useState } from "react";
 import {
   connectSocket,
@@ -11,6 +10,7 @@ export const SocketContext = createContext(null);
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
+  // Reconnect socket after page reload if token exists
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -18,8 +18,8 @@ export const SocketProvider = ({ children }) => {
       const s = connectSocket(token);
       setSocket(s);
 
-      s.on("connect", () => console.log("Connected:", s.id));
-      s.on("disconnect", () => console.log("Disconnected"));
+      s.on("connect", () => console.log("Socket reconnected on refresh:", s.id));
+      s.on("disconnect", () => console.log("Socket disconnected"));
     }
 
     return () => {
@@ -27,13 +27,16 @@ export const SocketProvider = ({ children }) => {
     };
   }, []);
 
-  // Listen for login/logout events
+  // Handle login/logout explicitly
   useEffect(() => {
     const handleLogin = () => {
-      const t = localStorage.getItem("token");
-      const s = connectSocket(t);
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const s = connectSocket(token);
       setSocket(s);
     };
+
     const handleLogout = () => {
       disconnectSocket();
       setSocket(null);
