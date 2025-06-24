@@ -30,6 +30,9 @@ def predict_plan(data):
     x = preprocess_input(data)
     y_pred = model.predict(x)
 
+    print("=== Raw Prediction ===")
+    print(y_pred)
+
     result = {}
     offset = 0
     for day, mlb in day_encoders.items():

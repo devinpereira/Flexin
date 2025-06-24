@@ -1,18 +1,21 @@
-import axios from 'axios';
+import FitnessProfile from "../models/FitnessProfile.js";
+import Exercise from "../models/Exercise.js";
+import generateWorkoutPlan from "../utils/workoutGenerator.js";
 
-const FLASK_API_URL = 'http://localhost:5000/generate';
-
-export const getWorkoutPlan = async (req, res) => {
+export const generateWorkout = async (req, res) => {
   try {
-    const userData = req.body;
+    const userId  = "680e416740baf4c326213ce9";
+    const profile = await FitnessProfile.findOne({ userId });
 
-    // Call Flask ML API
-    const response = await axios.post(FLASK_API_URL, userData);
-    const workoutPlan = response.data;
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    const exercises = await Exercise.find({});
+    const workoutPlan = generateWorkoutPlan(profile, exercises);
 
     res.json(workoutPlan);
-  } catch (error) {
-    console.error('Error calling ML API:', error.message);
-    res.status(500).json({ error: 'Failed to fetch workout plan' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
