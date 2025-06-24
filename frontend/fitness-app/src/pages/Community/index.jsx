@@ -1,5 +1,6 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CommunityLayout from '../../components/Community/CommunityLayout';
 import Navigation from '../../components/Navigation';
 import Sidebar from './components/Sidebar';
 import PostFeed from './components/PostFeed';
@@ -16,10 +17,17 @@ import { BASE_URL } from '../../utils/apiPaths';
 
 const Community = () => {
   useUserAuth();
-  const { user, loading } = useContext(UserContext);
+  const { user: contextUser, loading } = useContext(UserContext);
   const [activeSection, setActiveSection] = useState('Home');
   const [selectedUser, setSelectedUser] = useState(null);
-  
+  const [user, setUser] = useState(contextUser);
+  const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    setUser(contextUser);
+  }, [contextUser]);
+
   const handleSectionChange = (section) => {
     setActiveSection(section);
     setSelectedUser(null);
@@ -77,7 +85,7 @@ const Community = () => {
           
           {activeSection === 'Notifications' && <NotificationsPanel />}
           
-          {activeSection === 'Create' && <PostFeed />}
+          {activeSection === 'Create' && <PostFeed profileImage={user?.profileImageUrl ? `${BASE_URL}/${user?.profileImageUrl}` : "src/assets/profile1.png"} />}
           
           {activeSection === 'Friends' && <FriendsManagement />}
           

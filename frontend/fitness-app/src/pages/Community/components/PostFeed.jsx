@@ -47,16 +47,65 @@ const PostFeed = ({profileImage}) => {
   }, []);
 
   const handleNewPost = (newPost) => {
-    setPosts([newPost, ...posts]);
+    // Format the new post to match the structure of other posts
+    const formattedNewPost = {
+      id: newPost._id,
+      user: {
+        name: newPost.user.name,
+        username: `@${newPost.user.username}`,
+        profileImage: newPost.user.profileImageUrl.startsWith('http') 
+          ? newPost.user.profileImageUrl
+          : `${BASE_URL}/${newPost.user.profileImageUrl}`
+      },
+      content: newPost.description,
+      images: newPost.content ? newPost.content.map(img => ({ 
+        preview: img.startsWith('http') ? img : `${BASE_URL}/${img}` 
+      })) : [],
+      likes: 0,
+      isliked: false,
+      comments: 0,
+      timestamp: new Date().toLocaleString()
+    };
+    
+    setPosts([formattedNewPost, ...posts]);
   };
 
-  const handleLikePost = (postId) => {
+  const handleLikePost = (postId, isLiked) => {
     setPosts(posts.map(post => {
       if (post.id === postId) {
-        return { ...post, likes: post.liked ? post.likes - 1 : post.likes + 1, liked: !post.liked };
+        return { 
+          ...post, 
+          likes: isLiked ? post.likes + 1 : post.likes - 1, 
+          isliked: isLiked 
+        };
       }
       return post;
     }));
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      // For development purposes, just update the UI
+      setPosts(posts.filter(post => post.id !== postId));
+      
+      // In production, this would call the API
+      // await axiosInstance.delete(`${API_PATHS.POST.DELETE_POST(postId)}`);
+    } catch (err) {
+      console.error("Error deleting post:", err);
+    }
+  };
+
+  const handleUpdatePost = (postId, updatedData) => {
+    // Update the post in the UI
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        return { ...post, ...updatedData };
+      }
+      return post;
+    }));
+    
+    // In production, this would call the API
+    // await axiosInstance.put(`${API_PATHS.POST.UPDATE_POST(postId)}`, updatedData);
   };
 
   return (
@@ -100,7 +149,12 @@ const PostFeed = ({profileImage}) => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <Post post={post} onLike={handleLikePost} />
+              <Post 
+                post={post} 
+                onLike={handleLikePost}
+                onDelete={handleDeletePost}
+                onUpdate={handleUpdatePost}
+              />
             </motion.div>
           ))}
         </motion.div>

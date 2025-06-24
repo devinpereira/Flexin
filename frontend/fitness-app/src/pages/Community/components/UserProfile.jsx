@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FaArrowLeft, FaEllipsisH, FaTh, FaBookmark, FaUserTag } from 'react-icons/fa';
 import { API_PATHS } from '../../../utils/apiPaths';
+import axiosInstance from '../../../utils/axiosInstance';
 
 const UserProfile = ({ user, onBack }) => {
   const [activeTab, setActiveTab] = useState('posts');
@@ -17,19 +18,21 @@ const UserProfile = ({ user, onBack }) => {
     };
 
     fetchPosts();
-  }, []);
+  }, [user._id]);
 
   const handleFollowUser = async (userId, isFollowing) => {
-      try {
-        if (isFollowing == "accepted") {
-          await axiosInstance.delete(`${API_PATHS.FOLLOW.UNFOLLOW_USER(userId)}`);
-        } else {
-          await axiosInstance.post(`${API_PATHS.FOLLOW.SEND_FOLLOW_REQUEST(userId)}`);
-        }
-      } catch (err) {
-        console.error("Error following/unfollowing user:", err);
+    try {
+      if (isFollowing === "accepted") {
+        await axiosInstance.delete(`${API_PATHS.FOLLOW.UNFOLLOW_USER(userId)}`);
+      } else {
+        await axiosInstance.post(`${API_PATHS.FOLLOW.SEND_FOLLOW_REQUEST(userId)}`);
       }
+      // Update local state or refetch user data to reflect the new follow status
+      // This could be done via a callback provided by the parent component
+    } catch (err) {
+      console.error("Error following/unfollowing user:", err);
     }
+  }
   
   return (
     <div className="max-w-3xl mx-auto">
@@ -91,10 +94,7 @@ const UserProfile = ({ user, onBack }) => {
                   className={`px-6 py-2 rounded-full ${user.isFollowing 
                     ? 'bg-gray-700 text-white' 
                     : 'bg-[#f67a45] text-white hover:bg-[#e56d3d]'}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleFollowUser(user.id, user.isFollowing);
-                  }}
+                  onClick={(e) => handleFollowUser(user._id, user.isFollowing)}
                 >
                   {user.isFollowing ? 'Following' : 'Follow'}
                 </button>

@@ -16,6 +16,7 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
   const [isCreating, setIsCreating] = useState(false);
   const [images, setImages] = useState([]);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+  const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleSubmit = async (e) => {
@@ -23,12 +24,16 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
     if (!postContent.trim() && images.length === 0) return;
 
     setIsCreating(true);
+    setUploadError(null);
 
     const formData = new FormData();
     formData.append("description", postContent);
     if (images && images.length > 0) {
-      images.forEach((image, index) => {
-        formData.append("media", image.file);
+      images.forEach((image) => {
+        // Make sure we're uploading the File object, not the preview URL
+        if (image.file) {
+          formData.append("media", image.file);
+        }
       });
     }
 
@@ -43,7 +48,12 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
         }
       );
 
-      onPostCreated(response.data);
+      // Call the parent component's callback with the new post data
+      if (onPostCreated && response.data) {
+        onPostCreated(response.data);
+      }
+
+      // Reset form
       setPostContent("");
       setImages([]);
       setCurrentPreviewIndex(0);
@@ -53,6 +63,7 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
         "Post creation failed:",
         error.response?.data || error.message
       );
+      setUploadError("Failed to create post. Please try again.");
       setIsCreating(false);
     }
   };
@@ -61,9 +72,24 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    // Clear any previous errors
+    setUploadError(null);
+
     // Limit to 5 images total
     const remainingSlots = 5 - images.length;
+    if (remainingSlots <= 0) {
+      setUploadError("Maximum 5 images allowed");
+      return;
+    }
+
     const filesToProcess = files.slice(0, remainingSlots);
+
+    // Check file sizes
+    const oversizedFiles = filesToProcess.filter((file) => file.size > 5 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      setUploadError("One or more files exceed the 5MB size limit");
+      return;
+    }
 
     // Process each file
     filesToProcess.forEach((file) => {
@@ -223,6 +249,11 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
           multiple={images.length < 5}
           className="hidden"
         />
+
+        {/* Show error message if there's an upload error */}
+        {uploadError && (
+          <div className="mt-2 text-red-500 text-sm">{uploadError}</div>
+        )}
 
         <div className="flex justify-between items-center">
           <div className="flex space-x-2">
