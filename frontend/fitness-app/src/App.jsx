@@ -53,6 +53,9 @@ import AdminProductView from "./pages/Admin/Store/ProductView";
 
 import { NotificationProvider } from "./context/NotificationContext";
 
+import PrivateRoute from "./guards/PrivateRoutes";
+import PublicRoute from "./guards/PublicRoutes";
+
 function App() {
   return (
     <UserProvider>
@@ -63,51 +66,56 @@ function App() {
               <NavigationProvider>
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
                   <Route path="/logout" element={<Logout />} />
-                  <Route path="/oauth-success" element={<OAuthSuccess />} />
-                  <Route path="/store" element={<Store />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/product/:productId" element={<ProductView />} />
-                  <Route path="/trainers" element={<Trainers />} />
-                  <Route path="/explore" element={<Explore />} />
-                  <Route path="/schedule/:trainerId" element={<Schedule />} />
-                  <Route path="/meal-plan/:trainerId" element={<MealPlan />} />
-                  <Route path="/chat/:trainerId" element={<Chat />} />
-                  <Route path="/subscription/:trainerId" element={<Subscription />} />
-                  <Route path="/trainer-profile/:trainerId" element={<TrainerProfile />} />
-                  <Route path="/calculators" element={<Calculators />} />
-                  <Route path="/custom-schedules" element={<CustomSchedules />} />
-                  <Route path="/add-schedule" element={<AddSchedule />} />
-                  <Route path="/edit-schedule/:scheduleId" element={<EditSchedule />} />
-                  <Route path="/view-schedule/:scheduleId" element={<ViewSchedule />} />
-                  <Route path="/search-exercises" element={<SearchExercisesPage />} />
-                  <Route path="/fitness-calculators" element={<FitnessCalculators />} />
-                  <Route path="/exercise" element={<Exercise />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/community" element={<Community />} />
-
-                  {/* Admin Routes - No Role Protection for Development */}
-                  <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/admin/trainers" element={<AdminTrainers />} />
-                  <Route path="/admin/trainers/edit-trainer" element={<AdminEditTrainer />} />
-                  <Route path="/admin/trainers/approve-trainers" element={<AdminApproveTrainers />} />
-                  <Route path="/admin/trainers/payments" element={<AdminTrainerPayments />} />
-                  <Route path="/admin/trainers/reports" element={<AdminTrainerReports />} />
-                  <Route path="/admin/store" element={<AdminStore />} />
-                  <Route path="/admin/store/products" element={<AdminProducts />} />
-                  <Route path="/admin/store/products/add" element={<AdminAddProduct />} />
-                  <Route path="/admin/store/products/edit/:productId" element={<AdminEditProduct />} />
-                  <Route path="/admin/store/products/view/:productId" element={<AdminProductView />} />
-                  <Route path="/admin/store/orders" element={<AdminOrders />} />
-                  <Route path="/admin/store/orders/:orderId" element={<AdminOrderDetails />} />
-                  <Route path="/admin/store/inventory" element={<AdminInventory />} />
-                  <Route path="/admin/community" element={<AdminCommunity />} />
-                  <Route path="/admin/fitness" element={<AdminFitness />} />
-                  <Route path="/admin/fitness/add-exercise" element={<AdminAddExercise />} />
-                  <Route path="/admin/fitness/edit-exercise" element={<AdminEditExercise />} />
-                  <Route path="/admin/settings" element={<AdminSettings />} />
+                  <Route element={<PublicRoute />}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/oauth-success" element={<OAuthSuccess />} />
+                  </Route>
+                  <Route element={<PrivateRoute />}>
+                    <Route path="/store" element={<Store />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/product/:productId" element={<ProductView />} />
+                    <Route path="/trainers" element={<Trainers />} />
+                    <Route path="/explore" element={<Explore />} />
+                    <Route path="/schedule/:trainerId" element={<Schedule />} />
+                    <Route path="/meal-plan/:trainerId" element={<MealPlan />} />
+                    <Route path="/chat/:trainerId" element={<Chat />} />
+                    <Route path="/subscription/:trainerId" element={<Subscription />} />
+                    <Route path="/trainer-profile/:trainerId" element={<TrainerProfile />} />
+                    <Route path="/calculators" element={<Calculators />} />
+                    <Route path="/custom-schedules" element={<CustomSchedules />} />
+                    <Route path="/add-schedule" element={<AddSchedule />} />
+                    <Route path="/edit-schedule/:scheduleId" element={<EditSchedule />} />
+                    <Route path="/view-schedule/:scheduleId" element={<ViewSchedule />} />
+                    <Route path="/search-exercises" element={<SearchExercisesPage />} />
+                    <Route path="/fitness-calculators" element={<FitnessCalculators />} />
+                    <Route path="/exercise" element={<Exercise />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/community" element={<Community />} />
+                  </Route>
+                  {/* Admin Routes */}
+                  <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/admin/trainers" element={<AdminTrainers />} />
+                    <Route path="/admin/trainers/edit-trainer" element={<AdminEditTrainer />} />
+                    <Route path="/admin/trainers/approve-trainers" element={<AdminApproveTrainers />} />
+                    <Route path="/admin/trainers/payments" element={<AdminTrainerPayments />} />
+                    <Route path="/admin/trainers/reports" element={<AdminTrainerReports />} />
+                    <Route path="/admin/store" element={<AdminStore />} />
+                    <Route path="/admin/store/products" element={<AdminProducts />} />
+                    <Route path="/admin/store/products/add" element={<AdminAddProduct />} />
+                    <Route path="/admin/store/products/edit/:productId" element={<AdminEditProduct />} />
+                    <Route path="/admin/store/products/view/:productId" element={<AdminProductView />} />
+                    <Route path="/admin/store/orders" element={<AdminOrders />} />
+                    <Route path="/admin/store/orders/:orderId" element={<AdminOrderDetails />} />
+                    <Route path="/admin/store/inventory" element={<AdminInventory />} />
+                    <Route path="/admin/community" element={<AdminCommunity />} />
+                    <Route path="/admin/fitness" element={<AdminFitness />} />
+                    <Route path="/admin/fitness/add-exercise" element={<AdminAddExercise />} />
+                    <Route path="/admin/fitness/edit-exercise" element={<AdminEditExercise />} />
+                    <Route path="/admin/settings" element={<AdminSettings />} />
+                  </Route>
 
                   {/* Fallback route for unauthorized access */}
                   <Route path="/unauthorized" element={<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A0A1F] to-[#1A1A2F]">

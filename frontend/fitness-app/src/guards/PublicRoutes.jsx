@@ -1,11 +1,18 @@
 import { useContext } from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 
 const PublicRoute = () => {
-  const { isAuthenticated } = useContext(UserContext);
+  const { user } = useContext(UserContext);
+  const location = useLocation();
 
-  return isAuthenticated ? <Navigate to="/" /> : <Outlet />;
+  const isAuthPage = ["/login", "/signup", "/oauth-success"].includes(location.pathname);
+
+  if (user && isAuthPage) {
+    return <Navigate to="/calculators" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default PublicRoute;

@@ -1,16 +1,20 @@
-import { useContext } from "react";
 import { Navigate, Outlet } from "react-router-dom";
+import { useContext } from "react";
 import { UserContext } from "../context/UserContext";
+import { useUserAuth }  from "../hooks/useUserAuth";
 
-const PrivateRoute = ({ roles = [] }) => {
-  const { user, isAuthenticated } = useContext(UserContext);
+const PrivateRoute = ({ allowedRoles }) => {
+  const { user, loading } = useContext(UserContext);
+  useUserAuth();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+  if (loading || !user || user.role === null) {
+    return <div>Loading...</div>;
   }
 
-  if (roles.length > 0 && !roles.includes(user?.role)) {
-    return <Navigate to="/unauthorized" />; // Optional "403" page
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (allowedRoles && (!user.role || !allowedRoles.includes(user.role))) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <Outlet />;

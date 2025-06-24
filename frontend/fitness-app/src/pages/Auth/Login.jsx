@@ -60,16 +60,9 @@ const Login = () => {
         localStorage.setItem("token", token);
         window.dispatchEvent(new Event("login"));
         updateUser(user);
+        console.log("User logged in successfully:", user);
 
-        // Check if there's a saved redirect path
-        const redirectPath = sessionStorage.getItem('redirectAfterLogin');
-        if (redirectPath) {
-          sessionStorage.removeItem('redirectAfterLogin'); // Clear it after use
-          navigate(redirectPath);
-        } else {
-          // Default redirect if no specific path was saved
-          navigate("/calculators");
-        }
+        navigate("/calculators");
       }
     } catch (error) {
       if (error.response && error.response.data.message) {
@@ -96,17 +89,6 @@ const Login = () => {
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 0.5 } }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate('/store');
-    }, 1500);
   };
 
   return (

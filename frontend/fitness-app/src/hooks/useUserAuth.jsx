@@ -12,11 +12,14 @@ export const useUserAuth = () => {
         if(user) return;
 
         let isMounted = true;
+        let hasFetchedUser = false;
 
         const fetchUserInfo = async () => {
+            if (hasFetchedUser) return;
+            hasFetchedUser = true;
+            
             try {
                 const response = await axiosInstance.get(API_PATHS.AUTH.GET_USER_INFO);
-
                 if (isMounted && response.data) {
                     updateUser(response.data);
                 }

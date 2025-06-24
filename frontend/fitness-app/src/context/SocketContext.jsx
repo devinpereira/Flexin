@@ -1,54 +1,42 @@
+// SocketProvider.jsx
 import { createContext, useEffect, useState } from "react";
-import { io } from "socket.io-client";
-import { BASE_URL } from "../utils/apiPaths";
+import {
+  connectSocket,
+  getSocket,
+  disconnectSocket,
+} from "../utils/socket";
 
 export const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
 
-  // (Re)connect / disconnect whenever `token` changes
   useEffect(() => {
-    // If there's no token, tear down any existing socket
-    if (!token) {
-      setSocket((prev) => {
-        if (prev) prev.disconnect();
-        return null;
-      });
-      return;
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      const s = connectSocket(token);
+      setSocket(s);
+
+      s.on("connect", () => console.log("Connected:", s.id));
+      s.on("disconnect", () => console.log("Disconnected"));
     }
 
-    // Otherwise, build a fresh socket
-    const newSocket = io(BASE_URL, {
-      auth: { token },
-      autoConnect: true,
-      transports: ["websocket"],
-    });
-
-    setSocket(newSocket);
-
-    newSocket.on("connect", () => {
-      console.log("Socket connected:", newSocket.id);
-    });
-    newSocket.on("disconnect", () => {
-      console.log("Socket disconnected");
-    });
-
-    // Clean up on unmount or before reconnect
     return () => {
-      newSocket.disconnect();
+      disconnectSocket();
     };
-  }, [token]);
+  }, []);
 
-  // Listen for your login/logout events to update the token
+  // Listen for login/logout events
   useEffect(() => {
     const handleLogin = () => {
       const t = localStorage.getItem("token");
-      setToken(t);
+      const s = connectSocket(t);
+      setSocket(s);
     };
     const handleLogout = () => {
-      setToken(null);
+      disconnectSocket();
+      setSocket(null);
     };
 
     window.addEventListener("login", handleLogin);
