@@ -13,7 +13,7 @@ const generateToken = (id) => {
 
 // Register User
 export const registerUser = async (req, res) => {
-    const { fullName, email, password, profileImageUrl, dob, role } = req.body;
+    const { fullName, email, password, dob } = req.body;
     
     // validation: Check for missing fields
     if (!fullName || !email || !password || !dob) {
@@ -32,9 +32,7 @@ export const registerUser = async (req, res) => {
             fullName,
             email,
             password,
-            profileImageUrl,
             dob,
-            role,
         });
 
         res.status(201).json({
@@ -130,7 +128,7 @@ export const sendVerifyOtp = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
-}
+};
 
 // Verify Email
 export const verifyEmail = async (req, res) => {
@@ -169,7 +167,7 @@ export const verifyEmail = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
-}
+};
 
 // Send Password Reset OTP
 export const sendResetOtp = async (req, res) => {
@@ -205,7 +203,7 @@ export const sendResetOtp = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
-}
+};
 
 // Reset Password
 export const resetPassword = async (req, res) => {
@@ -240,4 +238,4 @@ export const resetPassword = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
-}
+};
