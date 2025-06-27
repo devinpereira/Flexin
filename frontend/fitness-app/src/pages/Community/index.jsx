@@ -15,26 +15,56 @@ import Friends from './sections/Friends';
 import Profile from './sections/Profile';
 import UserProfile from '../../components/Community/UserProfile.jsx';
 
+/**
+ * Community - Main container component for the social networking features
+ * 
+ * This component serves as the entry point for the entire community module,
+ * managing navigation between different sections (Home, Search, Profile, etc.)
+ * and controlling the layout with sidebars and main content area.
+ * 
+ * The component implements a "fake routing" system using state rather than
+ * actual routes, which allows for smooth transitions between sections while
+ * maintaining a SPA feel.
+ * 
+ * Key features:
+ * - Authentication check via useUserAuth hook
+ * - Section navigation with animation transitions
+ * - Dynamic content rendering based on activeSection state
+ * - User profile management with context integration
+ */
 const Community = () => {
+  // Authentication check
   useUserAuth();
+
+  // Get user data from context
   const { user: contextUser, loading } = useContext(UserContext);
+
+  // Track which section is currently active (Home, Search, etc.)
   const [activeSection, setActiveSection] = useState('Home');
+
+  // Used for viewing other user profiles via search
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // Local user state that syncs with context
   const [user, setUser] = useState(contextUser);
 
+  // Update local user state when context changes
   useEffect(() => {
     setUser(contextUser);
   }, [contextUser]);
 
+  // Handler for navigating between sections
   const handleSectionChange = (section) => {
     setActiveSection(section);
-    setSelectedUser(null);
+    setSelectedUser(null); // Reset selected user when changing sections
   };
 
+  // Handler for selecting a user from search results
   const handleSelectUser = (user) => {
     setSelectedUser(user);
   };
 
+  // Handler for returning to search from user profile view
   const handleBackToSearch = () => {
     setSelectedUser(null);
   };
@@ -67,6 +97,7 @@ const Community = () => {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
+          {/* Conditionally render content based on active section */}
           {activeSection === 'Home' && (
             <Home
               profileImage={user?.profileImageUrl ? `${BASE_URL}/${user?.profileImageUrl}` : "src/assets/profile1.png"}
