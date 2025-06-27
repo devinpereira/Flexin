@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiMenu, FiX } from 'react-icons/fi';
-import { FaUserShield } from 'react-icons/fa';
+import { FaUserShield, FaChevronDown, FaSignOutAlt, FaUser } from 'react-icons/fa';
 import { useNavigationHistory } from '../context/NavigationContext';
 import { UserContext } from '../context/UserContext';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
   const adminMenuRef = useRef(null);
+  const profileMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useNavigationHistory();
@@ -43,6 +45,14 @@ const Navbar = () => {
         !adminMenuRef.current.contains(event.target)) {
         setAdminMenuOpen(false);
       }
+
+      if (
+        profileMenuOpen &&
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
+        setProfileMenuOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -52,7 +62,7 @@ const Navbar = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [mobileMenuOpen, adminMenuOpen]);
+  }, [mobileMenuOpen, adminMenuOpen, profileMenuOpen]);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
@@ -71,6 +81,14 @@ const Navbar = () => {
     } else {
       navigate(path);
     }
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    if (window.clearUser) window.clearUser(); // for context if available
+    window.dispatchEvent(new Event("logout"));
+    navigate("/login");
   };
 
   return (
@@ -158,12 +176,43 @@ const Navbar = () => {
                   </Link>
                 </>
               ) : (
-                // Show profile or account button on other pages
-                <div className="flex items-center gap-3">
-                  <Link to="/profile" className="text-white hover:text-[#f67a45] transition-colors flex items-center gap-2">
-                    <img src="/src/assets/profile1.png" className="w-8 h-8 rounded-full" alt="Profile" />
+                // Show profile/account dropdown on other pages
+                <div className="flex items-center gap-3 relative" ref={profileMenuRef}>
+                  <button
+                    className="text-white hover:text-[#f67a45] transition-colors flex items-center gap-2"
+                    onClick={() => setProfileMenuOpen((prev) => !prev)}
+                  >
+                    <img
+                      src={
+                        user?.profileImageUrl
+                          ? user.profileImageUrl.startsWith("http")
+                            ? user.profileImageUrl
+                            : `/src/assets/profile1.png`
+                          : "/src/assets/profile1.png"
+                      }
+                      className="w-8 h-8 rounded-full"
+                      alt="Profile"
+                    />
                     <span>Account</span>
-                  </Link>
+                    <FaChevronDown className="ml-1" />
+                  </button>
+                  {profileMenuOpen && (
+                    <div className="absolute right-0 mt-2 bg-[#1A1A2F] border border-[#f67a45]/30 rounded-lg shadow-lg py-2 min-w-[180px] z-50">
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-white hover:bg-[#f67a45]/20 hover:text-[#f67a45] flex items-center gap-2"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <FaUser /> Profile
+                      </Link>
+                      <button
+                        className="w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/20 hover:text-[#f67a45] flex items-center gap-2"
+                        onClick={handleLogout}
+                      >
+                        <FaSignOutAlt /> Logout
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
