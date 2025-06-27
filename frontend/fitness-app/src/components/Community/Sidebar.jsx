@@ -18,7 +18,7 @@ const Sidebar = ({ name, username, profileImage }) => {
     { id: 'Home', label: 'Home', icon: <FaHome size={20} />, path: '/community/home' },
     { id: 'Search', label: 'Search', icon: <FaSearch size={20} />, path: '/community/search' },
     { id: 'Notifications', label: 'Notifications', icon: <FaBell size={20} />, path: '/community/notifications' },
-    { id: 'Create', label: 'Create', icon: <FaPlus size={20} />, path: '/community/home' },
+    { id: 'Create', label: 'Create', icon: <FaPlus size={20} />, path: '/community/create' },
     { id: 'Friends', label: 'Friends', icon: <FaUserFriends size={20} />, path: '/community/friends' },
     { id: 'Profile', label: 'Profile', icon: <FaUser size={20} />, path: '/community/profile' },
   ];

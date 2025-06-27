@@ -1,11 +1,11 @@
-import React, { useContext, useState, useEffect, Children } from 'react';
-import Navigation from '../components/Navigation';
-import Sidebar from '../components/Community/Sidebar';
-import FriendsSidebar from '../components/Community/FriendsSidebar';
-import { motion } from 'framer-motion';
-import { useUserAuth } from '../hooks/useUserAuth';
-import { UserContext } from '../context/UserContext';
-import { BASE_URL } from '../utils/apiPaths';
+import React, { useContext, useState, useEffect, Children } from "react";
+import Navigation from "../components/Navigation";
+import Sidebar from "../components/Community/Sidebar";
+import FriendsSidebar from "../components/Community/FriendsSidebar";
+import { motion } from "framer-motion";
+import { useUserAuth } from "../hooks/useUserAuth";
+import { UserContext } from "../context/UserContext";
+import { BASE_URL } from "../utils/apiPaths";
 
 const CommunityLayout = ({ children, activeSection }) => {
   useUserAuth();
@@ -13,8 +13,12 @@ const CommunityLayout = ({ children, activeSection }) => {
   const { user, loading } = useContext(UserContext);
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-fixed"
-      style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
+    <div
+      className="min-h-screen bg-cover bg-center bg-fixed"
+      style={{
+        background: "linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)",
+      }}
+    >
       <Navigation />
 
       <div className="container mx-auto flex relative">
@@ -25,7 +29,11 @@ const CommunityLayout = ({ children, activeSection }) => {
               activeSection={activeSection}
               name={user?.fullName}
               username={`@${user?.username}`}
-              profileImage={user?.profileImageUrl ? `${BASE_URL}/${user?.profileImageUrl}` : "src/assets/profile1.png"}
+              profileImage={
+                user?.profileImageUrl
+                  ? `${BASE_URL}/${user?.profileImageUrl}`
+                  : "src/assets/profile1.png"
+              }
             />
           </div>
         </div>
@@ -38,7 +46,7 @@ const CommunityLayout = ({ children, activeSection }) => {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-            {children}
+          {children}
         </motion.div>
 
         {/* Right Sidebar - Fixed width */}
