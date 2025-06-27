@@ -1,6 +1,7 @@
 import express from "express";
 import User from "../models/User.js";
 import ProfileData from "../models/ProfileData.js";
+import Post from "../models/Post.js";
 
 export const registerProfile = async (req, res) => {
   const userId = req.user._id;
@@ -71,6 +72,47 @@ export const getProfileInfo = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "Error retrieving profile info",
+      error: err.message,
+    });
+  }
+};
+
+// Get Public Profile Info (for viewing other users)
+export const getPublicProfile = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    // Fetch user base info
+    const user = await User.findById(userId).select("fullName profileImageUrl");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Fetch profile info
+    const profile = await ProfileData.findOne({ userId }).select("-_id username bio noOfPosts followers following");
+    if (!profile) {
+      return res.status(404).json({ message: "Profile data not found" });
+    }
+
+    // Fetch posts
+    const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+
+    // Merge and return
+    res.status(200).json({
+      user: {
+        id: userId,
+        name: user.fullName,
+        username: `@${profile.username}`,
+        profileImage: user.profileImageUrl,
+        bio: profile.bio,
+        posts: profile.noOfPosts,
+        followers: profile.followers,
+        following: profile.following,
+      },
+      posts,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Error retrieving public profile",
       error: err.message,
     });
   }

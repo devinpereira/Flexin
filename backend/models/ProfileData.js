@@ -17,10 +17,6 @@ const profileDataSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    coverImageUrl: {
-      type: String,
-      default: null,
-    },
     noOfPosts: {
       type: Number,
       default: 0,
