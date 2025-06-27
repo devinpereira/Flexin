@@ -3,24 +3,54 @@ import { FaTimes, FaChevronLeft, FaChevronRight, FaRegHeart, FaHeart, FaComment,
 import { formatDistanceToNow } from 'date-fns';
 import { BASE_URL } from '../../../utils/apiPaths';
 
+/**
+ * PostImageModal - Displays a post's images in a full-screen modal view
+ * 
+ * This component provides an immersive view of post images with carousel navigation,
+ * like/comment functionality, and a comment section similar to Instagram's lightbox.
+ * 
+ * Features:
+ * - Full-screen modal with dark overlay
+ * - Image carousel with navigation controls
+ * - Like/unlike functionality
+ * - Comment section
+ * - Comment submission form
+ * - Responsive design for different screen sizes
+ * 
+ * @param {Object} post - The post data to display
+ * @param {Object} user - User data to display with the post
+ * @param {Function} onClose - Handler to close the modal
+ * @param {Function} onLike - Handler for liking/unliking the post
+ */
 const PostImageModal = ({ post, user, onClose, onLike }) => {
+  // State management
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [liked, setLiked] = useState(post.isliked);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [commentText, setCommentText] = useState('');
 
+  /**
+   * Navigate to the previous image in the carousel
+   */
   const handlePrevImage = () => {
     if (currentImageIndex > 0) {
       setCurrentImageIndex(currentImageIndex - 1);
     }
   };
 
+  /**
+   * Navigate to the next image in the carousel
+   */
   const handleNextImage = () => {
     if (post.images && currentImageIndex < post.images.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
     }
   };
 
+  /**
+   * Handle liking/unliking a post
+   * Updates UI optimistically and calls parent handler
+   */
   const handleLike = async () => {
     setLiked(!liked);
     setLikesCount(prev => liked ? prev - 1 : prev + 1);
@@ -30,6 +60,12 @@ const PostImageModal = ({ post, user, onClose, onLike }) => {
     }
   };
 
+  /**
+   * Handle comment submission
+   * In a real implementation, this would call an API
+   * 
+   * @param {Event} e - Form submit event
+   */
   const handleSubmitComment = (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
@@ -38,10 +74,12 @@ const PostImageModal = ({ post, user, onClose, onLike }) => {
     setCommentText('');
   };
 
+  // Determine if we need to show carousel controls
   const hasMultipleImages = post.images && Array.isArray(post.images) && post.images.length > 1;
 
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center" onClick={onClose}>
+      {/* Close button */}
       <div className="absolute top-4 right-4 z-50">
         <button
           onClick={onClose}
@@ -55,7 +93,7 @@ const PostImageModal = ({ post, user, onClose, onLike }) => {
         className="w-full h-full max-w-6xl md:h-[90vh] flex flex-col md:flex-row"
         onClick={e => e.stopPropagation()}
       >
-        {/* Image Section - Left/Top */}
+        {/* Left Side - Image Display */}
         <div className="relative flex items-center justify-center bg-black md:w-7/12 h-1/2 md:h-full">
           <img
             src={post.images ? post.images[currentImageIndex].preview : post.image}
@@ -63,6 +101,7 @@ const PostImageModal = ({ post, user, onClose, onLike }) => {
             className="max-h-full max-w-full object-contain"
           />
 
+          {/* Carousel navigation - only if multiple images */}
           {hasMultipleImages && (
             <>
               <button
@@ -83,6 +122,7 @@ const PostImageModal = ({ post, user, onClose, onLike }) => {
                 <FaChevronRight size={20} />
               </button>
 
+              {/* Image indicator dots */}
               <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1">
                 {post.images.map((_, idx) => (
                   <button
@@ -96,7 +136,7 @@ const PostImageModal = ({ post, user, onClose, onLike }) => {
           )}
         </div>
 
-        {/* Comments/Details Section - Right/Bottom */}
+        {/* Right Side - Post Details and Comments */}
         <div className="md:w-5/12 h-1/2 md:h-full bg-[#121225] flex flex-col overflow-hidden">
           {/* Post Header */}
           <div className="p-4 border-b border-gray-700 flex items-center">
@@ -142,15 +182,20 @@ const PostImageModal = ({ post, user, onClose, onLike }) => {
           {/* Actions Bar */}
           <div className="border-t border-gray-700 p-4">
             <div className="flex items-center mb-3 gap-4">
+              {/* Like button */}
               <button
                 onClick={handleLike}
                 className="text-2xl"
               >
                 {liked ? <FaHeart className="text-red-500" /> : <FaRegHeart className="text-white hover:text-white/70" />}
               </button>
+
+              {/* Comment button */}
               <button className="text-2xl text-white hover:text-white/70">
                 <FaComment />
               </button>
+
+              {/* Share button - commented out but ready for future use */}
               {/* <button className="text-2xl text-white hover:text-white/70">
                 <FaShare />
               </button> */}
