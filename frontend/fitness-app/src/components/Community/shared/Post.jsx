@@ -12,7 +12,25 @@ import { formatDistanceToNow } from 'date-fns';
 import axiosInstance from "../../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
 
+/**
+ * Post Component - Renders an individual social media post
+ * 
+ * This component handles the display and interaction of posts in the community feed.
+ * It supports images (including multi-image carousel), likes, comments, and sharing.
+ * 
+ * Features:
+ * - Image carousel with navigation controls
+ * - Like/unlike functionality with API integration
+ * - Comment section that loads lazily (on demand)
+ * - Comment submission form
+ * - Dropdown menu for post actions (save, report)
+ * - Responsive design for various screen sizes
+ * 
+ * @param {Object} post - The post data to display
+ * @param {Function} onLike - Callback for when a post is liked/unliked
+ */
 const Post = ({ post, onLike }) => {
+  // State management for post interactions
   const [liked, setLiked] = useState(post.isliked);
   const [likesCount, setLikesCount] = useState(post.likes);
   const [showMenu, setShowMenu] = useState(false);
@@ -22,25 +40,37 @@ const Post = ({ post, onLike }) => {
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(post.comments);
 
+  /**
+   * Handle liking/unliking a post
+   * Updates UI optimistically then calls the API
+   */
   const handleLike = async () => {
+    // Optimistic UI update
     setLiked(!liked);
     setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
 
     try {
+      // API call to update like status
       await axiosInstance.post(`${API_PATHS.POST.LIKE_POST(post.id)}`);
       if (onLike) onLike(post.id);
     } catch (err) {
+      // Revert UI if API call fails
       setLiked(liked);
       setLikesCount((prev) => (liked ? prev + 1 : prev - 1));
       console.error("Failed to like/unlike post:", err);
     }
   };
 
+  /**
+   * Handle adding a new comment to a post
+   * Submits to API and updates local state
+   */
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
 
     try {
+      // API call to add comment
       const res = await axiosInstance.post(
         `${API_PATHS.COMMENT.ADD_COMMENT(post.id)}`,
         {
@@ -48,6 +78,7 @@ const Post = ({ post, onLike }) => {
         }
       );
 
+      // Format the new comment
       const newComment = {
         _id: res.data._id,
         userId: {
@@ -58,6 +89,7 @@ const Post = ({ post, onLike }) => {
         createdAt: new Date(res.data.createdAt).toISOString(),
       };
 
+      // Update state with the new comment
       setCommentCount((prev) => prev + 1);
       setComments([newComment, ...comments]);
       setCommentText("");
@@ -66,7 +98,10 @@ const Post = ({ post, onLike }) => {
     }
   };
 
-  // Fetch comments on button click
+  /**
+   * Fetch comments when comment section is expanded
+   * Loads comments from API only when needed (lazy loading)
+   */
   const handleCommentClick = async () => {
     setShowComments(!showComments);
     if (!showComments && comments.length === 0) {
@@ -81,10 +116,16 @@ const Post = ({ post, onLike }) => {
     }
   };
 
+  /**
+   * Image carousel navigation - previous image
+   */
   const goToPrevImage = () => {
     setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
+  /**
+   * Image carousel navigation - next image
+   */
   const goToNextImage = () => {
     setCurrentImageIndex((prev) => {
       if (post.images && Array.isArray(post.images)) {
@@ -94,19 +135,20 @@ const Post = ({ post, onLike }) => {
     });
   };
 
+  // Close the menu when clicking outside
   React.useEffect(() => {
     const handleClickOutside = () => setShowMenu(false);
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Check if we have multiple images
+  // Check if we have multiple images to enable carousel
   const hasMultipleImages =
     post.images && Array.isArray(post.images) && post.images.length > 0;
 
   return (
     <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
-      {/* Post Header */}
+      {/* Post Header - Author info and menu */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
           <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
@@ -152,10 +194,10 @@ const Post = ({ post, onLike }) => {
         </div>
       </div>
 
-      {/* Post Content */}
+      {/* Post Content - Text */}
       <p className="text-white mb-4">{post.content}</p>
 
-      {/* Post Image(s) */}
+      {/* Post Content - Images with carousel */}
       {hasMultipleImages ? (
         <div className="rounded-lg overflow-hidden mb-4 relative">
           <img
@@ -233,7 +275,7 @@ const Post = ({ post, onLike }) => {
         )
       )}
 
-      {/* Post Stats */}
+      {/* Post Stats - Like and comment counts */}
       <div className="flex text-white/70 text-sm mb-4">
         <span className="mr-4">{likesCount} likes</span>
         <button
@@ -244,7 +286,7 @@ const Post = ({ post, onLike }) => {
         </button>
       </div>
 
-      {/* Post Actions */}
+      {/* Post Actions - Like, comment, share buttons */}
       <div className="flex border-t border-gray-700 pt-4">
         <button
           className={`flex items-center gap-2 px-4 py-2 rounded-full hover:bg-white/10 flex-1 justify-center ${liked ? "text-[#f67a45]" : "text-white"
@@ -267,7 +309,7 @@ const Post = ({ post, onLike }) => {
         </button> */}
       </div>
 
-      {/* Comments Section */}
+      {/* Comments Section - Conditionally rendered */}
       {showComments && (
         <div className="mt-4 border-t border-gray-700 pt-4">
           {/* Comment Form */}
