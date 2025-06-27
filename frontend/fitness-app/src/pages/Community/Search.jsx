@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { FaSearch, FaUserPlus, FaUserCheck } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
-import axiosInstance from "../../../utils/axiosInstance";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
+import axiosInstance from "../../utils/axiosInstance";
+import CommunityLayout from "../../layouts/CommunityLayout";
 
-const Search = ({ onSelectUser }) => {
+const CommunitySearch = ({ onSelectUser }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -27,7 +28,7 @@ const Search = ({ onSelectUser }) => {
         id: user._id,
         name: user.fullName,
         username: `@${user.username}`,
-        profileImage: `${BASE_URL}/${user.profileImageUrl}` || "/src/assets/profile1.png",
+        profileImage: user.profileImageUrl || "/src/assets/profile1.png",
         bio: user.bio || "",
         posts: user.noOfPosts,
         followers: user.followers,
@@ -45,7 +46,7 @@ const Search = ({ onSelectUser }) => {
   };
 
   const handleFollowUser = async (userId, isFollowing, e) => {
-    e.stopPropagation(); // Prevent triggering the parent click that navigates to user profile
+    e.stopPropagation();
 
     try {
       if (isFollowing == "accepted") {
@@ -74,6 +75,7 @@ const Search = ({ onSelectUser }) => {
   }, [searchQuery]);
 
   return (
+    <CommunityLayout>
     <div className="max-w-3xl mx-auto">
       <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
         <h3 className="text-white text-xl font-bold mb-6">Search Users</h3>
@@ -164,7 +166,8 @@ const Search = ({ onSelectUser }) => {
         </div>
       </div>
     </div>
+  </CommunityLayout>
   );
 };
 
-export default Search;
+export default CommunitySearch;

@@ -4,18 +4,19 @@ import {
   FaImage, FaRegHeart, FaComment
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import axiosInstance from "../../../utils/axiosInstance";
-import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
-import CreatePost from '../../../components/Community/shared/CreatePost';
+import axiosInstance from "../../utils/axiosInstance";
+import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
+import CreatePost from '../../components/Community/shared/CreatePost';
 
 // Import modals
-import SettingsModal from '../../../components/Community/modals/SettingsModal';
-import ProfilePictureModal from '../../../components/Community/modals/ProfilePictureModal';
-import EditProfileModal from '../../../components/Community/modals/EditProfileModal';
-import CreatePostModal from '../../../components/Community/modals/CreatePostModal';
-import PostImageModal from '../../../components/Community/modals/PostImageModal';
+import SettingsModal from '../../components/Community/modals/SettingsModal';
+import ProfilePictureModal from '../../components/Community/modals/ProfilePictureModal';
+import EditProfileModal from '../../components/Community/modals/EditProfileModal';
+import CreatePostModal from '../../components/Community/modals/CreatePostModal';
+import PostImageModal from '../../components/Community/modals/PostImageModal';
+import CommunityLayout from '../../layouts/CommunityLayout';
 
-const Profile = () => {
+const CommunityProfile = () => {
   const [activeTab, setActiveTab] = useState('posts');
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
@@ -155,6 +156,7 @@ const Profile = () => {
   };
 
   return (
+    <CommunityLayout>
     <div className="w-full max-w-3xl mx-auto">
       <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden">
         {/* Profile Header */}
@@ -398,7 +400,8 @@ const Profile = () => {
         />
       )}
     </div>
+    </CommunityLayout>
   );
 };
 
-export default Profile;
+export default CommunityProfile;

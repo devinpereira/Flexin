@@ -2,11 +2,12 @@ import React, { useState, useEffect, useContext } from 'react';
 import { FaBell, FaUserPlus, FaHeart, FaComment, FaCheck, FaTimes } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
-import { API_PATHS, BASE_URL } from '../../../utils/apiPaths';
-import axiosInstance from '../../../utils/axiosInstance';
-import { SocketContext } from '../../../context/SocketContext';
+import { API_PATHS, BASE_URL } from '../../utils/apiPaths';
+import axiosInstance from '../../utils/axiosInstance';
+import { SocketContext } from '../../context/SocketContext';
+import CommunityLayout from '../../layouts/CommunityLayout';
 
-const Notifications = () => {
+const CommunityNotifications = () => {
   const socket = useContext(SocketContext);
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,6 +111,7 @@ const Notifications = () => {
   };
 
   return (
+    <CommunityLayout>
     <div className="max-w-3xl mx-auto">
       <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
         <div className="flex justify-between items-center mb-6">
@@ -219,7 +221,8 @@ const Notifications = () => {
         )}
       </div>
     </div>
+    </CommunityLayout>
   );
 };
 
-export default Notifications;
+export default CommunityNotifications;

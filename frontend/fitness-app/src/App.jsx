@@ -29,6 +29,8 @@ import FitnessProfileProvider from "./context/FitnessProfileContext";
 import Home from "./pages/Home";
 import { NavigationProvider } from "./context/NavigationContext";
 import { SocketProvider } from "./context/SocketContext";
+import CommunityHome from "./pages/Community/Home";
+import CommunitySearch from "./pages/Community/Search";
 
 // Import Admin pages
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -52,6 +54,9 @@ import AdminSettings from "./pages/Admin/Settings";
 import AdminProductView from "./pages/Admin/Store/ProductView";
 
 import { NotificationProvider } from "./context/NotificationContext";
+import CommunityNotifications from "./pages/Community/Notifications";
+import CommunityFriends from "./pages/Community/Friends";
+import CommunityProfile from "./pages/Community/Profile";
 
 function App() {
   return (
@@ -87,6 +92,11 @@ function App() {
                   <Route path="/exercise" element={<Exercise />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/community" element={<Community />} />
+                  <Route path="/community/home" element={<CommunityHome />} />
+                  <Route path="/community/search" element={<CommunitySearch />} />
+                  <Route path="/community/notifications" element={<CommunityNotifications />} />
+                  <Route path="/community/friends" element={<CommunityFriends />} />
+                  <Route path="/community/profile" element={<CommunityProfile />} />
 
                   {/* Admin Routes - No Role Protection for Development */}
                   <Route path="/admin" element={<AdminDashboard />} />

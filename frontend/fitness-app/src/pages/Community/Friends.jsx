@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { FaUserPlus, FaUserCheck, FaUserTimes, FaSearch, FaFilter, FaUserMinus, FaCircle, FaComment } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { API_PATHS, BASE_URL } from '../../../utils/apiPaths';
-import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS, BASE_URL } from '../../utils/apiPaths';
+import axiosInstance from '../../utils/axiosInstance';
+import CommunityLayout from '../../layouts/CommunityLayout';
 
-const Friends = () => {
+const CommunityFriends = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -91,6 +92,7 @@ const Friends = () => {
   };
 
   return (
+    <CommunityLayout>
     <div className="space-y-6">
       <h2 className="text-white text-2xl font-bold mb-4">Friends</h2>
 
@@ -252,7 +254,8 @@ const Friends = () => {
         </div>
       </div>
     </div>
+    </CommunityLayout>
   );
 };
 
-export default Friends;
+export default CommunityFriends;
