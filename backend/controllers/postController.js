@@ -156,8 +156,12 @@ export const createPost = async (req, res) => {
   try {
     const { description } = req.body;
     const mediaFiles = req.files
-      ? req.files.map((file) => file.path.replace(/\\/g, "/"))
+      ? req.files.map((file) => file.path)
       : [];
+
+    console.log("req.files", req.files);
+    console.log("mediaFiles", mediaFiles);
+
 
     // 1. Create and save new post
     const newPost = new Post({
@@ -193,11 +197,11 @@ export const createPost = async (req, res) => {
         name: user.fullName,
         username: `@${profile.username}`,
         profileImage: user.profileImageUrl
-          ? `${BASE_URL}/${user.profileImageUrl}`
+          ? user.profileImageUrl
           : null,
       },
       content: newPost.description,
-      images: newPost.content.map((img) => ({ preview: `${BASE_URL}/${img}` })),
+      images: newPost.content.map((img) => ({ preview: img })),
       likes: newPost.likes || 0,
       isliked: false,
       comments: newPost.comments || 0,

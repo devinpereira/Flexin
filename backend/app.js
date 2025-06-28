@@ -3,7 +3,7 @@ import cors from "cors";
 import path from "path";
 import session from "express-session";
 import passport from "./config/passport.js";
-import connectDB from "./config/db.js";
+import connectToDB from "./config/db.js";
 import logger from "./middleware/logger.js";
 
 import authRoutes from "./routes/authRoutes.js";
@@ -20,7 +20,7 @@ import mealPlanRoutes from "./routes/mealPlanRoutes.js";
 const app = express();
 
 // Connect to DB
-connectDB();
+connectToDB();
 
 // Middleware
 app.use(cors({

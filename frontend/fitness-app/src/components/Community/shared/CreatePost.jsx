@@ -178,11 +178,10 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
                       <button
                         type="button"
                         onClick={handlePrevImage}
-                        className={`absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${
-                          currentPreviewIndex === 0
+                        className={`absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${currentPreviewIndex === 0
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-black/80"
-                        }`}
+                          }`}
                         disabled={currentPreviewIndex === 0}
                       >
                         <FaChevronLeft />
@@ -190,11 +189,10 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
                       <button
                         type="button"
                         onClick={handleNextImage}
-                        className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${
-                          currentPreviewIndex === images.length - 1
+                        className={`absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/60 text-white p-2 rounded-full ${currentPreviewIndex === images.length - 1
                             ? "opacity-50 cursor-not-allowed"
                             : "hover:bg-black/80"
-                        }`}
+                          }`}
                         disabled={currentPreviewIndex === images.length - 1}
                       >
                         <FaChevronRight />
@@ -220,11 +218,10 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
                         key={img.preview}
                         type="button"
                         onClick={() => setCurrentPreviewIndex(idx)}
-                        className={`w-10 h-10 rounded-md overflow-hidden border-2 ${
-                          currentPreviewIndex === idx
+                        className={`w-10 h-10 rounded-md overflow-hidden border-2 ${currentPreviewIndex === idx
                             ? "border-[#f67a45]"
                             : "border-transparent"
-                        }`}
+                          }`}
                       >
                         <img
                           src={img.preview}
@@ -259,11 +256,10 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
           <div className="flex space-x-2">
             <button
               type="button"
-              className={`p-2 rounded-full ${
-                images.length >= 5
+              className={`p-2 rounded-full ${images.length >= 5
                   ? "text-gray-500 cursor-not-allowed"
                   : "text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]"
-              }`}
+                }`}
               onClick={images.length < 5 ? triggerFileInput : undefined}
               disabled={images.length >= 5}
               title={
@@ -299,11 +295,10 @@ const CreatePost = ({ onPostCreated, profileImage }) => {
             disabled={
               (!postContent.trim() && images.length === 0) || isCreating
             }
-            className={`px-5 py-2 rounded-full ${
-              (!postContent.trim() && images.length === 0) || isCreating
+            className={`px-5 py-2 rounded-full ${(!postContent.trim() && images.length === 0) || isCreating
                 ? "bg-gray-600 text-gray-300 cursor-not-allowed"
                 : "bg-[#f67a45] text-white hover:bg-[#e56d3d]"
-            } transition-colors`}
+              } transition-colors`}
           >
             {isCreating ? "Posting..." : "Post"}
           </button>

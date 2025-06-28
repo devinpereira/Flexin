@@ -46,4 +46,54 @@ export const API_PATHS = {
     GET_NOTIFICATIONS: "/api/v1/notifications", // Done
     MARK_AS_READ: (notificationId) => `/api/v1/notifications/${notificationId}/read`,
   },
+
+  //  Store: Products
+  STORE_PRODUCTS: {
+    GET_PRODUCTS: "/api/v1/store/products",
+    GET_PRODUCT: (productId) => `/api/v1/store/products/${productId}`,
+    GET_FEATURED_PRODUCTS: "/api/v1/store/featured",
+    GET_DEALS_AND_OFFERS: "/api/v1/store/deals",
+  },
+
+  // Store: Categories and Subcategories
+  STORE_CATEGORIES: {
+    GET_CATEGORIES: "/api/v1/store/categories",
+    GET_SUBCATEGORIES: (categoryId) => `/api/v1/store/categories/${categoryId}/subcategories`,
+    GET_PRODUCTS_BY_CATEGORY: (categoryId) => `/api/v1/store/categories/${categoryId}/products`,
+    GET_PRODUCTS_BY_SUBCATEGORY: (subcategoryId) => `/api/v1/store/subcategories/${subcategoryId}/products`,
+  },
+
+  // Store: Shopping Cart
+  STORE_CART: {
+    GET_CART: "/api/v1/store/cart",
+    ADD_TO_CART: "/api/v1/store/cart",
+    UPDATE_CART_ITEM: (cartItemId) => `/api/v1/store/cart/${cartItemId}`,
+    REMOVE_FROM_CART: (cartItemId) => `/api/v1/store/cart/${cartItemId}`,
+  },
+
+  // Store: Checkout (Addresses & Payment Methods)
+  STORE_CHECKOUT: {
+    GET_ADDRESSES: "/api/v1/users/addresses",
+    ADD_ADDRESS: "/api/v1/users/addresses",
+    UPDATE_ADDRESS: (addressId) => `/api/v1/users/addresses/${addressId}`,
+    DELETE_ADDRESS: (addressId) => `/api/v1/users/addresses/${addressId}`,
+
+    GET_PAYMENT_METHODS: "/api/v1/users/payment-methods",
+    ADD_PAYMENT_METHOD: "/api/v1/users/payment-methods",
+  },
+
+  // Store: Orders
+  STORE_ORDERS: {
+    PLACE_ORDER: "/api/v1/store/orders",
+    GET_ORDERS: "/api/v1/store/orders",
+    GET_ORDER: (orderId) => `/api/v1/store/orders/${orderId}`,
+  },
+
+  // Store: Promotions
+  STORE_PROMOTIONS: {
+    APPLY_COUPON: "/api/v1/store/coupons/apply",
+  }
+
+
+
 };
