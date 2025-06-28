@@ -385,7 +385,7 @@ const MealPlan = () => {
               <h3 className="text-white text-lg sm:text-xl font-medium">{trainer.name}</h3>
               <p className="text-gray-400 mb-2 text-sm sm:text-base">{trainer.specialty}</p>
               <a
-                onClick={() => navigate(`/trainer-profile/${trainerId}`)}
+                onClick={() => navigate(`/trainers/${trainerId}`)}
                 className="text-[#f67a45] hover:underline text-sm cursor-pointer"
               >
                 View Profile

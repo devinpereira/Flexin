@@ -13,7 +13,11 @@ export const createTrainer = async (req, res) => {
             services,
             photos,
             packages,
-            availabilityStatus      
+            availabilityStatus,
+            feedbacks, // <-- Add this line
+            socialMedia, // (optional, if you want to allow setting social links at creation)
+            rating,      // (optional)
+            reviewCount  // (optional)
         } = req.body;
 
         const trainer = new Trainer(
@@ -27,7 +31,11 @@ export const createTrainer = async (req, res) => {
                 services,
                 photos,
                 packages,
-                availabilityStatus
+                availabilityStatus,
+                feedbacks: feedbacks || [], // <-- Add this line
+                socialMedia: socialMedia || {},
+                rating: rating || 0,
+                reviewCount: reviewCount || 0
             }
         );
         await trainer.save();
@@ -142,23 +150,4 @@ export const getAllTrainers = async (req, res) => {
             error: err.message
         });
     }
-};
-
-// Add Feedback to Trainer
-export const addFeedback = async (req, res) => {
-  try {
-    const { userName, comment, rating, photos } = req.body;
-    const trainer = await Trainer.findById(req.params.id);
-    if (!trainer) return res.status(404).json({ message: "Trainer not found" });
-
-    // Ensure feedbacks array exists
-    if (!trainer.feedbacks) trainer.feedbacks = [];
-
-    trainer.feedbacks.push({ userName, comment, rating, photos });
-    await trainer.save();
-
-    res.status(201).json({ message: "Feedback added", feedbacks: trainer.feedbacks });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 };

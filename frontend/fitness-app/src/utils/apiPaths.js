@@ -92,8 +92,10 @@ export const API_PATHS = {
   // Store: Promotions
   STORE_PROMOTIONS: {
     APPLY_COUPON: "/api/v1/store/coupons/apply",
+  },
+
+TRAINER: {
+    GET_TRAINER: (trainerId) => `/api/v1/trainers/${trainerId}`,
   }
-
-
 
 };

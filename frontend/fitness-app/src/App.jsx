@@ -86,7 +86,7 @@ function App() {
                     <Route path="/meal-plan/:trainerId" element={<MealPlan />} />
                     <Route path="/chat/:trainerId" element={<Chat />} />
                     <Route path="/subscription/:trainerId" element={<Subscription />} />
-                    <Route path="/trainer-profile/:trainerId" element={<TrainerProfile />} />
+                    <Route path="/trainers/:trainerId" element={<TrainerProfile />} />
                     <Route path="/calculators" element={<Calculators />} />
                     <Route path="/custom-schedules" element={<CustomSchedules />} />
                     <Route path="/add-schedule" element={<AddSchedule />} />

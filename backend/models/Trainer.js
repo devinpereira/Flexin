@@ -2,67 +2,122 @@ import mongoose from 'mongoose';
 
 
 const certificateSchema = new mongoose.Schema({
-  title: String,
-  issuer: String,
-  year: Number,
+  title: { type: String, required: true },
+  issuer: { type: String, required: true },
+  year: { type: Number, required: true },
 });
 
 const serviceSchema = new mongoose.Schema({
-  name: String,
-  description: String,
+  name: { type: String, required: true },
+  description: { type: String, required: true },
 });
 
 const packageSchema = new mongoose.Schema({
-  name: String,
-  price: Number,
-  features: [String],
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  features: [{ type: String, required: true }],
 });
 
 const feedbackSchema = new mongoose.Schema({
-  userName: String,
-  comment: String,
-  rating: { type: Number, min: 1, max: 5 },
-  photos: [String], // URLs to feedback images
+  userName: { type: String, required: true },
+  comment: { type: String, required: true },
+  rating: { type: Number, min: 1, max: 5, required: true },
+  photos: [{ type: String }],
   createdAt: { type: Date, default: Date.now },
 });
 
-const trainerSchema = new mongoose.Schema({
-  userId : {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true
-  },
-  name: {
-    type: String,
-    required: true,
-    trim:true 
-  },
-  age: {
-    type:Number,
-    required : true,
-    min:18,
-    max:100
-  },
-  bio:{
-    type:String
-  },
-  profilePhoto: {
-    type: String,
-    default: "default-profile-photo.jpg"
-  },
-  certificates: [certificateSchema],
-  services: [serviceSchema],
-  photos: [String], // URLs to trainer photos
-  packages: [packageSchema],
-  feedbacks: [feedbackSchema],
-  availabilityStatus: {
-    type: String,
-    enum: ['available', 'unavailable'],
-    default: 'available'
-  },
-},
-{
-  timestamps: true,
+const socialMediaSchema = new mongoose.Schema({
+  facebook: { type: String, default: "" },
+  instagram: { type: String, default: "" },
+  tiktok: { type: String, default: "" },
+  twitter: { type: String, default: "" },
 });
+
+const trainerSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    title: { // <-- Added
+      type: String,
+      required: true,
+      default: "Certified Trainer",
+    },
+    age: {
+      type: Number,
+      required: true,
+      min: 18,
+      max: 100,
+    },
+    bio: {
+      type: String,
+      required: true,
+    },
+    profilePhoto: {
+      type: String,
+      required: true,
+      default: "default-profile-photo.jpg",
+    },
+    certificates: {
+      type: [certificateSchema],
+      required: true,
+      default: [],
+    },
+    services: {
+      type: [serviceSchema],
+      required: true,
+      default: [],
+    },
+    photos: {
+      type: [String],
+      required: true,
+      default: [],
+    },
+    packages: {
+      type: [packageSchema],
+      required: true,
+      default: [],
+    },
+    feedbacks: {
+      type: [feedbackSchema],
+      required: true,
+      default: [],
+    },
+    socialMedia: { // <-- Added
+      type: socialMediaSchema,
+      required: true,
+      default: {},
+    },
+    rating: { // <-- Added
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    reviewCount: { // <-- Added
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    availabilityStatus: {
+      type: String,
+      enum: ["available", "unavailable"],
+      default: "available",
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 export default mongoose.model("Trainer", trainerSchema);

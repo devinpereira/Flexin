@@ -522,7 +522,7 @@ const Chat = () => {
                   <h3 className="text-white text-lg font-medium text-center">{trainer.name}</h3>
                   <p className="text-gray-400 mb-2 text-sm text-center">{trainer.specialty}</p>
                   <a
-                    onClick={() => navigate(`/trainer-profile/${trainerId}`)}
+                    onClick={() => navigate(`/trainers/${trainerId}`)}
                     className="text-[#f67a45] hover:underline text-sm cursor-pointer"
                   >
                     View Profile

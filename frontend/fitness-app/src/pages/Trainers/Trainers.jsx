@@ -7,7 +7,7 @@ const Trainers = () => {
   const navigate = useNavigate();
 
   const myTrainers = [
-    { id: 1, name: "John Smith", image: "/src/assets/trainer.png", specialty: "Strength & Conditioning" },
+    { id: "685fb7d4ba52f850eb19ba06", name: "John Smith", image: "/src/assets/trainer.png", specialty: "Strength & Conditioning" },
     { id: 2, name: "Sarah Johnson", image: "/src/assets/trainer.png", specialty: "Yoga & Flexibility" }
   ];
 
@@ -18,7 +18,7 @@ const Trainers = () => {
           <div
             key={trainer.id}
             className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-5 cursor-pointer hover:scale-[1.02] transition-transform"
-            onClick={() => navigate(`/trainer-profile/${trainer.id}`)}
+            onClick={() => navigate(`/trainers/${trainer.id}`)}
           >
             <div className="flex flex-col items-center">
               <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
@@ -38,7 +38,7 @@ const Trainers = () => {
                 className="bg-[#f67a45] text-white px-4 py-1.5 rounded-full text-sm hover:bg-[#e56d3d] transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/trainer-profile/${trainer.id}`);
+                  navigate(`/trainers/${trainer.id}`);
                 }}
               >
                 View Profile

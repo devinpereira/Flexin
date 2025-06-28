@@ -6,7 +6,6 @@ import {
   deleteTrainer,
   getTrainerById,
   getAllTrainers,
-  addFeedback,
 } from '../controllers/trainerController.js';
 import {
   getSubscriptionDetails,
@@ -27,8 +26,6 @@ router
   .put(protect, updateTrainer)
   .delete(protect, deleteTrainer);
 
-// Add feedback to a trainer
-router.post('/:id/feedback', addFeedback);
 
 // Get user's subscription details for a trainer
 router.get('/:id/subscription', protect, getSubscriptionDetails);
