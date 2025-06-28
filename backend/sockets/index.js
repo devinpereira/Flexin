@@ -16,6 +16,18 @@ const setupSocket = (io, app) => {
     console.log(`User connected: ${userId}`);
     onlineUsers.set(userId, socket.id);
 
+    // Listen for chat messages
+    socket.on("sendMessage", ({ to, message }) => {
+      const recipientSocketId = onlineUsers.get(to);
+      if (recipientSocketId) {
+        io.to(recipientSocketId).emit("receiveMessage", {
+          from: userId,
+          message,
+          time: new Date(),
+        });
+      }
+    });
+
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${userId}`);
       onlineUsers.delete(userId.toString());

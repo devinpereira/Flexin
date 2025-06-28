@@ -1,12 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
-import { FaUserFriends, FaPaperclip, FaImage, FaFile, FaMicrophone, FaPhoneAlt, FaStopCircle, FaBars } from 'react-icons/fa';
+import { FaUserFriends, FaPaperclip, FaImage, FaFile, FaMicrophone, FaPhoneAlt, FaStopCircle, FaBars, FaPlay } from 'react-icons/fa';
 import { MdExplore, MdArrowBack, MdSend } from 'react-icons/md';
 import { BsCalendarWeek, BsEmojiSmile } from 'react-icons/bs';
 import { GiMeal } from 'react-icons/gi';
 import { BiChat } from 'react-icons/bi';
 import { RiVipDiamondLine } from 'react-icons/ri';
+// --- Socket.IO client import ---
+import { io } from "socket.io-client";
 
 const Chat = () => {
   const { trainerId } = useParams();
@@ -32,30 +34,15 @@ const Chat = () => {
     status: "Online"
   };
 
-  // Sample initial messages
-  useEffect(() => {
-    setMessages([
-      { id: 1, sender: 'trainer', text: 'Hello! How can I help you today?', time: '09:30 AM' },
-      { id: 2, sender: 'user', text: 'Hi, I wanted to ask about my training program', time: '09:31 AM' },
-      { id: 3, sender: 'trainer', text: 'Sure! Is there anything specific you want to know about?', time: '09:32 AM' },
-      {
-        id: 4, sender: 'user', text: 'Yes, I was wondering if I could modify some exercises due to my knee injury', time: '09:33 AM',
-        isRead: true
-      },
-      {
-        id: 5, sender: 'trainer',
-        text: 'Absolutely, we can make modifications. I\'ll send you an updated version of your workout plan with alternative exercises.',
-        time: '09:35 AM'
-      },
-      {
-        id: 6,
-        sender: 'trainer',
-        image: '/src/assets/workout-plan.jpg',
-        text: 'Here\'s a sample of modified exercises for your knee condition.',
-        time: '09:36 AM',
-      }
-    ]);
-  }, []);
+  // --- Replace with your actual user ID logic ---
+  const userId = localStorage.getItem("userId") || "demoUserId";
+
+  // --- Socket.IO connection (memoized) ---
+  const socket = useMemo(() => io("http://localhost:8000", {
+    auth: { token: localStorage.getItem("token") }
+  }), []);
+
+
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -74,36 +61,41 @@ const Chat = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // --- Listen for incoming messages from Socket.IO ---
+  useEffect(() => {
+    socket.on("receiveMessage", (msg) => {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: prev.length + 1,
+          sender: msg.from === userId ? "user" : "trainer",
+          text: msg.message,
+          time: new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+      ]);
+    });
+    return () => socket.off("receiveMessage");
+  }, [socket, userId]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Handle send message
+  // --- Send message via Socket.IO ---
   const handleSendMessage = () => {
     if (message.trim() === '') return;
-
-    const newMessage = {
-      id: messages.length + 1,
-      sender: 'user',
-      text: message,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isRead: false
-    };
-
-    setMessages([...messages, newMessage]);
+    socket.emit("sendMessage", { to: trainerId, message });
+    setMessages(prev => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        sender: "user",
+        text: message,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isRead: false
+      }
+    ]);
     setMessage('');
-
-    // Simulate trainer response
-    setTimeout(() => {
-      const trainerResponse = {
-        id: messages.length + 2,
-        sender: 'trainer',
-        text: 'I received your message and will get back to you shortly.',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      setMessages(prev => [...prev, trainerResponse]);
-    }, 1000);
   };
 
   // Handle file upload

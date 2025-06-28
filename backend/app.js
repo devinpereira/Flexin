@@ -13,6 +13,9 @@ import followRoutes from "./routes/followRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import workoutRoutes from "./routes/workoutRoutes.js";
+import trainerRoutes from "./routes/trainerRoutes.js";
+import trainerScheduleRoutes from "./routes/trainer.schedule.routes.js";
+import mealPlanRoutes from "./routes/mealPlanRoutes.js";
 
 const app = express();
 
@@ -42,6 +45,9 @@ app.use("/api/v1/friends", followRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/workouts", workoutRoutes);
+app.use("/api/v1/trainers", trainerRoutes);
+app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
+app.use("/api/v1/meal-plans", mealPlanRoutes);
 
 // Static folder
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
