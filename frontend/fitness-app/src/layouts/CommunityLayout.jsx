@@ -1,13 +1,12 @@
-import React, { useContext, useState, useEffect, Children } from "react";
+import React, { useContext, useState, useEffectn } from "react";
 import Navigation from "../components/Navigation";
 import Sidebar from "../components/Community/Sidebar";
 import FriendsSidebar from "../components/Community/FriendsSidebar";
 import { motion } from "framer-motion";
 import { useUserAuth } from "../hooks/useUserAuth";
 import { UserContext } from "../context/UserContext";
-import { BASE_URL } from "../utils/apiPaths";
 
-const CommunityLayout = ({ children, activeSection }) => {
+const CommunityLayout = ({ children }) => {
   useUserAuth();
 
   const { user, loading } = useContext(UserContext);
@@ -26,13 +25,12 @@ const CommunityLayout = ({ children, activeSection }) => {
         <div className="fixed top-16 left-0 bottom-0 w-[240px] z-10 overflow-hidden">
           <div className="h-full">
             <Sidebar
-              activeSection={activeSection}
               name={user?.fullName}
               username={`@${user?.username}`}
               profileImage={
                 user?.profileImageUrl
-                  ? `${BASE_URL}/${user?.profileImageUrl}`
-                  : "src/assets/profile1.png"
+                  ? user?.profileImageUrl
+                  : "/default.jpg"
               }
             />
           </div>

@@ -119,7 +119,7 @@ const Navbar = () => {
               <Link to="/calculators" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
                 CALCULATORS
               </Link>
-              <Link to="/community" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
+              <Link to="/community/home" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
                 COMMUNITY
               </Link>
 

@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 import axiosInstance from "../../utils/axiosInstance";
 import CommunityLayout from "../../layouts/CommunityLayout";
+import { useNavigate } from "react-router-dom";
 
-const CommunitySearch = ({ onSelectUser }) => {
+const CommunitySearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch users from backend based on search query
   const searchFriends = async (searchTerm) => {
@@ -72,6 +74,10 @@ const CommunitySearch = ({ onSelectUser }) => {
     }
   };
 
+  const handleUserClick = (user) => {
+    navigate(`/community/profile/${user.id}`);
+  };
+
   // Whenever searchQuery changes, trigger the search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -125,7 +131,7 @@ const CommunitySearch = ({ onSelectUser }) => {
                   <motion.div
                     key={user.id}
                     className="bg-[#1A1A2F] p-4 rounded-lg flex items-center justify-between cursor-pointer hover:bg-[#242440] transition duration-200"
-                    onClick={() => onSelectUser(user)}
+                    onClick={() => handleUserClick(user)}
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.3 }}

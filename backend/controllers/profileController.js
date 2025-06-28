@@ -101,10 +101,10 @@ export const getPublicProfile = async (req, res) => {
       user: {
         id: userId,
         name: user.fullName,
-        username: `@${profile.username}`,
+        username: profile.username,
         profileImage: user.profileImageUrl,
         bio: profile.bio,
-        posts: profile.noOfPosts,
+        noOfPosts: profile.noOfPosts,
         followers: profile.followers,
         following: profile.following,
       },
