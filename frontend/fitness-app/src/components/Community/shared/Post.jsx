@@ -341,7 +341,7 @@ const Post = ({ post, onLike }) => {
                   <img
                     src={
                       comment.userId?.profileImageUrl
-                        ? `${BASE_URL}/${comment.userId.profileImageUrl}`
+                        ? comment.userId.profileImageUrl
                         : "/src/assets/profile1.png"
                     }
                     alt="Profile"

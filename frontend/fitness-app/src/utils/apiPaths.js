@@ -41,6 +41,7 @@ export const API_PATHS = {
   },
   PROFILE: {
     GET_PROFILE_INFO: "/api/v1/profile",
+    GET_USER_PROFILE: (userId) => `/api/v1/profile/user/${userId}`,
   },
   NOTIFICATION: {
     GET_NOTIFICATIONS: "/api/v1/notifications", // Done

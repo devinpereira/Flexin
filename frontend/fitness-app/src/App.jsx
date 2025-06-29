@@ -101,6 +101,7 @@ function App() {
                     <Route path="/community/notifications" element={<CommunityNotifications />} />
                     <Route path="/community/friends" element={<CommunityFriends />} />
                     <Route path="/community/profile" element={<CommunityProfile />} />
+                    <Route path="/community/profile/:userId" element={<CommunityProfile />} />
                     <Route path="/community/create" element={<CommunityHome />} />
                   </Route>
                   {/* Admin Routes */}

@@ -22,6 +22,7 @@ import EditProfileModal from "../../components/Community/modals/EditProfileModal
 import CreatePostModal from "../../components/Community/modals/CreatePostModal";
 import PostImageModal from "../../components/Community/modals/PostImageModal";
 import CommunityLayout from "../../layouts/CommunityLayout";
+import { useParams } from "react-router-dom";
 
 const CommunityProfile = () => {
   const [activeTab, setActiveTab] = useState("posts");
@@ -31,6 +32,7 @@ const CommunityProfile = () => {
   const [showPostModal, setShowPostModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [selectedImagePost, setSelectedImagePost] = useState(null);
+  const { userId } = useParams();
   const [user, setUser] = useState({});
   const [posts, setPosts] = useState([]);
 
@@ -38,29 +40,33 @@ const CommunityProfile = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await axiosInstance.get(
-          `${API_PATHS.PROFILE.GET_PROFILE_INFO}`
-        );
+        const url = userId
+          ? API_PATHS.PROFILE.GET_USER_PROFILE(userId)
+          : API_PATHS.PROFILE.GET_PROFILE_INFO;
+        const response = await axiosInstance.get(url);
         setUser(response.data.user);
       } catch (err) {
         console.error("Error fetching user profile:", err);
       }
     };
     fetchUserProfile();
-  }, []);
+  }, [userId]);
 
   // Fetch user posts
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await axiosInstance.get(`${API_PATHS.POST.GET_ALL_POSTS}`);
+        const url = userId
+          ? API_PATHS.POST.GET_USER_POSTS(userId)
+          : API_PATHS.POST.GET_ALL_POSTS;
+        const res = await axiosInstance.get(url);
         setPosts(res.data);
       } catch (err) {
         console.error("Error fetching posts:", err);
       }
     };
     fetchPosts();
-  }, []);
+  }, [userId]);
 
   // Modal handlers
   const handleOpenSettings = () => setShowSettingsModal(true);
@@ -98,7 +104,7 @@ const CommunityProfile = () => {
   const handleAddPost = (newPost) => {
     const post = {
       id: Date.now(),
-      images: newPost.images || ["/src/assets/posts/default.jpg"],
+      images: newPost.images,
       likes: 0,
       comments: 0,
       caption: newPost.caption || "",
@@ -177,19 +183,21 @@ const CommunityProfile = () => {
                   <img
                     src={
                       user.profileImageUrl
-                        ? `${BASE_URL}/${user.profileImageUrl}`
-                        : "/src/assets/profile1.png"
+                        ? user.profileImageUrl
+                        : "/default.jpg"
                     }
                     alt={user.fullName}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <button
-                  onClick={() => setShowProfilePictureModal(true)}
-                  className="absolute bottom-0 right-0 bg-[#f67a45] text-white p-2 rounded-full hover:bg-[#e56d3d]"
-                >
-                  <FaCamera size={16} />
-                </button>
+                {!userId && (
+                  <button
+                    onClick={() => setShowProfilePictureModal(true)}
+                    className="absolute bottom-0 right-0 bg-[#f67a45] text-white p-2 rounded-full hover:bg-[#e56d3d]"
+                  >
+                    <FaCamera size={16} />
+                  </button>
+                )}
               </div>
 
               {/* User Info */}
@@ -214,7 +222,7 @@ const CommunityProfile = () => {
                     <p className="text-gray-400 text-sm">Following</p>
                   </div>
                 </div>
-
+                {!userId && (
                 <div className="flex gap-3 justify-center mb-2">
                   <button
                     onClick={handleEditProfile}
@@ -230,21 +238,24 @@ const CommunityProfile = () => {
                     <FaCog size={16} />
                   </button>
                 </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* Create Post Section */}
+          {!userId && (
           <div className="p-4 border-b border-gray-700">
             <CreatePost
               onPostCreated={handlePostCreated}
               profileImage={
                 user.profileImageUrl
-                  ? `${BASE_URL}/${user.profileImageUrl}`
-                  : "/src/assets/profile1.png"
+                  ? user.profileImageUrl
+                  : "/default.jpg"
               }
             />
           </div>
+          )}
 
           {/* Tabs */}
           <div className="border-b border-gray-700">
@@ -291,14 +302,14 @@ const CommunityProfile = () => {
                             <img
                               src={
                                 user.profileImageUrl
-                                  ? `${BASE_URL}/${user.profileImageUrl}`
-                                  : "/src/assets/profile1.png"
+                                  ? user.profileImageUrl
+                                  : "/default.jpg"
                               }
                               alt={user.fullName}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 e.target.onerror = null;
-                                e.target.src = "/src/assets/profile1.png";
+                                e.target.src = "/default.jpg";
                               }}
                             />
                           </div>
@@ -321,13 +332,13 @@ const CommunityProfile = () => {
                         {post.content && post.content.length > 0 && (
                           <div className="w-full">
                             <img
-                              src={`${BASE_URL}/${post.content[0]}`}
+                              src={post.content[0]}
                               alt="Post"
                               className="w-full h-auto cursor-pointer"
                               onClick={() => handleImageClick(post)}
                               onError={(e) => {
                                 e.target.onerror = null;
-                                e.target.src = "/src/assets/posts/default.jpg";
+                                e.target.src = "/post-default.jpg";
                               }}
                             />
                           </div>
@@ -375,6 +386,7 @@ const CommunityProfile = () => {
           </div>
 
           {/* Log Out Button */}
+          {!userId && (
           <div className="p-4 border-t border-gray-700">
             <button
               onClick={handleLogout}
@@ -384,7 +396,9 @@ const CommunityProfile = () => {
               <span>Log Out</span>
             </button>
           </div>
+          )}
         </div>
+
 
         {/* Modals */}
         {showSettingsModal && (
@@ -423,7 +437,7 @@ const CommunityProfile = () => {
             post={{
               ...selectedImagePost,
               images: selectedImagePost.content.map((img) => ({
-                preview: `${BASE_URL}/${img}`,
+                preview: img,
               })),
             }}
             user={user}

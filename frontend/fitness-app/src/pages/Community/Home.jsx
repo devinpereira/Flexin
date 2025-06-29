@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import CommunityLayout from '../../layouts/CommunityLayout.jsx'
 import Post from '../../components/Community/shared/Post.jsx';
 import CreatePost from '../../components/Community/shared/CreatePost.jsx';
 import { motion } from 'framer-motion';
 import { API_PATHS } from '../../utils/apiPaths.js';
 import axiosInstance from '../../utils/axiosInstance.js';
+import { UserContext } from '../../context/UserContext.jsx';
 
 const CommunityHome = ({ profileImage, createMode = false }) => {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useContext(UserContext);
 
   // Fetch posts from the API on component mount
   useEffect(() => {
@@ -24,7 +26,7 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
           user: {
             name: post.user.name,
             username: `@${post.user.username}`,
-            profileImage: post.user.profileImageUrl,
+            profileImage: post.user.profileImageUrl ? post.user.profileImageUrl : "/default.jpg",
           },
           content: post.description,
           images: post.content.map(img => ({
@@ -50,13 +52,12 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
   }, []);
 
   const handleNewPost = (newPost) => {
-    // Format the new post to match the structure of other posts
     const formattedNewPost = {
       id: newPost.id || newPost._id,
       user: {
         name: newPost.user?.name,
         username: `@${newPost.user?.username}`,
-        profileImage: newPost.user?.profileImage,
+        profileImage: newPost.user?.profileImage || newPost.user?.profileImage || "/default.jpg",
       },
       content: newPost.content || newPost.description,
       images: (newPost.images && newPost.images.length > 0)
@@ -120,7 +121,7 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
     <CommunityLayout activeSection={'Home'}>
     <div className="max-w-2xl mx-auto">
       {/* Post Creation Component */}
-      <CreatePost onPostCreated={handleNewPost} profileImage={profileImage} />
+      <CreatePost onPostCreated={handleNewPost} profileImage={ user?.profileImageUrl || "/default.jpg"} />
 
       {/* Loading State */}
       {isLoading ? (
@@ -137,7 +138,6 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
           </div>
         </div>
       ) : error ? (
-        // Error State
         <div className="bg-red-500/20 border border-red-500 rounded-lg p-6 my-6 text-center text-white">
           {error}
           <button
@@ -148,7 +148,6 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
           </button>
         </div>
       ) : (
-        // Posts List with Animation
         <motion.div
           className="space-y-6 my-6"
           initial={{ opacity: 0 }}
