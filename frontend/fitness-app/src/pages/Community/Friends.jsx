@@ -34,32 +34,18 @@ const CommunityFriends = () => {
     const fetchFriends = async () => {
       setIsLoading(true);
       try {
-        const [followersData, followingData, suggestionsData] =
+        const [followersData, followingData, suggestionsData, followRequests] =
           await Promise.all([
             axiosInstance.get(`${API_PATHS.FOLLOW.GET_MY_FOLLOWERS}`),
             axiosInstance.get(`${API_PATHS.FOLLOW.GET_FOLLOWING}`),
             axiosInstance.get(`${API_PATHS.FOLLOW.GET_SUGGESTIONS}`),
+            axiosInstance.get(`${API_PATHS.FOLLOW.GET_FOLLOW_REQUESTS}`),
           ]);
 
         setFollowers(followersData.data);
         setFollowing(followingData.data);
         setSuggestions(suggestionsData.data);
-
-        // For demo purposes, create some mock friend requests
-        setFriendRequests([
-          {
-            id: 101,
-            name: "Alex Johnson",
-            image: "/src/assets/profile1.png",
-            mutualFriends: 3,
-          },
-          {
-            id: 102,
-            name: "Sam Peterson",
-            image: "/src/assets/profile1.png",
-            mutualFriends: 1,
-          },
-        ]);
+        setFriendRequests(followRequests.data);
       } catch (err) {
         console.error("Failed to fetch friends", err);
       }
@@ -69,25 +55,48 @@ const CommunityFriends = () => {
     fetchFriends();
   }, []);
 
-  const handleFollow = (id) => {
-    // Update suggestions
-    setSuggestions(suggestions.filter((user) => user.id !== id));
+  const handleFollow = async (id) => {
+    try {
+      const res = await axiosInstance.post(
+        `${API_PATHS.FOLLOW.SEND_FOLLOW_REQUEST(id)}`);
+      console.log("Follow request sent successfully", res.data);
+    
+      // Update suggestions to remove the followed user
+      setSuggestions((prev) => prev.filter((user) => user.id !== id));
+    
+      // Add to following
+      const userToAdd = suggestions.find((user) => user.id === id);
+      if (userToAdd) {
+        setFollowing((prev) => [...prev, { ...userToAdd }]);
+      }
 
-    // Add to following
-    const userToAdd = suggestions.find((user) => user.id === id);
-    if (userToAdd) {
-      setFollowing([...following, { ...userToAdd }]);
+    } catch (error) {
+      console.error("Error sending follow request", error);
     }
   };
 
-  const handleUnfollow = (id) => {
-    setFollowing(following.filter((user) => user.id !== id));
+
+  const handleUnfollow = async (id) => {
+    try {
+      const response = await axiosInstance.delete(
+      `${API_PATHS.FOLLOW.UNFOLLOW_USER(id)}`
+      );
+      setFollowing(following.filter((user) => user.id !== id));
+    } catch (error) {
+      console.error("Error sending follow request", error);
+    }
   };
 
-  const handleAcceptRequest = (request) => {
-    // Remove from requests and add to friends
-    setFriendRequests(friendRequests.filter((r) => r.id !== request.id));
-    setFollowers([...followers, request]);
+  const handleAcceptRequest = async (request) => {
+
+    try {
+      const response = await axiosInstance.post(`${API_PATHS.FOLLOW.APPROVE_FOLLOW_REQUEST(request._id)}`);
+
+      setFriendRequests(friendRequests.filter((r) => r.id !== request._id));
+      setFollowers([...followers, request]);
+    } catch (error) {
+      console.error("Error sending follow request", error);
+    }
   };
 
   const getFilteredFriends = () => {
@@ -154,12 +163,12 @@ const CommunityFriends = () => {
             {friendRequests.length > 0 ? (
               friendRequests.map((request) => (
                 <div
-                  key={request.id}
+                  key={request._id}
                   className="bg-[#121225] rounded-xl p-4 flex justify-between items-center"
                 >
                   <div className="flex items-center gap-3">
                     <img
-                      src={request.image}
+                      src={request.followerId.profileImageUrl || "/default.jpg"}
                       alt={request.name}
                       className="w-12 h-12 rounded-full object-cover"
                       onError={(e) => {
@@ -168,7 +177,7 @@ const CommunityFriends = () => {
                       }}
                     />
                     <div>
-                      <h4 className="text-white font-medium">{request.name}</h4>
+                      <h4 className="text-white font-medium">{request.followerId.fullName}</h4>
                       <p className="text-gray-400 text-xs">
                         {request.mutualFriends} mutual friends
                       </p>
@@ -205,12 +214,12 @@ const CommunityFriends = () => {
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="relative">
                       <img
-                        src={friend.image}
+                        src={friend.profileImageUrl || "/default.jpg"}
                         alt={friend.name}
                         className="w-12 h-12 rounded-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = "/src/assets/profile1.png";
+                          e.target.src = "/default.jpg";
                         }}
                       />
                       <div
@@ -263,44 +272,30 @@ const CommunityFriends = () => {
             People You May Know
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {[
-              {
-                id: 201,
-                name: "Jordan Lee",
-                image: "/src/assets/profile1.png",
-                mutualFriends: 5,
-              },
-              {
-                id: 202,
-                name: "Taylor Smith",
-                image: "/src/assets/profile1.png",
-                mutualFriends: 3,
-              },
-              {
-                id: 203,
-                name: "Riley Zhang",
-                image: "/src/assets/profile1.png",
-                mutualFriends: 2,
-              },
-            ].map((suggestion) => (
+            {suggestions.map((suggestion) => (
               <div
                 key={suggestion.id}
                 className="bg-[#121225] rounded-xl p-4 flex flex-col items-center text-center"
               >
                 <img
-                  src={suggestion.image}
+                  src={suggestion.profileImage || "/default.jpg"}
                   alt={suggestion.name}
                   className="w-16 h-16 rounded-full object-cover mb-3"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = "/src/assets/profile1.png";
+                    e.target.src = "/default.jpg";
                   }}
                 />
                 <h4 className="text-white font-medium">{suggestion.name}</h4>
                 <p className="text-gray-400 text-xs mb-3">
-                  {suggestion.mutualFriends} mutual friends
+                  {suggestion.mutualFriends
+                    ? `${suggestion.mutualFriends} mutual friends`
+                    : "Suggested for you"}
                 </p>
-                <button className="bg-[#1A1A2F] text-white px-3 py-1 rounded-full text-sm hover:bg-[#f67a45]/20 hover:text-[#f67a45] flex items-center gap-1">
+                <button
+                  className="bg-[#1A1A2F] text-white px-3 py-1 rounded-full text-sm hover:bg-[#f67a45]/20 hover:text-[#f67a45] flex items-center gap-1"
+                  onClick={() => handleFollow(suggestion.id)}
+                >
                   <FaUserPlus size={12} />
                   <span>Add Friend</span>
                 </button>

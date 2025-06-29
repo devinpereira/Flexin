@@ -88,7 +88,7 @@ const Navbar = () => {
     localStorage.removeItem("token");
     if (window.clearUser) window.clearUser(); // for context if available
     window.dispatchEvent(new Event("logout"));
-    navigate("/login");
+    navigate("/logout");
   };
 
   return (
@@ -200,7 +200,7 @@ const Navbar = () => {
                     <div className="absolute right-0 mt-2 bg-[#1A1A2F] border border-[#f67a45]/30 rounded-lg shadow-lg py-2 min-w-[180px] z-50">
                       <Link
                         to="/profile"
-                        className="block px-4 py-2 text-white hover:bg-[#f67a45]/20 hover:text-[#f67a45] flex items-center gap-2"
+                        className="px-4 py-2 text-white hover:bg-[#f67a45]/20 hover:text-[#f67a45] flex items-center gap-2"
                         onClick={() => setProfileMenuOpen(false)}
                       >
                         <FaUser /> Profile

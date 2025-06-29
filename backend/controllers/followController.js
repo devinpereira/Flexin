@@ -75,7 +75,7 @@ export const sendFollowRequest = async (req, res) => {
     const newFollow = new Follow({
       followerId,
       followingId,
-      status: "accepted",
+      status: "pending",
     });
 
     await newFollow.save();

@@ -5,45 +5,49 @@ import Post from "../models/Post.js";
 
 export const registerProfile = async (req, res) => {
   const userId = req.user._id;
-  const { username, bio = "", coverImageUrl = null } = req.body;
+  const { username, bio = "" } = req.body;
+  const profileImageFile = req.file;
 
   if (!username) {
     return res.status(400).json({ message: "Please choose a username" });
   }
 
   try {
-    // Check if username already exists
-    const existingUsername = await ProfileData.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({ message: "Username already in use" });
-    }
-
     // Prevent duplicate profile creation
     const existingProfile = await ProfileData.findOne({ userId });
     if (existingProfile) {
       return res.status(400).json({ message: "Profile already exists for this user" });
     }
 
+    // Check if username already exists
+    const existingUsername = await ProfileData.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already in use" });
+    }
+
+    const profileImageUrl = profileImageFile.path || "";
+
     // Create the profile
     const profile = await ProfileData.create({
       userId,
       username,
       bio,
-      coverImageUrl,
     });
+
+    await User.findByIdAndUpdate(userId, { profileImageUrl });
 
     res.status(201).json({
       message: "Profile created successfully",
       profile,
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       message: "Error registering profile",
       error: err.message,
     });
   }
 };
-
 
 // Get Profile Info
 export const getProfileInfo = async (req, res) => {
@@ -102,7 +106,7 @@ export const getPublicProfile = async (req, res) => {
         id: userId,
         name: user.fullName,
         username: profile.username,
-        profileImage: user.profileImageUrl,
+        profileImageUrl: user.profileImageUrl,
         bio: profile.bio,
         noOfPosts: profile.noOfPosts,
         followers: profile.followers,

@@ -1,15 +1,29 @@
-import React, { useContext, useState, useEffectn } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import Navigation from "../components/Navigation";
 import Sidebar from "../components/Community/Sidebar";
 import FriendsSidebar from "../components/Community/FriendsSidebar";
 import { motion } from "framer-motion";
 import { useUserAuth } from "../hooks/useUserAuth";
 import { UserContext } from "../context/UserContext";
+import CommunityProfileWizard from "../components/Wizard/CommunityWizard";
 
 const CommunityLayout = ({ children }) => {
   useUserAuth();
-
   const { user, loading } = useContext(UserContext);
+  const [showWizard, setShowWizard] = useState(false);
+
+  useEffect(() => {
+    const checkProfile = async () => {
+      if (user.username) {
+        setShowWizard(false);
+        return;
+      } else {
+        setShowWizard(true);
+      }
+    };
+
+    checkProfile();
+  }, []);
 
   return (
     <div
@@ -27,11 +41,7 @@ const CommunityLayout = ({ children }) => {
             <Sidebar
               name={user?.fullName}
               username={`@${user?.username}`}
-              profileImage={
-                user?.profileImageUrl
-                  ? user?.profileImageUrl
-                  : "/default.jpg"
-              }
+              profileImage={user?.profileImageUrl}
             />
           </div>
         </div>
@@ -44,7 +54,10 @@ const CommunityLayout = ({ children }) => {
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
         >
-          {children}
+          {showWizard && (
+            <CommunityProfileWizard profileImageUrl={user.profileImageUrl} />
+          )}
+          {!showWizard && children}
         </motion.div>
 
         {/* Right Sidebar - Fixed width */}

@@ -34,12 +34,14 @@ export const API_PATHS = {
     SEND_FOLLOW_REQUEST: (followingId) => `/api/v1/friends/follow/${followingId}`, // Done
     APPROVE_FOLLOW_REQUEST: (followId) => `/api/v1/friends/approve/${followId}`,
     REJECT_FOLLOW_REQUEST: (followId) => `/api/v1/friends/reject/${followId}`,
+    GET_FOLLOW_REQUESTS: "/api/v1/friends/requests", // Done
     GET_FRIENDS: "/api/v1/friends/", // Done
     GET_FOLLOWING: "/api/v1/friends/following",
     GET_MY_FOLLOWERS: "/api/v1/friends/followers",
     GET_SUGGESTIONS: "/api/v1/friends/suggestions",
   },
   PROFILE: {
+    REGISTER_PROFILE: "/api/v1/profile/register", // Done
     GET_PROFILE_INFO: "/api/v1/profile",
     GET_USER_PROFILE: (userId) => `/api/v1/profile/user/${userId}`,
   },

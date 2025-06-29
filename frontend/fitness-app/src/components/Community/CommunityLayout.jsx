@@ -37,7 +37,7 @@ const CommunityLayout = ({ children, activeSection, onSectionChange, user }) => 
               onSectionChange={onSectionChange}
               name={user?.fullName}
               username={`@${user?.username}`}
-              profileImage={user?.profileImageUrl ? `${BASE_URL}/${user?.profileImageUrl}` : "src/assets/profile1.png"}
+              profileImage={user?.profileImageUrl}
             />
           </div>
         </div>

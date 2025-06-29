@@ -32,7 +32,7 @@ const Sidebar = ({ name, username, profileImage }) => {
         {/* User Profile */}
         <div className="flex flex-col items-center mb-8 pt-6">
           <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
-            <img src={profileImage} alt={name} className="w-full h-full object-cover" />
+            <img src={profileImage || "/default.jpg"} alt={name} className="w-full h-full object-cover" />
           </div>
           <h3 className="text-white text-xl font-medium">{name || "Loading..."}</h3>
           <p className="text-gray-400">{username || "@loading"}</p>
