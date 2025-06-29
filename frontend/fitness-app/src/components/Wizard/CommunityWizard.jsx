@@ -5,7 +5,7 @@ import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { UserContext } from '../../context/UserContext';
 
-const CommunityProfileWizard = ({ profileimageUrl }) => {
+const CommunityProfileWizard = ({ profileimageUrl, onComplete }) => {
   const { updateUser } = useContext(UserContext);
   const [step, setStep] = useState(1);
   const totalSteps = 3;
@@ -84,6 +84,8 @@ const CommunityProfileWizard = ({ profileimageUrl }) => {
     } finally {
         setIsSubmitting(false);
     }
+    onComplete?.();
+    window.location.reload();
 
     try {
         const response = await axiosInstance.get(API_PATHS.PROFILE.GET_PROFILE_INFO);

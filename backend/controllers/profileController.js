@@ -121,3 +121,71 @@ export const getPublicProfile = async (req, res) => {
     });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  const userId = req.user._id;
+  const { username, bio } = req.body;
+  const profileImageFile = req.file;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    const user = await User.findById(userId);
+
+    // Update fields
+    if (username) {
+      profile.username = username;
+    }
+    if (bio) {
+      profile.bio = bio;
+    }
+    if (profileImageFile) {
+      user.profileImageUrl = profileImageFile.path;
+    }
+
+    await profile.save();
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error updating profile",
+      error: err.message,
+    });
+  }
+}
+
+export const updateProfileImage = async (req, res) => {
+  const userId = req.user._id;
+  const profileImageFile = req.file;
+
+  try {
+    // Check if profile exists
+    const profile = await User.findById(userId);
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Update profile image
+    profile.profileImageUrl = profileImageFile.path;
+    await profile.save();
+
+    res.status(200).json({
+      message: "Profile image updated successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error updating profile image",
+      error: err.message,
+    });
+  }
+}

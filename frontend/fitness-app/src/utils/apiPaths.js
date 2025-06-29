@@ -42,12 +42,17 @@ export const API_PATHS = {
   },
   PROFILE: {
     REGISTER_PROFILE: "/api/v1/profile/register", // Done
-    GET_PROFILE_INFO: "/api/v1/profile",
-    GET_USER_PROFILE: (userId) => `/api/v1/profile/user/${userId}`,
+    GET_PROFILE_INFO: "/api/v1/profile", // Done
+    GET_USER_PROFILE: (userId) => `/api/v1/profile/user/${userId}`, // Done
+    UPDATE_PROFILE: "/api/v1/profile/update", // Done
+    UPDATE_PROFILE_PIC: "/api/v1/profile/update-pic", // Done
   },
   NOTIFICATION: {
     GET_NOTIFICATIONS: "/api/v1/notifications", // Done
-    MARK_AS_READ: (notificationId) => `/api/v1/notifications/${notificationId}/read`,
+    MARK_AS_READ: (notificationId) => `/api/v1/notifications/read/${notificationId}`,
+    MARK_ALL_AS_READ: "/api/v1/notifications/read-all",
+    DELETE_NOTIFICATION: (notificationId) => `/api/v1/notifications/delete/${notificationId}`,
+    DELETE_ALL_NOTIFICATIONS: "/api/v1/notifications/delete-all",
   },
 
   //  Store: Products
