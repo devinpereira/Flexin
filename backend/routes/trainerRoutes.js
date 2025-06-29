@@ -6,6 +6,9 @@ import {
   deleteTrainer,
   getTrainerById,
   getAllTrainers,
+  getTrainersForUser,
+  addFollower,
+  removeFollower,
 } from '../controllers/trainerController.js';
 import {
   getSubscriptionDetails,
@@ -15,6 +18,10 @@ import {
 
 
 const router = express.Router();
+
+router.get('/my-trainers', protect, getTrainersForUser);
+router.post('/add-follower', protect, addFollower);
+router.post('/remove-follower', protect, removeFollower);
 
 // Create trainer and get all trainers
 router.route('/').post(protect, createTrainer).get(getAllTrainers);
@@ -35,6 +42,7 @@ router.post('/:id/subscribe', protect, subscribeToPackage);
 
 // Cancel subscription
 router.post('/:id/unsubscribe', protect, cancelSubscription);
+
 
 
 export default router;

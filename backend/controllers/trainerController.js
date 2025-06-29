@@ -151,3 +151,44 @@ export const getAllTrainers = async (req, res) => {
         });
     }
 };
+
+export const addFollower = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { trainerId } = req.body;
+    await Trainer.findByIdAndUpdate(
+      trainerId,
+      { $addToSet: { followers: userId } }, // prevents duplicates
+      { new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const removeFollower = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { trainerId } = req.body;
+    await Trainer.findByIdAndUpdate( 
+      trainerId,
+      { $pull: { followers: userId } }, // removes the userId from followers
+      { new: true }
+    ); 
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const getTrainersForUser = async (req, res) => {
+  try {
+    const userId = req.user._id; // from auth middleware
+    const trainers = await Trainer.find({ followers: userId });
+    res.json({ success: true, trainers });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};

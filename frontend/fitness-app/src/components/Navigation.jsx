@@ -113,7 +113,7 @@ const Navbar = () => {
               <Link to="/store" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
                 STORE
               </Link>
-              <Link to="/trainers" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
+              <Link to="/trainers/my-trainers" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">
                 TRAINERS
               </Link>
               <Link to="/calculators" className="text-white hover:text-[#f67a45] text-base lg:text-lg px-2 py-1">

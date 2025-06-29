@@ -96,6 +96,9 @@ export const API_PATHS = {
 
 TRAINER: {
     GET_TRAINER: (trainerId) => `/api/v1/trainers/${trainerId}`,
+    GET_MY_TRAINERS: "/api/v1/trainers/my-trainers", 
+    ADD_FOLLOWER: "/api/v1/trainers/add-follower",   
+    REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower", 
   }
 
 };

@@ -114,6 +114,9 @@ const trainerSchema = new mongoose.Schema(
       default: "available",
       required: true,
     },
+    followers: [
+  { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+],
   },
   {
     timestamps: true,

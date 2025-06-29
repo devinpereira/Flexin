@@ -1,9 +1,59 @@
 import { BASE_URL, API_PATHS } from '../utils/apiPaths';
 
+//  Get all trainers
+export async function getAllTrainers() {
+  const res = await fetch(`${BASE_URL}/api/v1/trainers`);
+  if (!res.ok) throw new Error('Failed to fetch trainers');
+  const data = await res.json();
+  return data.trainers;
+}
+
+// Get a trainer by ID for profile view
 export async function getTrainerById(trainerId) {
   const res = await fetch(`${BASE_URL}${API_PATHS.TRAINER.GET_TRAINER(trainerId)}`);
   if (!res.ok) throw new Error('Failed to fetch trainer');
   const data = await res.json();
   // If your backend returns { success, trainer }, return trainer only:
   return data.trainer;
+}
+
+// Get all trainers the user has added
+export async function getMyTrainers() {
+  const res = await fetch(`${BASE_URL}${API_PATHS.TRAINER.GET_MY_TRAINERS}`, {
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem('token')}`,
+      "Content-Type": "application/json"
+    }
+  });
+  if (!res.ok) throw new Error('Failed to fetch trainers');
+  const data = await res.json();
+  return data.trainers;
+}
+
+// Add a trainer to "my trainers"
+export async function addTrainerFollower(trainerId) {
+  const res = await fetch(`${BASE_URL}${API_PATHS.TRAINER.ADD_FOLLOWER}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify({ trainerId })
+  });
+  if (!res.ok) throw new Error('Failed to add follower');
+  return await res.json();
+}
+
+// Remove a trainer from "my trainers"
+export async function removeTrainerFollower(trainerId) {
+  const res = await fetch(`${BASE_URL}${API_PATHS.TRAINER.REMOVE_FOLLOWER}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify({ trainerId })
+  });
+  if (!res.ok) throw new Error('Failed to remove follower');
+  return await res.json();
 }
