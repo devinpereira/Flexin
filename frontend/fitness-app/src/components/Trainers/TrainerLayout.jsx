@@ -12,7 +12,7 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
   // Determine active section based on current path
   const getActiveSection = () => {
     const path = location.pathname;
-    if (path === '/trainers' || path.includes('/trainer-profile')) return 'My Trainers';
+    if (path === '/trainers/my-trainers' || path.includes('/trainer-profile')) return 'My Trainers';
     if (path === '/explore') return 'Explore';
     return 'My Trainers'; // Default
   };
@@ -42,7 +42,7 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
     if (section === 'Explore') {
       navigate('/explore');
     } else if (section === 'My Trainers') {
-      navigate('/trainers');
+      navigate('/trainers/my-trainers');
     }
   };
 

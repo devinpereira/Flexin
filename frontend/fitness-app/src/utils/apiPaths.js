@@ -97,8 +97,13 @@ export const API_PATHS = {
     APPLY_COUPON: "/api/v1/store/coupons/apply",
   },
 
-TRAINER: {
+  TRAINER: {
     GET_TRAINER: (trainerId) => `/api/v1/trainers/${trainerId}`,
+    GET_MY_TRAINERS: "/api/v1/trainers/my-trainers", 
+    ADD_FOLLOWER: "/api/v1/trainers/add-follower",   
+    REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower", 
+    ADD_FEEDBACK: (trainerId) => `/api/v1/trainers/${trainerId}/feedback`,
+    GET_TRAINER_SCHEDULE: (trainerId) => `/api/v1/trainer-schedules/${trainerId}`,
   }
 
 };

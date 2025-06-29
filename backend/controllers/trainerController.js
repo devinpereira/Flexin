@@ -32,7 +32,7 @@ export const createTrainer = async (req, res) => {
                 photos,
                 packages,
                 availabilityStatus,
-                feedbacks: feedbacks || [], // <-- Add this line
+                feedbacks: feedbacks || [], 
                 socialMedia: socialMedia || {},
                 rating: rating || 0,
                 reviewCount: reviewCount || 0
@@ -150,4 +150,85 @@ export const getAllTrainers = async (req, res) => {
             error: err.message
         });
     }
+};
+
+export const addFollower = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { trainerId } = req.body;
+    await Trainer.findByIdAndUpdate(
+      trainerId,
+      { $addToSet: { followers: userId } }, // prevents duplicates
+      { new: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const removeFollower = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { trainerId } = req.body;
+    await Trainer.findByIdAndUpdate( 
+      trainerId,
+      { $pull: { followers: userId } }, // removes the userId from followers
+      { new: true }
+    ); 
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const getTrainersForUser = async (req, res) => {
+  try {
+    const userId = req.user._id; // from auth middleware
+    const trainers = await Trainer.find({ followers: userId });
+    res.json({ success: true, trainers });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+export const addFeedbackToTrainer = async (req, res) => {
+  try {
+    const trainerId = req.params.id;
+    const { comment, rating } = req.body;
+    const userName = req.user.fullName; // Assuming user has a name field
+
+    const feedback = {
+      userName,
+      comment,
+      rating,
+      createdAt: new Date()
+    };
+
+    const trainer = await Trainer.findByIdAndUpdate(
+      trainerId,
+      { $push: { feedbacks: feedback } },
+      { new: true }
+    );
+
+// Calculate average rating from feedbacks
+        const feedbacks = trainer.feedbacks || [];
+        const ratings = feedbacks.map(fb => fb.rating);
+        const avgRating = ratings.length
+            ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+            : 0;
+
+        trainer.rating = avgRating;
+        trainer.reviewCount = trainer.feedbacks.length;
+        await trainer.save(); // Save the updated rating
+    
+    if (!trainer) {
+      return res.status(404).json({ success: false, message: "Trainer not found" });
+    }
+
+    res.json({ success: true, feedbacks: trainer.feedbacks });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to add feedback", error: err.message });
+  }
 };

@@ -80,7 +80,7 @@ function App() {
                     <Route path="/store" element={<Store />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/product/:productId" element={<ProductView />} />
-                    <Route path="/trainers" element={<Trainers />} />
+                    <Route path="/trainers/my-trainers" element={<Trainers />} />
                     <Route path="/explore" element={<Explore />} />
                     <Route path="/schedule/:trainerId" element={<Schedule />} />
                     <Route path="/meal-plan/:trainerId" element={<MealPlan />} />

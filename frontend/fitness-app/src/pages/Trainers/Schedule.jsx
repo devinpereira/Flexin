@@ -1,45 +1,51 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import TrainerLayout from '../../components/Trainers/TrainerLayout';
-import { BsCalendarWeek } from 'react-icons/bs';
-import { GiMeal } from 'react-icons/gi';
-import { BiChat } from 'react-icons/bi';
-import { RiVipDiamondLine } from 'react-icons/ri';
-import { FaPlus } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import TrainerLayout from "../../components/Trainers/TrainerLayout";
+import { BsCalendarWeek } from "react-icons/bs";
+import { GiMeal } from "react-icons/gi";
+import { BiChat } from "react-icons/bi";
+import { RiVipDiamondLine } from "react-icons/ri";
+import { FaPlus } from "react-icons/fa";
+import { getTrainerById, getTrainerSchedule } from "../../api/trainer";
 
 const Schedule = () => {
   const { trainerId } = useParams();
   const navigate = useNavigate();
-  const [activeDay, setActiveDay] = useState('Day 1');
+  const [activeDay, setActiveDay] = useState("");
+  const [trainer, setTrainer] = useState(null);
+  const [schedule, setSchedule] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Mock trainer data
-  const trainer = {
-    id: trainerId,
-    name: "John Smith",
-    image: "/src/assets/trainer.png",
-    specialty: "Strength & Conditioning"
-  };
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      setError("");
+      try {
+        const trainerData = await getTrainerById(trainerId);
+        setTrainer(trainerData);
 
-  // Mock schedule data
-  const schedule = {
-    "Day 1": [
-      { id: 1, name: "Incline Barbell Press", sets: 4, reps: 8, image: "/src/assets/exercise1.png" },
-      { id: 2, name: "Dumbbell Bench Press", sets: 3, reps: 10, image: "/src/assets/exercise1.png" },
-      { id: 3, name: "Cable Flyes", sets: 3, reps: 12, image: "/src/assets/exercise1.png" }
-    ],
-    "Day 2": [
-      { id: 4, name: "Barbell Squat", sets: 5, reps: 5, image: "/src/assets/exercise1.png" },
-      { id: 5, name: "Romanian Deadlift", sets: 4, reps: 8, image: "/src/assets/exercise1.png" },
-      { id: 6, name: "Leg Press", sets: 3, reps: 12, image: "/src/assets/exercise1.png" }
-    ],
-    "Day 3": [
-      { id: 7, name: "Pull-ups", sets: 4, reps: 8, image: "/src/assets/exercise1.png" },
-      { id: 8, name: "Barbell Rows", sets: 4, reps: 8, image: "/src/assets/exercise1.png" },
-      { id: 9, name: "Face Pulls", sets: 3, reps: 15, image: "/src/assets/exercise1.png" }
-    ],
-  };
+        const scheduleData = await getTrainerSchedule(trainerId);
+        setSchedule(scheduleData);
+
+        const days = Object.keys(scheduleData);
+        if (days.length > 0) setActiveDay(days[0]);
+      } catch (err) {
+        setError("Failed to load trainer or schedule.");
+        setTrainer(null);
+        setSchedule({});
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [trainerId]);
 
   const days = Object.keys(schedule);
+
+  if (loading) return <div className="text-white p-8">Loading...</div>;
+  if (error) return <div className="text-red-500 p-8">{error}</div>;
+  if (!trainer) return <div className="text-white p-8">Trainer not found.</div>;
 
   return (
     <TrainerLayout pageTitle={`${trainer.name}'s Schedule`}>
@@ -47,19 +53,22 @@ const Schedule = () => {
         {/* Left side - Schedule content */}
         <div className="lg:col-span-3">
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
-            <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Schedule</h2>
+            <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+              Schedule
+            </h2>
 
-            {/* Days navigation - Scrollable on mobile */}
+            {/* Days navigation */}
             <div className="flex gap-2 sm:gap-4 mb-4 sm:mb-8 overflow-x-auto pb-2 scrollbar-hidden">
               <div className="flex space-x-2 min-w-max">
                 {days.map((day) => (
                   <button
                     key={day}
                     onClick={() => setActiveDay(day)}
-                    className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-full whitespace-nowrap ${activeDay === day
-                        ? 'bg-white text-[#121225]'
-                        : 'bg-transparent text-white border border-white/30'
-                      }`}
+                    className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-full whitespace-nowrap ${
+                      activeDay === day
+                        ? "bg-white text-[#121225]"
+                        : "bg-transparent text-white border border-white/30"
+                    }`}
                   >
                     {day}
                   </button>
@@ -67,35 +76,54 @@ const Schedule = () => {
               </div>
             </div>
 
-            {/* Exercises for selected day - Responsive layout */}
+            {/* Exercises for selected day */}
             <div className="space-y-3 sm:space-y-4">
-              {schedule[activeDay]?.map((exercise) => (
-                <div key={exercise.id} className="bg-white rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center">
-                  <div className="flex items-center flex-1 mb-3 sm:mb-0">
-                    <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gray-100 rounded-lg mr-3 sm:mr-4 flex-shrink-0">
-                      <img
-                        src={exercise.image}
-                        alt={exercise.name}
-                        className="w-full h-full object-cover rounded-lg"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/src/assets/equipment.png';
-                        }}
-                      />
+              {schedule[activeDay]?.length > 0 ? (
+                schedule[activeDay].map((exercise) => (
+                  <div
+                    key={exercise.id}
+                    className="bg-white rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center"
+                  >
+                    <div className="flex items-center flex-1 mb-3 sm:mb-0">
+                      <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gray-100 rounded-lg mr-3 sm:mr-4 flex-shrink-0">
+                        <img
+                          src={exercise.image}
+                          alt={exercise.name}
+                          className="w-full h-full object-cover rounded-lg"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/src/assets/equipment.png";
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-[#121225] text-sm sm:text-base">
+                          {exercise.name}
+                        </h3>
+                        <p className="text-gray-600 text-xs sm:text-sm">
+                          {exercise.sets} sets x {exercise.reps} reps
+                        </p>
+                      </div>
                     </div>
-
-                    <div className="flex-1">
-                      <h3 className="font-bold text-[#121225] text-sm sm:text-base">{exercise.name}</h3>
-                      <p className="text-gray-600 text-xs sm:text-sm">{exercise.sets} sets x {exercise.reps} reps</p>
+                    <div className="flex sm:flex-col gap-2 justify-end">
+                      <a
+                        href="#"
+                        className="text-[#f67a45] hover:underline text-xs sm:text-sm px-3 py-1 border border-[#f67a45]/30 rounded-full text-center"
+                      >
+                        View
+                      </a>
+                      <a
+                        href="#"
+                        className="text-[#f67a45] hover:underline text-xs sm:text-sm px-3 py-1 border border-[#f67a45]/30 rounded-full text-center"
+                      >
+                        Edit
+                      </a>
                     </div>
                   </div>
-
-                  <div className="flex sm:flex-col gap-2 justify-end">
-                    <a href="#" className="text-[#f67a45] hover:underline text-xs sm:text-sm px-3 py-1 border border-[#f67a45]/30 rounded-full text-center">View</a>
-                    <a href="#" className="text-[#f67a45] hover:underline text-xs sm:text-sm px-3 py-1 border border-[#f67a45]/30 rounded-full text-center">Edit</a>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-white/60">No exercises for this day.</div>
+              )}
             </div>
 
             <div className="mt-6 sm:mt-8 flex justify-center">
@@ -118,12 +146,16 @@ const Schedule = () => {
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = '/src/assets/profile1.png';
+                    e.target.src = "/src/assets/profile1.png";
                   }}
                 />
               </div>
-              <h3 className="text-white text-lg sm:text-xl font-medium">{trainer.name}</h3>
-              <p className="text-gray-400 mb-2 text-sm sm:text-base">{trainer.specialty}</p>
+              <h3 className="text-white text-lg sm:text-xl font-medium">
+                {trainer.name}
+              </h3>
+              <p className="text-gray-400 mb-2 text-sm sm:text-base">
+                {trainer.specialty}
+              </p>
               <a
                 onClick={() => navigate(`/trainers/${trainerId}`)}
                 className="text-[#f67a45] hover:underline text-sm cursor-pointer"
@@ -166,13 +198,15 @@ const Schedule = () => {
 
           {/* Add More Trainers Box */}
           <div
-            onClick={() => navigate('/explore')}
+            onClick={() => navigate("/explore")}
             className="bg-[#121225] border border-dashed border-[#f67a45]/50 rounded-lg p-4 sm:p-6 flex flex-col items-center justify-center h-32 sm:h-48 cursor-pointer hover:bg-[#1A1A2F] transition-colors"
           >
             <div className="bg-[#f67a45]/20 p-3 sm:p-4 rounded-full mb-2 sm:mb-3">
               <FaPlus className="text-[#f67a45] text-lg sm:text-xl" />
             </div>
-            <p className="text-white text-center text-sm sm:text-base">Find More Trainers</p>
+            <p className="text-white text-center text-sm sm:text-base">
+              Find More Trainers
+            </p>
           </div>
         </div>
       </div>
