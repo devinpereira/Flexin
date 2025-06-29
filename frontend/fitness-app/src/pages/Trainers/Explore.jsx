@@ -60,19 +60,28 @@ const Explore = () => {
 
   // Filter trainers based on search and specialty
   const filteredTrainers = trainers.filter((trainer) => {
+    const search = searchQuery.toLowerCase();
+
+    // Match name, any specialty, or any certificate title
     const matchesSearch =
-      trainer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (trainer.specialty &&
-        trainer.specialty.toLowerCase().includes(searchQuery.toLowerCase()));
+      trainer.name.toLowerCase().includes(search) ||
+      (Array.isArray(trainer.specialties) &&
+        trainer.specialties.some((spec) =>
+          spec.toLowerCase().includes(search)
+        ));
+
+    // Match specialty dropdown
     const matchesSpecialty =
       selectedSpecialty === "All Specialties" ||
-      trainer.specialty === selectedSpecialty;
+      (Array.isArray(trainer.specialties) &&
+        trainer.specialties.includes(selectedSpecialty));
 
     return matchesSearch && matchesSpecialty;
   });
 
   // Handle viewing trainer profile
   const handleViewTrainerProfile = (trainerId) => {
+    console.log("Viewing trainer profile:", trainerId);
     navigate(`/trainers/${trainerId}`);
   };
 
@@ -80,8 +89,9 @@ const Explore = () => {
   const handleAddTrainer = async (trainerId) => {
     try {
       await addTrainerFollower(trainerId);
-const updated = await getMyTrainers();
-    setMyTrainers(updated || []);      console.log("Trainer added to your list!");
+      const updated = await getMyTrainers();
+      setMyTrainers(updated || []);
+      console.log("Trainer added to your list!");
       // Optionally navigate or refresh trainers
       // navigate("/trainers");
     } catch (err) {

@@ -14,7 +14,8 @@ import { BsCalendarWeek, BsStarHalf } from "react-icons/bs";
 import { GiMeal } from "react-icons/gi";
 import { BiChat } from "react-icons/bi";
 import { RiVipDiamondLine } from "react-icons/ri";
-import { getTrainerById } from "../../api/trainer";
+import { getTrainerById, addTrainerFeedback } from "../../api/trainer";
+import { motion } from "framer-motion";
 
 const TrainerProfile = () => {
   const { trainerId } = useParams();
@@ -23,6 +24,11 @@ const TrainerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [submitting, setSubmitting] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -65,6 +71,28 @@ const TrainerProfile = () => {
     return <div className="flex">{stars}</div>;
   };
 
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    if (!feedbackText.trim()) return;
+    setSubmitting(true);
+    try {
+      await addTrainerFeedback(trainerId, {
+        comment: feedbackText,
+        rating: feedbackRating,
+      });
+      setFeedbackText("");
+      setFeedbackRating(5);
+      setShowFeedbackForm(false);
+      // Refresh trainer data to show new feedback
+      const updated = await getTrainerById(trainerId);
+      setTrainer(updated);
+    } catch {
+      alert("Failed to submit feedback.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
   if (!trainer) return <div>No trainer found.</div>;
@@ -87,7 +115,7 @@ const TrainerProfile = () => {
     <TrainerLayout pageTitle={`Trainer: ${trainer.name}`}>
       {/* Back Button */}
       <button
-        onClick={() => navigate("/trainers")}
+        onClick={() => navigate("/trainers/my-trainers")}
         className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
       >
         <MdArrowBack size={20} />
@@ -379,14 +407,40 @@ const TrainerProfile = () => {
         </div>
       </div>
 
-      {/* Customer Feedback */}
-      <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 my-4 sm:my-8 w-full overflow-visible">
-        <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
-          Customer Feedback
-        </h2>
-        <div className="space-y-6 w-full">
-          {feedbacks.length > 0 ? (
-            feedbacks.map((review, idx) => (
+      {/* Reviews and Ratings */}
+      <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
+          <h2 className="text-white text-xl sm:text-2xl font-bold">
+            Reviews & Ratings
+          </h2>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowFeedbackForm(true)}
+            className="bg-[#f67a45] text-white px-4 py-2 rounded-full hover:bg-[#e56d3d] transition-colors w-full sm:w-auto text-sm sm:text-base"
+          >
+            Write a Review
+          </motion.button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 bg-[#1A1A2F] p-4 rounded-lg">
+          <div className="text-[#f67a45] text-3xl sm:text-4xl font-bold text-center sm:text-left">
+            {trainer.rating}
+          </div>
+          <div>
+            <div className="flex justify-center sm:justify-start mb-1">
+              {renderStars(trainer.rating)}
+            </div>
+            <div className="text-white/70 text-sm sm:text-base text-center sm:text-left">
+              Based on {trainer.reviewCount} reviews
+            </div>
+          </div>
+        </div>
+
+        {/* Review List */}
+        <div className="space-y-6">
+          {(showAllReviews ? feedbacks : feedbacks.slice(0, 3)).map(
+            (review, idx) => (
               <div key={idx} className="border-b border-gray-700 pb-4 sm:pb-6">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center">
@@ -440,12 +494,118 @@ const TrainerProfile = () => {
                   {review.comment}
                 </p>
               </div>
-            ))
-          ) : (
-            <div className="text-white/60">No feedback yet.</div>
+            )
+          )}
+          {feedbacks.length > 3 && !showAllReviews && (
+            <button
+              className="text-[#f67a45] hover:underline mt-2"
+              onClick={() => setShowAllReviews(true)}
+            >
+              See more reviews
+            </button>
+          )}
+          {feedbacks.length > 3 && showAllReviews && (
+            <button
+              className="text-[#f67a45] hover:underline mt-2"
+              onClick={() => setShowAllReviews(false)}
+            >
+              Show less
+            </button>
           )}
         </div>
       </div>
+
+      {/* Feedback Form - Hidden by default */}
+      {showFeedbackForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white dark:bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 sm:p-10 w-full max-w-lg shadow-xl relative"
+          >
+            <button
+              onClick={() => setShowFeedbackForm(false)}
+              className="absolute top-3 right-3 text-gray-700 dark:text-white text-xl hover:text-[#f67a45] transition-colors"
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 className="text-[#f67a45] dark:text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+              Leave Feedback
+            </h2>
+            <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+              <div>
+                <label className="text-gray-700 dark:text-white text-sm mb-2 block">
+                  Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackRating(star)}
+                      className={`${
+                        feedbackRating >= star
+                          ? "text-[#f67a45]"
+                          : "text-gray-400 dark:text-white/50"
+                      } transition-colors flex items-center`}
+                    >
+                      <FaStar className="w-5 h-5" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-gray-700 dark:text-white text-sm mb-2 block">
+                  Comments
+                </label>
+                <textarea
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  className="w-full bg-gray-100 dark:bg-[#1A1A2F] border border-[#f67a45]/30 rounded-lg p-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45] focus:border-transparent resize-none"
+                  rows="4"
+                  placeholder="What did you think about the training?"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-[#f67a45] text-white py-2 rounded-full hover:bg-[#f67a45]/90 transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                {submitting ? (
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v16a8 8 0 01-8-8z"
+                    />
+                  </svg>
+                ) : (
+                  <>
+                    <RiVipDiamondLine size={14} />
+                    <span>Submit Feedback</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </TrainerLayout>
   );
 };

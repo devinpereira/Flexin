@@ -9,6 +9,7 @@ import {
   getTrainersForUser,
   addFollower,
   removeFollower,
+  addFeedbackToTrainer,
 } from '../controllers/trainerController.js';
 import {
   getSubscriptionDetails,
@@ -42,6 +43,9 @@ router.post('/:id/subscribe', protect, subscribeToPackage);
 
 // Cancel subscription
 router.post('/:id/unsubscribe', protect, cancelSubscription);
+
+// Add feedback to trainer
+router.post('/:id/feedback', protect, addFeedbackToTrainer);
 
 
 

@@ -11,6 +11,7 @@ export async function getAllTrainers() {
 // Get a trainer by ID for profile view
 export async function getTrainerById(trainerId) {
   const res = await fetch(`${BASE_URL}${API_PATHS.TRAINER.GET_TRAINER(trainerId)}`);
+  console.log("Fetching trainer with ID:", trainerId);
   if (!res.ok) throw new Error('Failed to fetch trainer');
   const data = await res.json();
   // If your backend returns { success, trainer }, return trainer only:
@@ -55,5 +56,19 @@ export async function removeTrainerFollower(trainerId) {
     body: JSON.stringify({ trainerId })
   });
   if (!res.ok) throw new Error('Failed to remove follower');
+  return await res.json();
+}
+
+
+export async function addTrainerFeedback(trainerId, feedback) {
+  const res = await fetch(`${BASE_URL}/api/v1/trainers/${trainerId}/feedback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify(feedback)
+  });
+  if (!res.ok) throw new Error('Failed to add feedback');
   return await res.json();
 }

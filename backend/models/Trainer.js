@@ -22,7 +22,6 @@ const feedbackSchema = new mongoose.Schema({
   userName: { type: String, required: true },
   comment: { type: String, required: true },
   rating: { type: Number, min: 1, max: 5, required: true },
-  photos: [{ type: String }],
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -45,7 +44,7 @@ const trainerSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    title: { // <-- Added
+    title: {
       type: String,
       required: true,
       default: "Certified Trainer",
@@ -97,14 +96,10 @@ const trainerSchema = new mongoose.Schema(
     },
     rating: { // <-- Added
       type: Number,
-      required: true,
-      default: 0,
-      min: 0,
-      max: 5,
+      default: 0
     },
     reviewCount: { // <-- Added
       type: Number,
-      required: true,
       default: 0,
       min: 0,
     },
@@ -117,6 +112,19 @@ const trainerSchema = new mongoose.Schema(
     followers: [
   { type: mongoose.Schema.Types.ObjectId, ref: "User" }
 ],
+specialties: {
+  type: [String],
+  required: true,
+  default: [],
+  enum: [
+    "Strength & Conditioning",
+    "Yoga & Flexibility",
+    "Weight Loss",
+    "Nutrition",
+    "Cardio & HIIT",
+    "Pilates"
+  ]
+},
   },
   {
     timestamps: true,
