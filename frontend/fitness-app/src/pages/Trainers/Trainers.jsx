@@ -1,29 +1,44 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import TrainerLayout from '../../components/Trainers/TrainerLayout';
-import { FaPlus } from 'react-icons/fa';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import TrainerLayout from "../../components/Trainers/TrainerLayout";
+import { FaPlus } from "react-icons/fa";
+import { getMyTrainers } from "../../api/trainer";
 
 const Trainers = () => {
   const navigate = useNavigate();
+  const [myTrainers, setMyTrainers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const myTrainers = [
-    { id: "685fb7d4ba52f850eb19ba06", name: "John Smith", image: "/src/assets/trainer.png", specialty: "Strength & Conditioning" },
-    { id: 2, name: "Sarah Johnson", image: "/src/assets/trainer.png", specialty: "Yoga & Flexibility" }
-  ];
+  useEffect(() => {
+    async function fetchTrainers() {
+      try {
+        const trainers = await getMyTrainers();
+        console.log("Fetched trainers:", trainers);
+        setMyTrainers(trainers || []);
+      } catch (err) {
+        setMyTrainers([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTrainers();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <TrainerLayout pageTitle="My Trainers">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {myTrainers.map(trainer => (
+        {myTrainers.map((trainer) => (
           <div
-            key={trainer.id}
+            key={trainer._id}
             className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-5 cursor-pointer hover:scale-[1.02] transition-transform"
-            onClick={() => navigate(`/trainers/${trainer.id}`)}
+            onClick={() => navigate(`/trainers/${trainer._id}`)}
           >
             <div className="flex flex-col items-center">
               <div className="w-24 h-24 rounded-full overflow-hidden mb-4">
                 <img
-                  src={trainer.image}
+                  src={trainer.profilePhoto}
                   alt={trainer.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -33,12 +48,12 @@ const Trainers = () => {
                 />
               </div>
               <h3 className="text-white text-lg font-medium">{trainer.name}</h3>
-              <p className="text-gray-400 text-sm mb-4">{trainer.specialty}</p>
+              <p className="text-gray-400 text-sm mb-4">{trainer.title}</p>
               <button
                 className="bg-[#f67a45] text-white px-4 py-1.5 rounded-full text-sm hover:bg-[#e56d3d] transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/trainers/${trainer.id}`);
+                  navigate(`/trainers/${trainer._id}`);
                 }}
               >
                 View Profile
@@ -49,7 +64,7 @@ const Trainers = () => {
 
         <div
           className="bg-[#121225] border border-dashed border-[#f67a45]/50 rounded-lg p-5 flex flex-col items-center justify-center cursor-pointer hover:bg-[#1A1A2F] transition-colors h-[250px]"
-          onClick={() => navigate('/explore')}
+          onClick={() => navigate("/explore")}
         >
           <div className="bg-[#f67a45]/20 p-4 rounded-full mb-4">
             <FaPlus className="text-[#f67a45] text-xl" />

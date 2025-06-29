@@ -328,58 +328,7 @@ const Subscription = () => {
             </div>
           </div>
 
-          {/* Reviews and Ratings */}
-          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
-              <h2 className="text-white text-xl sm:text-2xl font-bold">Reviews & Ratings</h2>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowReviewModal(true)}
-                className="bg-[#f67a45] text-white px-4 py-2 rounded-full hover:bg-[#e56d3d] transition-colors w-full sm:w-auto text-sm sm:text-base"
-              >
-                Write a Review
-              </motion.button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 bg-[#1A1A2F] p-4 rounded-lg">
-              <div className="text-[#f67a45] text-3xl sm:text-4xl font-bold text-center sm:text-left">{trainer.rating}</div>
-              <div>
-                <div className="flex justify-center sm:justify-start mb-1">
-                  {renderStars(trainer.rating)}
-                </div>
-                <div className="text-white/70 text-sm sm:text-base text-center sm:text-left">Based on {trainer.reviewCount} reviews</div>
-              </div>
-            </div>
-
-            {/* Review List */}
-            <div className="space-y-6">
-              {reviews.map((review, index) => (
-                <motion.div
-                  key={review.id}
-                  className="border-b border-gray-700 pb-6"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="text-white font-medium">{review.userName}</h4>
-                      <div className="flex text-[#f67a45]">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span key={star}>
-                            {star <= review.rating ? <FaStar /> : <FaRegStar />}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <span className="text-gray-400 text-sm">{review.date}</span>
-                  </div>
-                  <p className="text-white">{review.text}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
+         
         </div>
 
         {/* Right side - Trainer info and actions - Stacked on mobile */}
@@ -470,61 +419,7 @@ const Subscription = () => {
         </div>
       )}
 
-      {/* Review Modal - Responsive */}
-      {showReviewModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 max-w-md w-full"
-          >
-            <h3 className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4">Write a Review</h3>
-
-            <div className="mb-3 sm:mb-4">
-              <label className="block text-white mb-1 sm:mb-2 text-sm sm:text-base">Rating</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <motion.button
-                    key={star}
-                    onClick={() => setRating(star)}
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="text-xl sm:text-2xl"
-                  >
-                    {star <= rating ? <FaStar className="text-[#f67a45]" /> : <FaRegStar className="text-[#f67a45]" />}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-4 sm:mb-6">
-              <label className="block text-white mb-1 sm:mb-2 text-sm sm:text-base">Review</label>
-              <textarea
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white h-24 sm:h-32 focus:outline-none focus:ring-2 focus:ring-[#f67a45] text-sm sm:text-base"
-                placeholder="Share your experience with this trainer..."
-              ></textarea>
-            </div>
-
-            <div className="flex justify-end gap-2 sm:gap-3">
-              <button
-                onClick={() => setShowReviewModal(false)}
-                className="px-3 sm:px-6 py-1.5 sm:py-2 border border-gray-600 rounded-lg text-white hover:bg-[#1e1e35] text-sm sm:text-base"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitReview}
-                className="px-3 sm:px-6 py-1.5 sm:py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d] text-sm sm:text-base"
-                disabled={rating === 0 || !reviewText.trim()}
-              >
-                Submit Review
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+   
 
       {/* Success Modal - Responsive */}
       {showSuccessModal && (
