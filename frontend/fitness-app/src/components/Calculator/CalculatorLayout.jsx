@@ -138,7 +138,7 @@ const CalculatorLayout = ({ children, pageTitle = 'Calculator' }) => {
                 </a>
               ))}
 
-              <div className="mt-auto pt-6 border-t border-white/20 mt-32">
+              <div className="pt-6 border-t border-white/20 mt-32">
                 <a
                   href="#"
                   className="flex items-center gap-3 px-6 py-3 rounded-full text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45] transition-all duration-200"

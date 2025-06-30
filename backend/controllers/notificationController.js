@@ -21,7 +21,7 @@ export const getNotifications = async (req, res) => {
         let postImage = null;
         if (notification.postId) {
           const post = await Post.findById(notification.postId).lean();
-          postImage = `${BASE_URL}/${post?.content?.[0]}` || null;
+          postImage = post?.content?.[0] || null;
         }
 
         return {
@@ -31,8 +31,8 @@ export const getNotifications = async (req, res) => {
             name: user.fullName,
             username: profile?.username || "",
             profileImage: user.profileImageUrl
-              ? `${BASE_URL}/${user.profileImageUrl}`
-              : "/src/assets/profile1.png",
+              ? user.profileImageUrl
+              : "/default.jpg",
           },
           content: notification.message,
           postImage: postImage,

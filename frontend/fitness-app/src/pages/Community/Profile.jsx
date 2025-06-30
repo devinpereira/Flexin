@@ -22,7 +22,7 @@ import EditProfileModal from "../../components/Community/modals/EditProfileModal
 import CreatePostModal from "../../components/Community/modals/CreatePostModal";
 import PostImageModal from "../../components/Community/modals/PostImageModal";
 import CommunityLayout from "../../layouts/CommunityLayout";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const CommunityProfile = () => {
   const [activeTab, setActiveTab] = useState("posts");
@@ -35,6 +35,7 @@ const CommunityProfile = () => {
   const { userId } = useParams();
   const [user, setUser] = useState({});
   const [posts, setPosts] = useState([]);
+  const navigate = useNavigate();
 
   // Fetch user profile data
   useEffect(() => {
@@ -96,7 +97,8 @@ const CommunityProfile = () => {
   };
 
   const handleLogout = () => {
-    console.log("Logging out...");
+    localStorage.removeItem("token");
+    navigate("/logout");
   };
 
   const handleCreatePost = () => setShowPostModal(true);
@@ -119,9 +121,33 @@ const CommunityProfile = () => {
   };
 
   // Handle saving profile picture
-  const handleSaveProfilePicture = (file, preview, setUploading) => {
-    // Simulate API call with timeout
-    setTimeout(() => {
+  const handleSaveProfilePicture = async (file, preview, setUploading) => {
+    try {
+      setUploading(true);
+      
+      const formData = new FormData();
+      formData.append("profileImage", file);
+
+      const res = await axiosInstance.patch(API_PATHS.PROFILE.UPDATE_PROFILE_PIC, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data.success) {
+        setUser((prev) => ({
+          ...prev,
+          profileImageUrl: res.data.profileImageUrl,
+        }));
+      }
+
+      setShowProfilePictureModal(false);
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+    }
+    finally{
+      setUploading(false);
+    }
       // Update user state with new profile image
       setUser({
         ...user,
@@ -129,9 +155,7 @@ const CommunityProfile = () => {
       });
 
       // Close modal
-      setShowProfilePictureModal(false);
-      setUploading(false);
-    }, 1000);
+
   };
 
   // Handle image click for post modal
@@ -223,21 +247,21 @@ const CommunityProfile = () => {
                   </div>
                 </div>
                 {!userId && (
-                <div className="flex gap-3 justify-center mb-2">
-                  <button
-                    onClick={handleEditProfile}
-                    className="bg-[#f67a45] text-white px-5 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors flex items-center gap-2"
-                  >
-                    <FaUserEdit size={16} />
-                    <span>Edit Profile</span>
-                  </button>
-                  <button
-                    onClick={handleOpenSettings}
-                    className="bg-[#1A1A2F] text-white px-4 py-2 rounded-lg hover:bg-[#242440] transition-colors"
-                  >
-                    <FaCog size={16} />
-                  </button>
-                </div>
+                  <div className="flex gap-3 justify-center mb-2">
+                    <button
+                      onClick={handleEditProfile}
+                      className="bg-[#f67a45] text-white px-5 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors flex items-center gap-2"
+                    >
+                      <FaUserEdit size={16} />
+                      <span>Edit Profile</span>
+                    </button>
+                    <button
+                      onClick={handleOpenSettings}
+                      className="bg-[#1A1A2F] text-white px-4 py-2 rounded-lg hover:bg-[#242440] transition-colors"
+                    >
+                      <FaCog size={16} />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -245,16 +269,14 @@ const CommunityProfile = () => {
 
           {/* Create Post Section */}
           {!userId && (
-          <div className="p-4 border-b border-gray-700">
-            <CreatePost
-              onPostCreated={handlePostCreated}
-              profileImage={
-                user.profileImageUrl
-                  ? user.profileImageUrl
-                  : "/default.jpg"
-              }
-            />
-          </div>
+            <div className="p-4 border-b border-gray-700">
+              <CreatePost
+                onPostCreated={handlePostCreated}
+                profileImage={
+                  user.profileImageUrl ? user.profileImageUrl : "/default.jpg"
+                }
+              />
+            </div>
           )}
 
           {/* Tabs */}
@@ -367,12 +389,14 @@ const CommunityProfile = () => {
                 ) : (
                   <div className="py-10 text-center">
                     <p className="text-gray-400">No posts yet.</p>
-                    <button
-                      onClick={handleCreatePost}
-                      className="mt-4 bg-[#f67a45] text-white px-6 py-2 rounded-full hover:bg-[#e56d3d] transition-colors"
-                    >
-                      Create Your First Post
-                    </button>
+                    {!userId && (
+                      <button
+                        onClick={handleCreatePost}
+                        className="mt-4 bg-[#f67a45] text-white px-6 py-2 rounded-full hover:bg-[#e56d3d] transition-colors"
+                      >
+                        Create Your First Post
+                      </button>
+                    )}
                   </div>
                 )}
               </>
@@ -387,18 +411,17 @@ const CommunityProfile = () => {
 
           {/* Log Out Button */}
           {!userId && (
-          <div className="p-4 border-t border-gray-700">
-            <button
-              onClick={handleLogout}
-              className="w-full py-3 text-[#f67a45] flex items-center justify-center gap-2 hover:bg-[#f67a45]/10 rounded-lg transition-colors"
-            >
-              <FaSignOutAlt />
-              <span>Log Out</span>
-            </button>
-          </div>
+            <div className="p-4 border-t border-gray-700">
+              <button
+                onClick={handleLogout}
+                className="w-full py-3 text-[#f67a45] flex items-center justify-center gap-2 hover:bg-[#f67a45]/10 rounded-lg transition-colors"
+              >
+                <FaSignOutAlt />
+                <span>Log Out</span>
+              </button>
+            </div>
           )}
         </div>
-
 
         {/* Modals */}
         {showSettingsModal && (

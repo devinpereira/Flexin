@@ -55,7 +55,7 @@ const CommunityLayout = ({ children }) => {
           transition={{ duration: 0.3 }}
         >
           {showWizard && (
-            <CommunityProfileWizard profileImageUrl={user.profileImageUrl} />
+            <CommunityProfileWizard profileImageUrl={user.profileImageUrl} onComplete={() => setShowWizard(false)} />
           )}
           {!showWizard && children}
         </motion.div>

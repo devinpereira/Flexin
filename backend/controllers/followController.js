@@ -80,19 +80,6 @@ export const sendFollowRequest = async (req, res) => {
 
     await newFollow.save();
 
-    // Update the following and followers count for both users
-    await ProfileData.findOneAndUpdate(
-      { userId: followerId }, 
-      { $inc: { following: 1 } },  // Increment following count of the follower
-      { new: true }
-    );
-
-    await ProfileData.findOneAndUpdate(
-      { userId: followingId }, 
-      { $inc: { followers: 1 } },  // Increment followers count of the followed user
-      { new: true }
-    );
-
     res.status(201).json({ message: "Follow request sent", follow: newFollow });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -158,11 +145,26 @@ export const approveFollowRequest = async (req, res) => {
     const { followId } = req.params;
 
     const follow = await Follow.findById(followId);
-    if (!follow)
+    if (!follow) {
       return res.status(404).json({ error: "Follow request not found" });
+    }
+
+    const { followerId, followingId } = follow;
 
     follow.status = "accepted";
     await follow.save();
+
+    await ProfileData.findOneAndUpdate(
+      { userId: followerId },
+      { $inc: { following: 1 } },
+      { new: true }
+    );
+
+    await ProfileData.findOneAndUpdate(
+      { userId: followingId },
+      { $inc: { followers: 1 } },
+      { new: true }
+    );
 
     res.json({ message: "Follow request approved" });
   } catch (err) {
@@ -250,9 +252,9 @@ export const getFollowers = async (req, res) => {
 
     const result = users.map(u => ({
       id: u._id,
-      name: u.fullName,
+      fullName: u.fullName,
       username: profileMap[u._id.toString()]?.username || '',
-      profileImage: u.profileImageUrl,
+      profileImageUrl: u.profileImageUrl,
       isFollowing: followingBack.includes(u._id.toString())
     }));
 
@@ -280,9 +282,9 @@ export const getFollowing = async (req, res) => {
 
     const result = users.map(u => ({
       id: u._id,
-      name: u.fullName,
+      fullName: u.fullName,
       username: profileMap[u._id.toString()]?.username || '',
-      profileImage: u.profileImageUrl,
+      profileImageUrl: u.profileImageUrl,
       isFollowing: true
     }));
 

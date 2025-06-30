@@ -88,17 +88,22 @@ const CommunityNotifications = () => {
 
   // Mark a single notification as read
   const markAsRead = (id) => {
-    setNotifications(
-      notifications.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+    const response = axiosInstance.patch(`${API_PATHS.NOTIFICATION.MARK_AS_READ(id)}`);
+    if (response.status !== 200) {
+      setNotifications(
+        notifications.map((notification) =>
+          notification.id === id ? { ...notification, read: true } : notification
+        )
+      );
+    }
   };
 
   // Mark all notifications as read
   const markAllAsRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, read: true })));
-    // In a real app, you would call an API to mark all as read on the server
+    const response = axiosInstance.patch(API_PATHS.NOTIFICATION.MARK_ALL_AS_READ);
+    if (response.status !== 200) {
+      setNotifications(notifications.map((n) => ({ ...n, read: true })));
+    }
   };
 
   // Get the appropriate icon for each notification type

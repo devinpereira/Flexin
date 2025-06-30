@@ -25,8 +25,8 @@ const CommunityFriends = () => {
 
   // Tabs configuration
   const tabs = [
-    { id: "all", label: "All Friends" },
-    { id: "online", label: "Online" },
+    { id: "followers", label: "Followers" },
+    { id: "following", label: "Following" },
     { id: "requests", label: "Requests" },
   ];
 
@@ -88,35 +88,25 @@ const CommunityFriends = () => {
   };
 
   const handleAcceptRequest = async (request) => {
-
     try {
-      const response = await axiosInstance.post(`${API_PATHS.FOLLOW.APPROVE_FOLLOW_REQUEST(request._id)}`);
+      await axiosInstance.post(`${API_PATHS.FOLLOW.APPROVE_FOLLOW_REQUEST(request._id)}`);
 
-      setFriendRequests(friendRequests.filter((r) => r.id !== request._id));
+      setFriendRequests(friendRequests.filter((r) => r._id !== request._id));
       setFollowers([...followers, request]);
     } catch (error) {
       console.error("Error sending follow request", error);
     }
   };
 
-  const getFilteredFriends = () => {
-    // Combine followers and following for "all" tab
-    let friendsToShow =
-      activeTab === "online"
-        ? following.filter((friend) => friend.isOnline)
-        : following;
+  const handleDeclineRequest = async (request) => {
+        try {
+      const response = await axiosInstance.post(`${API_PATHS.FOLLOW.REJECT_FOLLOW_REQUEST(request._id)}`);
 
-    // Filter by search term if present
-    if (searchTerm) {
-      return friendsToShow.filter(
-        (friend) =>
-          friend.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          friend.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      setFriendRequests(friendRequests.filter((r) => r._id !== request._id));
+    } catch (error) {
+      console.error("Error sending follow request", error);
     }
-
-    return friendsToShow;
-  };
+  }
 
   return (
     <CommunityLayout>
@@ -153,118 +143,133 @@ const CommunityFriends = () => {
           </div>
         </div>
 
-        {/* Friends List or Requests */}
-        {activeTab === "requests" ? (
-          <div className="space-y-4">
-            <h3 className="text-white text-lg font-medium">
-              Friend Requests ({friendRequests.length})
-            </h3>
-
-            {friendRequests.length > 0 ? (
-              friendRequests.map((request) => (
-                <div
-                  key={request._id}
-                  className="bg-[#121225] rounded-xl p-4 flex justify-between items-center"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={request.followerId.profileImageUrl || "/default.jpg"}
-                      alt={request.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "/src/assets/profile1.png";
-                      }}
-                    />
-                    <div>
-                      <h4 className="text-white font-medium">{request.followerId.fullName}</h4>
-                      <p className="text-gray-400 text-xs">
-                        {request.mutualFriends} mutual friends
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      className="bg-[#f67a45] text-white px-3 py-1 rounded-full text-sm"
-                      onClick={() => handleAcceptRequest(request)}
-                    >
-                      Accept
-                    </button>
-                    <button className="bg-[#1A1A2F] text-white px-3 py-1 rounded-full text-sm">
-                      Decline
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="bg-[#121225] rounded-xl p-6 text-center">
-                <p className="text-gray-400">No pending friend requests</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {getFilteredFriends().length > 0 ? (
-              getFilteredFriends().map((friend) => (
-                <div
-                  key={friend.id}
-                  className="bg-[#121225] rounded-xl p-4 flex justify-between items-center"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="relative">
-                      <img
-                        src={friend.profileImageUrl || "/default.jpg"}
-                        alt={friend.name}
-                        className="w-12 h-12 rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "/default.jpg";
-                        }}
-                      />
-                      <div
-                        className={`absolute -bottom-1 -right-1 ${
-                          friend.isOnline ? "text-green-500" : "text-gray-400"
-                        }`}
-                      >
-                        <FaCircle size={10} />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-medium">{friend.name}</h4>
-                      <p className="text-gray-400 text-xs truncate">
-                        {friend.isOnline ? "Online" : friend.lastSeen}
-                        {friend.status && ` • ${friend.status}`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button className="bg-[#1A1A2F] text-white p-2 rounded-full hover:bg-[#f67a45]/20 hover:text-[#f67a45]">
-                      <FaComment size={14} />
-                    </button>
-                    <button
-                      className="bg-[#1A1A2F] text-white p-2 rounded-full hover:bg-red-500/20 hover:text-red-500"
-                      onClick={() => handleUnfollow(friend.id)}
-                    >
-                      <FaUserMinus size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="bg-[#121225] rounded-xl p-6 text-center">
-                <p className="text-gray-400">
-                  {searchTerm
-                    ? `No friends found matching "${searchTerm}"`
-                    : activeTab === "online"
-                    ? "No friends are currently online"
-                    : "No friends found"}
+{/* Friends List or Requests */}
+<div className="space-y-4">
+  {activeTab === "requests" && (
+    <>
+      <h3 className="text-white text-lg font-medium">
+        Friend Requests ({friendRequests.length})
+      </h3>
+      {friendRequests.length > 0 ? (
+        friendRequests.map((request) => (
+          <div
+            key={request._id}
+            className="bg-[#121225] rounded-xl p-4 flex justify-between items-center"
+          >
+            <div className="flex items-center gap-3">
+              <img
+                src={request.followerId.profileImageUrl || "/default.jpg"}
+                alt={request.followerId.fullName}
+                className="w-12 h-12 rounded-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/default.jpg";
+                }}
+              />
+              <div>
+                <h4 className="text-white font-medium">{request.followerId.fullName}</h4>
+                <p className="text-gray-400 text-xs">
+                  {request.mutualFriends} mutual friends
                 </p>
               </div>
-            )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="bg-[#f67a45] text-white px-3 py-1 rounded-full text-sm"
+                onClick={() => handleAcceptRequest(request)}
+              >
+                Accept
+              </button>
+              <button
+                className="bg-[#1A1A2F] text-white px-3 py-1 rounded-full text-sm"
+                onClick={() => handleDeclineRequest(request)}
+              >
+                Decline
+              </button>
+            </div>
           </div>
-        )}
+        ))
+      ) : (
+        <div className="bg-[#121225] rounded-xl p-6 text-center">
+          <p className="text-gray-400">No pending friend requests</p>
+        </div>
+      )}
+    </>
+  )}
+
+  {(activeTab === "followers" || activeTab === "following") && (
+    <>
+      <h3 className="text-white text-lg font-medium">
+        {activeTab === "followers" ? `Followers (${followers.length})` : `Following (${following.length})`}
+      </h3>
+      {(activeTab === "followers" ? followers : following).length > 0 ? (
+        (activeTab === "followers" ? followers : following)
+          .filter((friend) =>
+            searchTerm
+              ? friend.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                friend.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+              : true
+          )
+          .map((friend) => (
+            <div
+              key={friend._id}
+              className="bg-[#121225] rounded-xl p-4 flex justify-between items-center"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative">
+                  <img
+                    src={friend.profileImageUrl || "/default.jpg"}
+                    alt={friend.fullName}
+                    className="w-12 h-12 rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/default.jpg";
+                    }}
+                  />
+                  <div
+                    className={`absolute -bottom-1 -right-1 ${
+                      friend.isOnline ? "text-green-500" : "text-gray-400"
+                    }`}
+                  >
+                    <FaCircle size={10} />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-white font-medium">{friend.fullName}</h4>
+                  <p className="text-gray-400 text-xs truncate">
+                    {friend.isOnline ? "Online" : friend.lastSeen}
+                    {friend.status && ` • ${friend.status}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button className="bg-[#1A1A2F] text-white p-2 rounded-full hover:bg-[#f67a45]/20 hover:text-[#f67a45]">
+                  <FaComment size={14} />
+                </button>
+                {activeTab === "following" && (
+                  <button
+                    className="bg-[#1A1A2F] text-white p-2 rounded-full hover:bg-red-500/20 hover:text-red-500"
+                    onClick={() => handleUnfollow(friend._id)}
+                  >
+                    <FaUserMinus size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+      ) : (
+        <div className="bg-[#121225] rounded-xl p-6 text-center">
+          <p className="text-gray-400">
+            {searchTerm
+              ? `No ${activeTab} found matching "${searchTerm}"`
+              : `No ${activeTab} found`}
+          </p>
+        </div>
+      )}
+    </>
+  )}
+</div>
+
 
         {/* People You May Know section */}
         <div className="mt-8">
