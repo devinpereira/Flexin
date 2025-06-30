@@ -109,6 +109,9 @@ export const API_PATHS = {
     REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower", 
     ADD_FEEDBACK: (trainerId) => `/api/v1/trainers/${trainerId}/feedback`,
     GET_TRAINER_SCHEDULE: (trainerId) => `/api/v1/trainer-schedules/${trainerId}`,
-  }
+  },
 
+  MEAL_PLAN: {
+    GET_MEAL_PLAN: (trainerId, userId) => `/api/v1/meal-plans/${trainerId}/${userId}`,
+  },
 };

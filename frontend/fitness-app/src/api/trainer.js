@@ -88,16 +88,4 @@ export async function getTrainerSchedule(trainerId) {
   return data.schedule || data; // adjust if your backend returns just the schedule array/object
 }
 
-// Get a meal plan by trainer ID
-export async function getMealPlan(trainerId) {
-  const res = await fetch(`${BASE_URL}/api/v1/meal-plans/${trainerId}`, {
-    headers: {
-      "Authorization": `Bearer ${localStorage.getItem('token')}`,
-      "Content-Type": "application/json"
-    }
-  });
-  if (!res.ok) throw new Error("Failed to fetch meal plan");
-  return await res.json();
-}
-
 
