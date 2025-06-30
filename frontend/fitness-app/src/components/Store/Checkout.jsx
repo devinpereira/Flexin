@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AiOutlineClose } from 'react-icons/ai';
+import { addressesApi, ordersApi } from '../../api/storeApi';
 
 const Checkout = () => {
   const location = useLocation();
@@ -11,6 +12,7 @@ const Checkout = () => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [useNewAddress, setUseNewAddress] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Form state
   const [customerInfo, setCustomerInfo] = useState({
@@ -22,12 +24,50 @@ const Checkout = () => {
 
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newAddressData, setNewAddressData] = useState({
+    fullName: '',
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'Sri Lanka',
+    phoneNumber: '',
+    isDefault: false
+  });
 
-  // Demo saved addresses
-  const savedAddresses = [
-    { id: 1, name: 'Home', address: '123 Main St, Colombo', isDefault: true },
-    { id: 2, name: 'Work', address: '456 Business Ave, Kandy', isDefault: false }
-  ];
+  // Fetch saved addresses from backend
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await addressesApi.getAddresses();
+          if (response.success) {
+            setSavedAddresses(response.addresses || []);
+            // Set default address if available
+            const defaultAddress = response.addresses?.find(addr => addr.isDefault);
+            if (defaultAddress) {
+              setSelectedAddress(defaultAddress);
+            }
+          }
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching addresses:', error);
+        // Use fallback addresses
+        setSavedAddresses([
+          { id: 1, name: 'Home', address: '123 Main St, Colombo', isDefault: true },
+          { id: 2, name: 'Work', address: '456 Business Ave, Kandy', isDefault: false }
+        ]);
+        setIsLoading(false);
+      }
+    };
+
+    fetchAddresses();
+  }, []);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -35,17 +75,115 @@ const Checkout = () => {
     setCustomerInfo(prev => ({ ...prev, [name]: value }));
   };
 
+  // Handle address input changes
+  const handleAddressInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setNewAddressData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   // Handle payment method selection
   const handlePaymentMethodSelect = (method) => {
     setPaymentMethod(method);
   };
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  // Create new address
+  const handleCreateAddress = async () => {
+    try {
+      // Validate required fields (matching backend requirements)
+      if (!newAddressData.fullName || !newAddressData.addressLine1 || !newAddressData.city ||
+        !newAddressData.state || !newAddressData.postalCode || !newAddressData.country ||
+        !newAddressData.phoneNumber) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      const addressPayload = {
+        fullName: newAddressData.fullName,
+        addressLine1: newAddressData.addressLine1,
+        addressLine2: newAddressData.addressLine2,
+        city: newAddressData.city,
+        state: newAddressData.state,
+        postalCode: newAddressData.postalCode,
+        country: newAddressData.country,
+        phoneNumber: newAddressData.phoneNumber,
+        isDefault: newAddressData.isDefault
+      };
+
+      const response = await addressesApi.createAddress(addressPayload);
+      if (response.success) {
+        const newAddress = response.address;
+        setSavedAddresses(prev => [...prev, newAddress]);
+        setSelectedAddress(newAddress);
+        setNewAddressData({
+          fullName: '',
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          state: '',
+          postalCode: '',
+          country: 'Sri Lanka',
+          phoneNumber: '',
+          isDefault: false
+        });
+        setShowAddressModal(false);
+        alert('Address added successfully!');
+      }
+    } catch (error) {
+      console.error('Error creating address:', error);
+      alert(error.response?.data?.message || 'Failed to create address. Please try again.');
+    }
+  };
+
+  // Handle form submission - Create order
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Process order logic would go here
-    alert('Order submitted successfully!');
-    navigate('/store');
+
+    if (!selectedAddress || !selectedPayment) {
+      alert('Please select both shipping address and payment method');
+      return;
+    }
+
+    if (items.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Prepare order data
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.id || item._id,
+          quantity: item.quantity
+        })),
+        addressId: selectedAddress.id || selectedAddress._id,
+        paymentMethod: selectedPayment.type,
+        customerInfo
+      };
+
+      const response = await ordersApi.createOrder(orderData);
+
+      if (response.success) {
+        alert('Order placed successfully!');
+        navigate('/store', {
+          state: {
+            message: 'Order placed successfully!',
+            orderId: response.order._id
+          }
+        });
+      } else {
+        throw new Error(response.message || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Error creating order:', error);
+      alert(error.message || 'Failed to place order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -137,8 +275,8 @@ const Checkout = () => {
 
                 {selectedAddress ? (
                   <div className="bg-[#1e1e35] p-4 rounded-lg">
-                    <p className="text-white font-medium">{selectedAddress.name}</p>
-                    <p className="text-white/70">{selectedAddress.address}</p>
+                    <p className="text-white font-medium">{selectedAddress.fullName || selectedAddress.name}</p>
+                    <p className="text-white/70">{selectedAddress.address || `${selectedAddress.addressLine1}, ${selectedAddress.city} ${selectedAddress.postalCode}`}</p>
                   </div>
                 ) : (
                   <p className="text-white/70">No shipping address selected</p>
@@ -172,10 +310,10 @@ const Checkout = () => {
 
               <button
                 type="submit"
-                className="w-full bg-[#f67a45] text-white py-3 rounded-md hover:bg-[#e56d3d] transition-colors font-medium"
-                disabled={!selectedAddress || !selectedPayment}
+                className="w-full bg-[#f67a45] text-white py-3 rounded-md hover:bg-[#e56d3d] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!selectedAddress || !selectedPayment || isSubmitting}
               >
-                Place Order
+                {isSubmitting ? 'Placing Order...' : 'Place Order'}
               </button>
             </form>
           </div>
@@ -187,16 +325,19 @@ const Checkout = () => {
 
               <div className="max-h-80 overflow-y-auto mb-4">
                 {items.map(item => (
-                  <div key={item.id} className="flex items-center mb-4">
+                  <div key={item.id || item._id} className="flex items-center mb-4">
                     <div className="w-16 h-16 bg-gray-700/30 rounded-lg mr-3">
                       <img
-                        src={item.image}
-                        alt={item.name}
+                        src={item.image || item.images?.[0] || '/default.jpg'}
+                        alt={item.name || item.productName}
                         className="w-full h-full object-cover rounded-lg"
+                        onError={(e) => {
+                          e.target.src = '/default.jpg';
+                        }}
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="text-white">{item.name}</p>
+                      <p className="text-white">{item.name || item.productName}</p>
                       <div className="flex justify-between">
                         <span className="text-white/70">x{item.quantity}</span>
                         <span className="text-[#f67a45]">${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
@@ -327,27 +468,27 @@ const Checkout = () => {
 
       {/* Address Modal */}
       {showAddressModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-white text-xl font-bold">Shipping Address</h3>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 md:p-8 w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-3 sm:mb-4">
+              <h3 className="text-white text-lg sm:text-xl font-bold">Shipping Address</h3>
               <button
                 onClick={() => setShowAddressModal(false)}
-                className="text-white/70 hover:text-white"
+                className="text-white/70 hover:text-white p-1"
               >
-                <AiOutlineClose size={20} />
+                <AiOutlineClose size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
 
-            <div className="flex mb-6">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 mb-4 sm:mb-6 bg-[#1a1a2f] rounded-lg p-1">
               <button
-                className={`flex-1 py-2 ${!useNewAddress ? 'bg-[#f67a45] text-white' : 'bg-transparent text-white/70'}`}
+                className={`flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-md transition-colors ${!useNewAddress ? 'bg-[#f67a45] text-white' : 'bg-transparent text-white/70 hover:text-white'}`}
                 onClick={() => setUseNewAddress(false)}
               >
                 Use Saved Address
               </button>
               <button
-                className={`flex-1 py-2 ${useNewAddress ? 'bg-[#f67a45] text-white' : 'bg-transparent text-white/70'}`}
+                className={`flex-1 py-2 sm:py-2.5 text-sm sm:text-base rounded-md transition-colors ${useNewAddress ? 'bg-[#f67a45] text-white' : 'bg-transparent text-white/70 hover:text-white'}`}
                 onClick={() => setUseNewAddress(true)}
               >
                 Add New Address
@@ -355,77 +496,171 @@ const Checkout = () => {
             </div>
 
             {!useNewAddress ? (
-              <div className="space-y-3">
-                {savedAddresses.map(address => (
-                  <div
-                    key={address.id}
-                    className={`p-3 rounded-lg cursor-pointer ${address.isDefault ? 'bg-[#1e1e35] border border-[#f67a45]/30' : 'bg-[#1a1a2f]'
-                      }`}
-                    onClick={() => setSelectedAddress(address)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-white font-medium">{address.name}</p>
-                      {address.isDefault && (
-                        <span className="text-xs bg-[#f67a45]/20 text-[#f67a45] px-2 py-1 rounded-full">
-                          Default
-                        </span>
-                      )}
+              <div className="space-y-2 sm:space-y-3">
+                {isLoading ? (
+                  <p className="text-white/70 text-sm sm:text-base">Loading addresses...</p>
+                ) : savedAddresses.length > 0 ? (
+                  savedAddresses.map(address => (
+                    <div
+                      key={address.id || address._id}
+                      className={`p-3 sm:p-4 rounded-lg cursor-pointer transition-all ${address.isDefault ? 'bg-[#1e1e35] border border-[#f67a45]/30' : 'bg-[#1a1a2f] hover:bg-[#1e1e35]'
+                        }`}
+                      onClick={() => setSelectedAddress(address)}
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <p className="text-white font-medium text-sm sm:text-base">{address.fullName || address.name}</p>
+                        {address.isDefault && (
+                          <span className="text-xs bg-[#f67a45]/20 text-[#f67a45] px-2 py-1 rounded-full flex-shrink-0">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-white/70 text-sm sm:text-base mt-1">{address.address || `${address.addressLine1}, ${address.city} ${address.postalCode}`}</p>
                     </div>
-                    <p className="text-white/70">{address.address}</p>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-white/70 text-sm sm:text-base">No saved addresses found</p>
+                )}
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Address Name (e.g., Home, Work)
+                  <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                    Full Name *
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                    name="fullName"
+                    value={newAddressData.fullName}
+                    onChange={handleAddressInputChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                    placeholder="John Doe"
+                    required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-white text-sm font-medium mb-2">
-                    Street Address
+                  <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                    Address Line 1 *
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                    name="addressLine1"
+                    value={newAddressData.addressLine1}
+                    onChange={handleAddressInputChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                    placeholder="123 Main Street"
+                    required
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                    Address Line 2 (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    name="addressLine2"
+                    value={newAddressData.addressLine2}
+                    onChange={handleAddressInputChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                    placeholder="Apartment, suite, etc."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">
-                      City
+                    <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                      City *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                      name="city"
+                      value={newAddressData.city}
+                      onChange={handleAddressInputChange}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                      placeholder="Colombo"
+                      required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">
-                      Postal Code
+                    <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                      State/Province *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                      name="state"
+                      value={newAddressData.state}
+                      onChange={handleAddressInputChange}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                      placeholder="Western Province"
+                      required
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                      Postal Code *
+                    </label>
+                    <input
+                      type="text"
+                      name="postalCode"
+                      value={newAddressData.postalCode}
+                      onChange={handleAddressInputChange}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                      placeholder="00100"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                      Country *
+                    </label>
+                    <select
+                      name="country"
+                      value={newAddressData.country}
+                      onChange={handleAddressInputChange}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-[#121225] border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                      required
+                    >
+                      <option value="Sri Lanka">Sri Lanka</option>
+                      <option value="India">India</option>
+                      <option value="United States">United States</option>
+                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-white text-sm font-medium mb-1 sm:mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={newAddressData.phoneNumber}
+                    onChange={handleAddressInputChange}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436] text-sm sm:text-base"
+                    placeholder="+94 77 123 4567"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center pt-2">
                   <input
                     type="checkbox"
                     id="makeDefault"
-                    className="w-4 h-4 accent-[#f67a45]"
+                    name="isDefault"
+                    checked={newAddressData.isDefault}
+                    onChange={handleAddressInputChange}
+                    className="w-4 h-4 accent-[#f67a45] flex-shrink-0"
                   />
-                  <label htmlFor="makeDefault" className="ml-2 text-white">
+                  <label htmlFor="makeDefault" className="ml-2 sm:ml-3 text-white text-sm sm:text-base">
                     Make this my default address
                   </label>
                 </div>
@@ -433,19 +668,25 @@ const Checkout = () => {
             )}
 
             <button
-              className="w-full mt-6 bg-[#f67a45] text-white py-3 rounded-md hover:bg-[#e56d3d] transition-colors font-medium"
+              className="w-full mt-4 sm:mt-6 bg-[#f67a45] text-white py-2.5 sm:py-3 rounded-md hover:bg-[#e56d3d] transition-colors font-medium text-sm sm:text-base"
               onClick={() => {
                 if (!useNewAddress) {
-                  setSelectedAddress(savedAddresses.find(a => a.isDefault));
+                  // Use selected saved address
+                  const selected = savedAddresses.find(a => a.isDefault) || savedAddresses[0];
+                  if (selected) {
+                    setSelectedAddress(selected);
+                  }
+                  setShowAddressModal(false);
                 } else {
-                  setSelectedAddress({
-                    id: Date.now(),
-                    name: 'New Address',
-                    address: '789 New Address St, Colombo',
-                    isDefault: false
-                  });
+                  // Create new address
+                  if (newAddressData.fullName && newAddressData.addressLine1 && newAddressData.city &&
+                    newAddressData.state && newAddressData.postalCode && newAddressData.country &&
+                    newAddressData.phoneNumber) {
+                    handleCreateAddress();
+                  } else {
+                    alert('Please fill in all required fields (marked with *)');
+                  }
                 }
-                setShowAddressModal(false);
               }}
             >
               {useNewAddress ? 'Add Address' : 'Use Selected Address'}

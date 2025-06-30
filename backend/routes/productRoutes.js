@@ -1,22 +1,29 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
-import upload from "../middleware/uploadMiddleware.js";
 import {
-  addProduct,
-  deleteProduct,
-  editProduct,
-  getProduct,
   getProducts,
-  rateProduct,
+  getProduct,
+  addProduct,
+  editProduct,
+  deleteProduct,
+  addProductReview,
+  getProductReviews
 } from "../controllers/productController.js";
+import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
+// Public routes
 router.get("/", getProducts);
 router.get("/:id", getProduct);
+router.get("/:id/reviews", getProductReviews);
+
+// Protected user routes
+router.post("/:id/reviews", protect, addProductReview);
+
+// Admin routes (you might want to add admin middleware here)
+router.post("/", protect, upload.array("images", 10), addProduct);
+router.put("/:id", protect, upload.array("images", 10), editProduct);
 router.delete("/:id", protect, deleteProduct);
-router.put("/:id", protect, upload.array("media", 5), editProduct);
-router.post("/", protect, upload.array("media", 5), addProduct);
-router.post("/:id/like", protect, rateProduct);
 
 export default router;

@@ -59,54 +59,53 @@ export const API_PATHS = {
   STORE_PRODUCTS: {
     GET_PRODUCTS: "/api/v1/store/products",
     GET_PRODUCT: (productId) => `/api/v1/store/products/${productId}`,
-    GET_FEATURED_PRODUCTS: "/api/v1/store/featured",
-    GET_DEALS_AND_OFFERS: "/api/v1/store/deals",
+    ADD_REVIEW: (productId) => `/api/v1/store/products/${productId}/reviews`,
+    GET_REVIEWS: (productId) => `/api/v1/store/products/${productId}/reviews`,
   },
 
   // Store: Categories and Subcategories
   STORE_CATEGORIES: {
     GET_CATEGORIES: "/api/v1/store/categories",
+    GET_CATEGORY: (categoryId) => `/api/v1/store/categories/${categoryId}`,
     GET_SUBCATEGORIES: (categoryId) => `/api/v1/store/categories/${categoryId}/subcategories`,
-    GET_PRODUCTS_BY_CATEGORY: (categoryId) => `/api/v1/store/categories/${categoryId}/products`,
-    GET_PRODUCTS_BY_SUBCATEGORY: (subcategoryId) => `/api/v1/store/subcategories/${subcategoryId}/products`,
   },
 
   // Store: Shopping Cart
   STORE_CART: {
     GET_CART: "/api/v1/store/cart",
-    ADD_TO_CART: "/api/v1/store/cart",
-    UPDATE_CART_ITEM: (cartItemId) => `/api/v1/store/cart/${cartItemId}`,
-    REMOVE_FROM_CART: (cartItemId) => `/api/v1/store/cart/${cartItemId}`,
+    ADD_TO_CART: "/api/v1/store/cart/add",
+    UPDATE_CART: "/api/v1/store/cart/update",
+    REMOVE_FROM_CART: (productId) => `/api/v1/store/cart/remove/${productId}`,
+    CLEAR_CART: "/api/v1/store/cart/clear",
   },
 
-  // Store: Checkout (Addresses & Payment Methods)
-  STORE_CHECKOUT: {
-    GET_ADDRESSES: "/api/v1/users/addresses",
-    ADD_ADDRESS: "/api/v1/users/addresses",
-    UPDATE_ADDRESS: (addressId) => `/api/v1/users/addresses/${addressId}`,
-    DELETE_ADDRESS: (addressId) => `/api/v1/users/addresses/${addressId}`,
-
-    GET_PAYMENT_METHODS: "/api/v1/users/payment-methods",
-    ADD_PAYMENT_METHOD: "/api/v1/users/payment-methods",
+  // Store: Addresses
+  STORE_ADDRESSES: {
+    GET_ADDRESSES: "/api/v1/store/addresses",
+    ADD_ADDRESS: "/api/v1/store/addresses",
+    UPDATE_ADDRESS: (addressId) => `/api/v1/store/addresses/${addressId}`,
+    DELETE_ADDRESS: (addressId) => `/api/v1/store/addresses/${addressId}`,
   },
 
   // Store: Orders
   STORE_ORDERS: {
-    PLACE_ORDER: "/api/v1/store/orders",
+    CREATE_ORDER: "/api/v1/store/orders",
     GET_ORDERS: "/api/v1/store/orders",
     GET_ORDER: (orderId) => `/api/v1/store/orders/${orderId}`,
+    CANCEL_ORDER: (orderId) => `/api/v1/store/orders/${orderId}/cancel`,
   },
 
-  // Store: Promotions
-  STORE_PROMOTIONS: {
-    APPLY_COUPON: "/api/v1/store/coupons/apply",
+  // Store: Coupons
+  STORE_COUPONS: {
+    GET_ACTIVE_COUPONS: "/api/v1/store/coupons/active",
+    VALIDATE_COUPON: "/api/v1/store/coupons/validate",
   },
 
-TRAINER: {
+  TRAINER: {
     GET_TRAINER: (trainerId) => `/api/v1/trainers/${trainerId}`,
-    GET_MY_TRAINERS: "/api/v1/trainers/my-trainers", 
-    ADD_FOLLOWER: "/api/v1/trainers/add-follower",   
-    REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower", 
+    GET_MY_TRAINERS: "/api/v1/trainers/my-trainers",
+    ADD_FOLLOWER: "/api/v1/trainers/add-follower",
+    REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower",
     ADD_FEEDBACK: (trainerId) => `/api/v1/trainers/${trainerId}/feedback`, // <-- Add this line
 
   }

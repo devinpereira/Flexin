@@ -16,6 +16,14 @@ import workoutRoutes from "./routes/workoutRoutes.js";
 import trainerRoutes from "./routes/trainerRoutes.js";
 import trainerScheduleRoutes from "./routes/trainer.schedule.routes.js";
 import mealPlanRoutes from "./routes/mealPlanRoutes.js";
+//store related routes
+import productRoutes from "./routes/productRoutes.js";
+import categoryRoutes from "./routes/categoryRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
+import addressRoutes from "./routes/addressRoutes.js";
+import couponRoutes from "./routes/couponRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+
 
 const app = express();
 
@@ -48,6 +56,13 @@ app.use("/api/v1/workouts", workoutRoutes);
 app.use("/api/v1/trainers", trainerRoutes);
 app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
 app.use("/api/v1/meal-plans", mealPlanRoutes);
+// Store related routes
+app.use("/api/v1/store/products", productRoutes); 
+app.use("/api/v1/store/categories", categoryRoutes); 
+app.use("/api/v1/store/cart", cartRoutes); 
+app.use("/api/v1/store/addresses", addressRoutes); 
+app.use("/api/v1/store/coupons", couponRoutes); 
+app.use("/api/v1/store/orders", orderRoutes);
 
 // Static folder
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

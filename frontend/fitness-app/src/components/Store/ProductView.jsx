@@ -3,73 +3,109 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Navigation from '../Navigation';
 import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiFillStar, AiOutlineCheckCircle, AiOutlineClose } from 'react-icons/ai';
 import { FiShoppingCart } from 'react-icons/fi';
+import { productsApi, cartApi } from '../../api/storeApi';
 
 const ProductView = () => {
   const { productId } = useParams();
   const location = useLocation();
+
+  console.log('ProductView loaded with productId:', productId);
+  console.log('Location state:', location.state);
   const navigate = useNavigate();
   const [product, setProduct] = useState(location.state?.product || null);
+  const [isLoading, setIsLoading] = useState(!location.state?.product);
+  const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
-  const [newReview, setNewReview] = useState({ rating: 0, comment: '', name: '' });
+  const [newReview, setNewReview] = useState({ rating: 0, comment: '' });
   const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [showNotification, setShowNotification] = useState(false);
-
-  // Product images (in a real app, these would come from the product data)
-  const productImages = [
-    '/src/assets/products/product1.png',
-    '/src/assets/products/product2.png',
-    '/src/assets/products/product3.png',
-    '/src/assets/products/product4.png'
-  ];
+  const [isAddedToCart, setIsAddedToCart] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [reviewsError, setReviewsError] = useState(null);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   // Fetch product data if not available from location state
   useEffect(() => {
-    if (!product) {
-      // In a real app, you'd fetch the product data from your API using the productId
-      // For this demo, we'll use some static data
-      setProduct({
-        id: productId,
-        name: "Premium Protein Powder",
-        price: "49.99",
-        description: "High-quality protein powder for muscle recovery and growth. Our premium blend contains 25g of protein per serving, with minimal carbs and fats. Perfect for post-workout recovery or as a protein-rich snack between meals. Made with 100% whey protein isolate for maximum absorption.",
-        features: [
-          "25g protein per serving",
-          "Low in carbs and fat",
-          "Added BCAAs for muscle recovery",
-          "No artificial flavors or sweeteners",
-          "30 servings per container"
-        ],
-        specifications: {
-          "Weight": "2.5 lbs (1.13 kg)",
-          "Flavor": "Chocolate",
-          "Protein Source": "Whey Isolate",
-          "Protein per Serving": "25g",
-          "Servings": "30"
-        },
-        rating: 4.5,
-        reviewCount: 128,
-        stock: 15,
-        images: productImages
-      });
-    } else if (!product.images) {
-      // If the product doesn't have images from the location state, add some
-      setProduct({
-        ...product,
-        images: productImages
-      });
-    }
+    const fetchProduct = async () => {
+      console.log('ProductView useEffect - productId:', productId, 'product:', product);
+
+      if (!product && productId) {
+        try {
+          setIsLoading(true);
+          setError(null);
+
+          console.log('Fetching product with ID:', productId);
+          const response = await productsApi.getProduct(productId);
+
+          if (response.success && response.product) {
+            const formattedProduct = {
+              id: response.product._id || response.product.id,
+              name: response.product.productName || response.product.name,
+              price: response.product.price,
+              originalPrice: response.product.originalPrice,
+              discountPercentage: response.product.discountPercentage,
+              description: response.product.description,
+              shortDescription: response.product.shortDescription,
+              images: response.product.images || ['/public/default.jpg'],
+              rating: response.product.averageRating || 0,
+              reviewCount: response.product.reviewCount || 0,
+              brand: response.product.brand,
+              category: response.product.categoryId?.name,
+              specifications: response.product.specifications || {},
+              quantity: response.product.quantity || 0,
+              features: response.product.features || []
+            };
+            setProduct(formattedProduct);
+          } else {
+            setError('Product not found');
+          }
+          setIsLoading(false);
+        } catch (error) {
+          console.error('Error fetching product:', error);
+          setError('Failed to load product. Please try again.');
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchProduct();
   }, [productId, product]);
 
-  // Sample reviews data
-  const reviews = [
-    { id: 1, name: "John Doe", rating: 5, comment: "Great product! I've been using it for a month and seeing good results.", date: "2023-03-15" },
-    { id: 2, name: "Jane Smith", rating: 4, comment: "Good flavor and mixes well. I wish it had a bit more protein per serving.", date: "2023-02-28" },
-    { id: 3, name: "Mike Johnson", rating: 5, comment: "Best protein powder I've tried. No clumps and tastes great!", date: "2023-01-10" },
-    { id: 4, name: "Sarah Williams", rating: 3, comment: "It's okay. The flavor is a bit too sweet for my taste.", date: "2022-12-05" },
-    { id: 5, name: "Chris Brown", rating: 5, comment: "Perfect post-workout supplement. I've noticed faster recovery times.", date: "2022-11-22" }
-  ];
+  // Fetch product reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (productId) {
+        try {
+          setReviewsLoading(true);
+          setReviewsError(null);
+          const response = await productsApi.getReviews(productId);
+
+          if (response.success) {
+            // Format reviews for display
+            const formattedReviews = response.reviews.map(review => ({
+              id: review._id,
+              name: review.userId?.fullName || 'Anonymous User',
+              rating: review.rating,
+              comment: review.comment,
+              date: new Date(review.createdAt).toLocaleDateString(),
+              userId: review.userId?._id
+            }));
+            setReviews(formattedReviews);
+          }
+        } catch (error) {
+          console.error('Error fetching reviews:', error);
+          setReviewsError('Failed to load reviews');
+        } finally {
+          setReviewsLoading(false);
+        }
+      }
+    };
+
+    fetchReviews();
+  }, [productId]);
 
   // Handle the back button click
   const handleBack = () => {
@@ -89,23 +125,46 @@ const ProductView = () => {
   // Handle quantity changes
   const handleQuantityChange = (amount) => {
     const newQuantity = quantity + amount;
-    if (newQuantity >= 1 && newQuantity <= product.stock) {
+    if (newQuantity >= 1 && newQuantity <= (product.quantity || 999)) {
       setQuantity(newQuantity);
+      // Reset the "added to cart" state when quantity changes
+      setIsAddedToCart(false);
     }
   };
 
   // Handle adding the product to the cart
-  const handleAddToCart = () => {
-    // In a real app, you'd update your cart state or send the data to your API
-    console.log(`Added ${quantity} of ${product.name} to cart`);
+  const handleAddToCart = async () => {
+    try {
+      // Try to add to backend cart if user is authenticated
+      const token = localStorage.getItem('token');
+      if (token) {
+        await cartApi.addToCart(product.id, quantity);
+        console.log(`Added ${quantity} of ${product.name} to backend cart`);
+      }
 
-    // Show notification
-    setShowNotification(true);
+      // Set added to cart state
+      setIsAddedToCart(true);
 
-    // Hide notification after 3 seconds
-    setTimeout(() => {
-      setShowNotification(false);
-    }, 3000);
+      // Show notification
+      setShowNotification(true);
+
+      // Hide notification after 3 seconds
+      setTimeout(() => {
+        setShowNotification(false);
+      }, 3000);
+
+      // Reset the "added to cart" highlight after 2 seconds
+      setTimeout(() => {
+        setIsAddedToCart(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      // Still show notification and highlight even if API fails
+      setIsAddedToCart(true);
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
+      setTimeout(() => setIsAddedToCart(false), 2000);
+    }
   };
 
   // Handle new review input changes
@@ -126,23 +185,101 @@ const ProductView = () => {
   };
 
   // Handle submitting a new review
-  const handleSubmitReview = (e) => {
+  const handleSubmitReview = async (e) => {
     e.preventDefault();
-    // In a real app, you'd send this to your API
-    console.log("New review:", newReview);
 
-    // Reset the form
-    setNewReview({ rating: 0, comment: '', name: '' });
+    // Validation
+    if (!newReview.rating || !newReview.comment.trim()) {
+      alert('Please provide both rating and comment');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to submit a review');
+      return;
+    }
+
+    try {
+      setIsSubmittingReview(true);
+
+      const reviewData = {
+        rating: newReview.rating,
+        comment: newReview.comment.trim()
+      };
+
+      const response = await productsApi.addReview(productId, reviewData);
+
+      if (response.success) {
+        // Add the new review to the list
+        const newReviewFormatted = {
+          id: response.review._id,
+          name: response.review.userId?.fullName || 'You',
+          rating: response.review.rating,
+          comment: response.review.comment,
+          date: new Date(response.review.createdAt).toLocaleDateString(),
+          userId: response.review.userId?._id
+        };
+
+        setReviews(prev => [newReviewFormatted, ...prev]);
+
+        // Reset the form
+        setNewReview({ rating: 0, comment: '' });
+
+        alert('Review submitted successfully!');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      if (error.message) {
+        alert(error.message);
+      } else {
+        alert('Failed to submit review. Please try again.');
+      }
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   // If product data is still loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cover bg-center bg-fixed"
+        style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
+        <Navigation />
+        <div className="container mx-auto mt-10 px-4 text-white flex justify-center items-center h-64">
+          <div className="loader"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // If there's an error loading the product
+  if (error) {
+    return (
+      <div className="min-h-screen bg-cover bg-center bg-fixed"
+        style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
+        <Navigation />
+        <div className="container mx-auto mt-10 px-4 text-white flex flex-col justify-center items-center h-64">
+          <p className="text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-[#f67a45] text-white px-4 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If product data is not available
   if (!product) {
     return (
       <div className="min-h-screen bg-cover bg-center bg-fixed"
         style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
         <Navigation />
         <div className="container mx-auto mt-10 px-4 text-white">
-          Loading product details...
+          Product not found.
         </div>
       </div>
     );
@@ -173,28 +310,38 @@ const ProductView = () => {
               {/* Main product image */}
               <div className="bg-gray-700/30 rounded-lg mb-4 overflow-hidden h-80 flex items-center justify-center max-w-full">
                 <img
-                  src={product.images[currentImageIndex]}
+                  src={product.images?.[currentImageIndex] || '/public/default.jpg'}
                   alt={product.name}
                   className="max-h-full max-w-full object-contain"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/public/default.jpg';
+                  }}
                 />
               </div>
 
               {/* Thumbnail images */}
-              <div className="flex space-x-2 overflow-x-auto pb-2">
-                {product.images.map((image, index) => (
-                  <div
-                    key={index}
-                    className={`w-16 h-16 flex-shrink-0 rounded-md overflow-hidden cursor-pointer ${currentImageIndex === index ? 'ring-2 ring-[#f67a45]' : ''}`}
-                    onClick={() => handleImageChange(index)}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} - view ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
+              {product.images && product.images.length > 1 && (
+                <div className="flex space-x-2 overflow-x-auto pb-2">
+                  {product.images.map((image, index) => (
+                    <div
+                      key={index}
+                      className={`w-16 h-16 flex-shrink-0 rounded-md overflow-hidden cursor-pointer ${currentImageIndex === index ? 'ring-2 ring-[#f67a45]' : ''}`}
+                      onClick={() => handleImageChange(index)}
+                    >
+                      <img
+                        src={image}
+                        alt={`${product.name} - view ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/public/default.jpg';
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -224,30 +371,44 @@ const ProductView = () => {
 
               {/* Price */}
               <div className="mb-6">
-                <span className="text-[#f67a45] text-2xl font-bold">${product.price}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#f67a45] text-2xl font-bold">${product.price}</span>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <>
+                      <span className="text-white/50 text-lg line-through">${product.originalPrice}</span>
+                      {product.discountPercentage && (
+                        <span className="bg-red-500 text-white px-2 py-1 rounded text-sm">
+                          -{product.discountPercentage}%
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Description */}
               <p className="text-white mb-6">{product.description}</p>
 
               {/* Features */}
-              <div className="mb-6">
-                <h3 className="text-white font-semibold mb-2">Key Features:</h3>
-                <ul className="text-white space-y-1">
-                  {product.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <AiOutlineCheckCircle className="text-[#f67a45] mt-1 mr-2" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {product.features && product.features.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-white font-semibold mb-2">Key Features:</h3>
+                  <ul className="text-white space-y-1">
+                    {product.features.map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        <AiOutlineCheckCircle className="text-[#f67a45] mt-1 mr-2" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Stock */}
               <div className="mb-6">
                 <span className="text-white">Availability: </span>
-                <span className={product.stock > 0 ? "text-green-500" : "text-red-500"}>
-                  {product.stock > 0 ? `In Stock (${product.stock} left)` : "Out of Stock"}
+                <span className={product.quantity > 0 ? "text-green-500" : "text-red-500"}>
+                  {product.quantity > 0 ? `In Stock (${product.quantity} left)` : "Out of Stock"}
                 </span>
               </div>
 
@@ -265,19 +426,31 @@ const ProductView = () => {
                   <button
                     className="px-4 py-2 text-white hover:text-[#f67a45]"
                     onClick={() => handleQuantityChange(1)}
-                    disabled={quantity >= product.stock}
+                    disabled={quantity >= (product.quantity || 0)}
                   >
                     +
                   </button>
                 </div>
 
                 <button
-                  className="flex-1 bg-[#f67a45] text-white py-2 px-6 rounded-lg hover:bg-[#e56d3d] transition-colors flex items-center justify-center gap-2"
+                  className={`flex-1 py-2 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${isAddedToCart
+                    ? 'bg-green-500 text-white border-2 border-green-400 shadow-lg transform scale-105'
+                    : 'bg-[#f67a45] text-white hover:bg-[#e56d3d]'
+                    }`}
                   onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
+                  disabled={(product.quantity || 0) <= 0}
                 >
-                  <FiShoppingCart />
-                  <span>Add to Cart</span>
+                  {isAddedToCart ? (
+                    <>
+                      <AiOutlineCheckCircle />
+                      <span>Added to Cart!</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiShoppingCart />
+                      <span>Add to Cart</span>
+                    </>
+                  )}
                 </button>
 
                 <button
@@ -293,20 +466,22 @@ const ProductView = () => {
               </div>
 
               {/* Specifications */}
-              <div>
-                <h3 className="text-white font-semibold mb-2">Specifications:</h3>
-                <div className="bg-[#1a1a2f] rounded-lg overflow-hidden">
-                  {Object.entries(product.specifications).map(([key, value], index) => (
-                    <div
-                      key={key}
-                      className={`flex py-2 px-4 ${index % 2 === 0 ? 'bg-[#1e1e35]' : ''}`}
-                    >
-                      <span className="text-gray-400 w-1/3">{key}</span>
-                      <span className="text-white w-2/3">{value}</span>
-                    </div>
-                  ))}
+              {product.specifications && Object.keys(product.specifications).length > 0 && (
+                <div>
+                  <h3 className="text-white font-semibold mb-2">Specifications:</h3>
+                  <div className="bg-[#1a1a2f] rounded-lg overflow-hidden">
+                    {Object.entries(product.specifications).map(([key, value], index) => (
+                      <div
+                        key={key}
+                        className={`flex py-2 px-4 ${index % 2 === 0 ? 'bg-[#1e1e35]' : ''}`}
+                      >
+                        <span className="text-gray-400 w-1/3">{key}</span>
+                        <span className="text-white w-2/3">{value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -316,26 +491,46 @@ const ProductView = () => {
           <h2 className="text-white text-xl font-bold mb-6">Customer Reviews</h2>
 
           {/* Reviews list */}
-          <div className="space-y-6 mb-8">
-            {(showAllReviews ? reviews : reviews.slice(0, 3)).map(review => (
-              <div key={review.id} className="border-b border-gray-700 pb-6 last:border-b-0">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="text-white font-medium">{review.name}</h4>
-                    <div className="flex text-[#f67a45]">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span key={star}>
-                          {star <= review.rating ? <AiFillStar /> : <AiOutlineStar />}
-                        </span>
-                      ))}
+          {reviewsLoading ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="w-8 h-8 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : reviewsError ? (
+            <div className="text-center py-8">
+              <p className="text-red-400 mb-4">{reviewsError}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-[#f67a45] text-white px-4 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          ) : reviews.length > 0 ? (
+            <div className="space-y-6 mb-8">
+              {(showAllReviews ? reviews : reviews.slice(0, 3)).map(review => (
+                <div key={review.id} className="border-b border-gray-700 pb-6 last:border-b-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="text-white font-medium">{review.name}</h4>
+                      <div className="flex text-[#f67a45]">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span key={star}>
+                            {star <= review.rating ? <AiFillStar /> : <AiOutlineStar />}
+                          </span>
+                        ))}
+                      </div>
                     </div>
+                    <span className="text-gray-400 text-sm">{review.date}</span>
                   </div>
-                  <span className="text-gray-400 text-sm">{review.date}</span>
+                  <p className="text-white">{review.comment}</p>
                 </div>
-                <p className="text-white">{review.comment}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-white/70">No reviews yet. Be the first to review this product!</p>
+            </div>
+          )}
 
           {/* Show more/less reviews button */}
           {reviews.length > 3 && (
@@ -354,19 +549,7 @@ const ProductView = () => {
             <h3 className="text-white font-bold mb-4">Write a Review</h3>
             <form onSubmit={handleSubmitReview}>
               <div className="mb-4">
-                <label className="block text-white mb-2">Your Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={newReview.name}
-                  onChange={handleReviewInputChange}
-                  className="w-full bg-[#1a1a2f] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-white mb-2">Rating</label>
+                <label className="block text-white mb-2">Rating *</label>
                 <div className="flex text-2xl">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -374,6 +557,7 @@ const ProductView = () => {
                       type="button"
                       onClick={() => handleSetRating(star)}
                       className="text-gray-400 hover:text-[#f67a45] focus:outline-none"
+                      disabled={isSubmittingReview}
                     >
                       {star <= newReview.rating ? (
                         <AiFillStar className="text-[#f67a45]" />
@@ -383,24 +567,39 @@ const ProductView = () => {
                     </button>
                   ))}
                 </div>
+                {newReview.rating > 0 && (
+                  <p className="text-sm text-gray-400 mt-1">
+                    {newReview.rating} star{newReview.rating !== 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
 
               <div className="mb-4">
-                <label className="block text-white mb-2">Your Review</label>
+                <label className="block text-white mb-2">Your Review *</label>
                 <textarea
                   name="comment"
                   value={newReview.comment}
                   onChange={handleReviewInputChange}
                   className="w-full bg-[#1a1a2f] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45] min-h-[100px]"
+                  placeholder="Share your experience with this product..."
                   required
+                  disabled={isSubmittingReview}
                 ></textarea>
               </div>
 
               <button
                 type="submit"
-                className="bg-[#f67a45] text-white py-2 px-6 rounded-lg hover:bg-[#e56d3d] transition-colors"
+                className="bg-[#f67a45] text-white py-2 px-6 rounded-lg hover:bg-[#e56d3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                disabled={isSubmittingReview || !newReview.rating || !newReview.comment.trim()}
               >
-                Submit Review
+                {isSubmittingReview ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <span>Submit Review</span>
+                )}
               </button>
             </form>
           </div>

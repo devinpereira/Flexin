@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Login, Signup, Logout, OAuthSuccess } from "./pages/Auth";
 import Store from "./pages/Store/index";
 import Checkout from "./pages/Store/Checkout";
-import ProductView from "./components/Store/ProductView";
+import ProductView from "./pages/Store/ProductView";
 import {
   Trainers,
   Explore,
@@ -76,7 +76,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/oauth-success" element={<OAuthSuccess />} />
                   </Route>
-                    <Route element={<PrivateRoute />}>
+                  <Route element={<PrivateRoute />}>
                     <Route path="/store" element={<Store />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/product/:productId" element={<ProductView />} />

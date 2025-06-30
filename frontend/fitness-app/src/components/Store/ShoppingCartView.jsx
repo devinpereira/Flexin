@@ -1,15 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AiOutlineDelete, AiOutlinePlus, AiOutlineMinus } from 'react-icons/ai';
+import { cartApi } from '../../api/storeApi';
 
 const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCheckout }) => {
-  const [selectedItems, setSelectedItems] = useState(cartItems.map(item => item.id));
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [backendCartItems, setBackendCartItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch cart from backend on component mount
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const response = await cartApi.getCart();
+          if (response.success && response.cart.items) {
+            const formattedItems = response.cart.items.map(item => ({
+              id: item.productId._id || item.productId.id,
+              name: item.productId.productName || item.productId.name,
+              price: item.productId.price,
+              quantity: item.quantity,
+              image: item.productId.images?.[0] || '/public/default.jpg'
+            }));
+            setBackendCartItems(formattedItems);
+            setSelectedItems(formattedItems.map(item => item.id));
+          }
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+        setError('Failed to load cart');
+        setIsLoading(false);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
+  // Use backend cart items if available, otherwise use props
+  const displayCartItems = backendCartItems.length > 0 ? backendCartItems : cartItems;
+
+  // Update selected items when cart items change
+  useEffect(() => {
+    setSelectedItems(displayCartItems.map(item => item.id));
+  }, [displayCartItems]);
 
   // Demo data for shipping cost
   const shippingCost = 10.99;
 
   // Calculate subtotal of selected items
   const calculateSubtotal = () => {
-    return cartItems
+    return displayCartItems
       .filter(item => selectedItems.includes(item.id))
       .reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0)
       .toFixed(2);
@@ -32,17 +74,55 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
 
   // Toggle select all items
   const toggleSelectAll = () => {
-    if (selectedItems.length === cartItems.length) {
+    if (selectedItems.length === displayCartItems.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(cartItems.map(item => item.id));
+      setSelectedItems(displayCartItems.map(item => item.id));
     }
   };
 
-  // Handle quantity change
-  const handleQuantityChange = (itemId, newQuantity) => {
-    if (newQuantity >= 1) {
-      updateCartItem(itemId, newQuantity);
+  // Handle quantity change with backend API
+  const handleQuantityChange = async (itemId, newQuantity) => {
+    if (newQuantity <= 0) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await cartApi.updateCartItem(itemId, newQuantity);
+        // Update local state
+        setBackendCartItems(prev =>
+          prev.map(item =>
+            item.id === itemId ? { ...item, quantity: newQuantity } : item
+          )
+        );
+      }
+
+      // Also call parent's updateCartItem if provided
+      updateCartItem && updateCartItem(itemId, newQuantity);
+    } catch (error) {
+      console.error('Error updating cart:', error);
+      // Still update local state even if API fails
+      updateCartItem && updateCartItem(itemId, newQuantity);
+    }
+  };
+
+  // Handle remove item with backend API
+  const handleRemoveItem = async (itemId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await cartApi.removeFromCart(itemId);
+        // Update local state
+        setBackendCartItems(prev => prev.filter(item => item.id !== itemId));
+        setSelectedItems(prev => prev.filter(id => id !== itemId));
+      }
+
+      // Also call parent's removeCartItem if provided
+      removeCartItem && removeCartItem(itemId);
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      // Still update local state even if API fails
+      removeCartItem && removeCartItem(itemId);
     }
   };
 
@@ -57,7 +137,15 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
       <h2 className="text-white text-2xl font-bold mb-4">Shopping Cart</h2>
       <hr className="border-gray-600 mb-6" />
 
-      {cartItems.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="w-10 h-10 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      ) : error ? (
+        <div className="flex justify-center items-center h-64">
+          <p className="text-red-400">{error}</p>
+        </div>
+      ) : displayCartItems.length === 0 ? (
         <div className="text-center py-10">
           <p className="text-white text-lg mb-4">Your shopping cart is empty.</p>
           <p className="text-white/70">Browse products and add items to your cart.</p>
@@ -70,19 +158,19 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
             <div className="mb-4 flex items-center">
               <input
                 type="checkbox"
-                checked={selectedItems.length === cartItems.length && cartItems.length > 0}
+                checked={selectedItems.length === displayCartItems.length && displayCartItems.length > 0}
                 onChange={toggleSelectAll}
                 className="w-5 h-5 accent-[#f67a45] mr-3"
               />
               <span className="text-white">Select All Items</span>
             </div>
 
-            {cartItems.map(item => (
+            {displayCartItems.map(item => (
               <div
                 key={item.id}
                 className={`mb-4 p-4 rounded-lg backdrop-blur-sm ${selectedItems.includes(item.id)
-                    ? 'bg-[#121225] border border-[#f67a45]/30'
-                    : 'bg-black/30'
+                  ? 'bg-[#121225] border border-[#f67a45]/30'
+                  : 'bg-black/30'
                   }`}
               >
                 <div className="flex items-center">
@@ -102,6 +190,10 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
                       src={item.image}
                       alt={item.name}
                       className="w-full h-full object-cover rounded-lg"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/public/default.jpg';
+                      }}
                     />
                   </div>
 
@@ -136,7 +228,7 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
                   {/* Remove button */}
                   <button
                     className="text-gray-400 hover:text-[#f67a45]"
-                    onClick={() => removeCartItem(item.id)}
+                    onClick={() => handleRemoveItem(item.id)}
                   >
                     <AiOutlineDelete size={20} />
                   </button>
