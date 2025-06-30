@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 import CreatePost from "../../components/Community/shared/CreatePost";
+import { formatDistanceToNow } from 'date-fns';
 
 // Import modals
 import SettingsModal from "../../components/Community/modals/SettingsModal";
@@ -340,7 +341,7 @@ const CommunityProfile = () => {
                               {user.fullName}
                             </h4>
                             <p className="text-gray-400 text-xs">
-                              {new Date(post.createdAt).toLocaleDateString()}
+                              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                             </p>
                           </div>
                         </div>

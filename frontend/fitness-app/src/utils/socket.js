@@ -1,4 +1,3 @@
-// socket.js (Singleton Socket File)
 import { io } from "socket.io-client";
 import { BASE_URL } from "./apiPaths";
 

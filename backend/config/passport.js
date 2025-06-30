@@ -18,11 +18,11 @@ passport.use(new GoogleStrategy({
       user = await User.create({
         fullName: profile.displayName,
         email: profile.emails[0].value,
-        password: null, // Mark as OAuth user, skip local auth
+        password: null,
         googleId: profile.id,
         profileImageUrl: profile.photos[0].value,
-        dob: new Date(), // Placeholder, or enhance with additional steps
-        isAccountVerified: true, // Automatically verified for OAuth users
+        dob: new Date(),
+        isAccountVerified: true,
       });
 
       await user.save();
