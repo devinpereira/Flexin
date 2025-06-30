@@ -103,21 +103,12 @@ export const API_PATHS = {
 
   TRAINER: {
     GET_TRAINER: (trainerId) => `/api/v1/trainers/${trainerId}`,
-<<<<<<< HEAD
-    GET_MY_TRAINERS: "/api/v1/trainers/my-trainers",
-    ADD_FOLLOWER: "/api/v1/trainers/add-follower",
-    REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower",
-    ADD_FEEDBACK: (trainerId) => `/api/v1/trainers/${trainerId}/feedback`, // <-- Add this line
-
-  }
-=======
     GET_MY_TRAINERS: "/api/v1/trainers/my-trainers", 
     ADD_FOLLOWER: "/api/v1/trainers/add-follower",   
     REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower", 
     ADD_FEEDBACK: (trainerId) => `/api/v1/trainers/${trainerId}/feedback`,
     GET_TRAINER_SCHEDULE: (trainerId) => `/api/v1/trainer-schedules/${trainerId}`,
   },
->>>>>>> 6223b6485ddc2b9f02b498998c40a760370b8705
 
   MEAL_PLAN: {
     GET_MEAL_PLAN: (trainerId, userId) => `/api/v1/meal-plans/${trainerId}/${userId}`,
