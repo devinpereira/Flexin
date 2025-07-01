@@ -13,6 +13,8 @@ const PrivateRoute = ({ allowedRoles }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  if (!user.isAccountVerified) return <Navigate to="/signup" replace state={{ step: "otp" }} />
+
   if (allowedRoles && (!user.role || !allowedRoles.includes(user.role))) {
     return <Navigate to="/unauthorized" replace />;
   }

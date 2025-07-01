@@ -60,10 +60,12 @@ const Login = () => {
         localStorage.setItem("token", token);
         localStorage.setItem("userId", user._id);
         window.dispatchEvent(new Event("login"));
-        updateUser(user);
-        console.log("User logged in successfully:", user);
-
-        navigate("/calculators");
+        updateUser(user);;
+        
+        if (user.isAccountVerified){
+          navigate("/calculators");
+        }
+        navigate("/signup", { state: { step: "otp" } });
       }
     } catch (error) {
       if (error.response && error.response.data.message) {

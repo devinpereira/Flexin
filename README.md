@@ -72,7 +72,7 @@ pulseplus/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/yourusername/pulseplus.git
+git clone https://github.com/PasinduFdo/pulseplus.git
 cd pulseplus
 ```
 

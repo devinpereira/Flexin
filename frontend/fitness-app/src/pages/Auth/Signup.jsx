@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import Navigation from '../../components/Navigation';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { validateEmail } from "../../utils/helper.js";
 import { UserContext } from "../../context/UserContext.jsx";
@@ -25,13 +25,16 @@ const Signup = () => {
   const { updateUser } = useContext(UserContext);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [step, setStep] = useState('signup'); // 'signup' | 'otp'
+  const [step, setStep] = useState(location.state?.step || "signup"); // 'signup' | 'otp'
+  console.log(location.state?.step );
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [signupPayload, setSignupPayload] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { user, setUser } = useContext(UserContext);
 
   // Handle SignUp Form Submit
   const handleSignUp = async (e) => {
@@ -121,6 +124,10 @@ const Signup = () => {
         });
 
         if (response.data.data) {
+          updateUser(prev => ({
+          ...prev,
+          isAccountVerified: true,
+        }));
           navigate("/calculators");
         }
         
@@ -390,12 +397,21 @@ const Signup = () => {
               <motion.div variants={itemVariants} className="text-center">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async() => {
                     setOtp('');
-                    setIsLoading(true);
-                    setTimeout(() => {
-                      setIsLoading(false);
-                    }, 800);
+                     try {
+                      setIsLoading(true);
+      const response = await axiosInstance.post(API_PATHS.AUTH.SEND_OTP);
+    } catch (error) {
+      
+      if (error.response && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Something went wrong. Please try again later");
+      }
+    }finally{
+      setIsLoading(false);
+    }
                   }}
                   className="text-white/70 hover:text-white text-sm transition-colors duration-300"
                 >
