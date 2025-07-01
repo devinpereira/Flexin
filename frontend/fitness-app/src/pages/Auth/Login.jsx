@@ -63,7 +63,11 @@ const Login = () => {
         updateUser(user);;
         
         if (user.isAccountVerified){
+          if(user.role === "admin") {
+            navigate("/admin");
+          } else if (user.role === "user") {
           navigate("/calculators");
+          }
         }
         navigate("/signup", { state: { step: "otp" } });
       }
