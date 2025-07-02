@@ -66,7 +66,7 @@ const Login = () => {
           if(user.role === "admin") {
             navigate("/admin");
           } else if (user.role === "user") {
-          navigate("/calculators");
+            navigate("/calculators");
           }
         }
         navigate("/signup", { state: { step: "otp" } });
