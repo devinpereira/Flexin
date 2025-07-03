@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaArrowRight, FaArrowLeft, FaCheck, FaDumbbell, FaWeight, FaRunning, FaHeartbeat } from 'react-icons/fa';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
-const FitnessProfileWizard = ({ onComplete, onCancel }) => {
+const FitnessProfileWizard = ({ onComplete }) => {
   // State for the current step
   const [step, setStep] = useState(1);
   const totalSteps = 4;
@@ -148,19 +150,15 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
   };
 
   // Submit the form data
-  const submitForm = () => {
+  const submitForm = async () => {
     setIsSubmitting(true);
+      const response = await axiosInstance.post(API_PATHS.FITNESS.CREATE_FITNESS_PROFILE, userData);
 
-    // In a real app, this would be an API call
-    // Simulating an API call with setTimeout
-    setTimeout(() => {
-      // Store in local storage to persist between sessions
-      localStorage.setItem('fitnessProfileData', JSON.stringify(userData));
-
-      // Call the onComplete callback with the user data
-      onComplete(userData);
+      if (response.status === 200) {
+        onComplete(response.data.profile);
+      }
       setIsSubmitting(false);
-    }, 1500);
+
   };
 
   // Animation variants for the steps
@@ -196,7 +194,6 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-white text-lg sm:text-xl font-bold">Fitness Profile Setup</h2>
             <button
-              onClick={onCancel}
               className="text-white/70 hover:text-white"
               aria-label="Close"
             >
@@ -684,7 +681,7 @@ const FitnessProfileWizard = ({ onComplete, onCancel }) => {
         <div className="bg-[#1A1A2F] p-4 sm:p-6 flex justify-between items-center border-t border-white/10">
           <button
             type="button"
-            onClick={step > 1 ? prevStep : onCancel}
+            onClick={prevStep}
             className="px-4 py-2 rounded-lg text-white border border-white/30 hover:bg-white/10 transition-colors flex items-center gap-2"
           >
             <FaArrowLeft className="text-sm" />

@@ -6,12 +6,15 @@ import {
 } from 'react-icons/fa';
 import CalculatorLayout from '../../components/Calculator/CalculatorLayout';
 import FitnessProfileWizard from '../../components/Wizard/FitnessProfileWizard';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const Calculators = () => {
   // Add state for the wizard visibility
   const [showWizard, setShowWizard] = useState(false);
   const [fitnessProfile, setFitnessProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [profileCreated, setProfileCreated] = useState(false);
 
   // Existing state and variables
   const [selectedDay, setSelectedDay] = useState('Monday');
@@ -24,17 +27,14 @@ const Calculators = () => {
 
   // Check if user has completed fitness profile setup
   useEffect(() => {
-    const checkFitnessProfile = () => {
+    const checkFitnessProfile = async () => {
       try {
-        // Attempt to load fitness profile from local storage
-        const savedProfile = localStorage.getItem('fitnessProfileData');
+        const savedProfile = await axiosInstance.get(API_PATHS.FITNESS.GET_FITNESS_PROFILE);
 
-        if (savedProfile) {
-          const profileData = JSON.parse(savedProfile);
-          setFitnessProfile(profileData);
+        if (savedProfile.data.exists) {
+          setFitnessProfile(profileData.data.prof);
           setShowWizard(false);
         } else {
-          // No profile found, show wizard
           setShowWizard(true);
         }
       } catch (error) {
@@ -45,19 +45,16 @@ const Calculators = () => {
       }
     };
 
-    // Simulate an API call delay
-    setTimeout(checkFitnessProfile, 1000);
-  }, []);
+    checkFitnessProfile();
+  }, [profileCreated]);
 
   // Handle wizard completion
   const handleWizardComplete = (userData) => {
     setFitnessProfile(userData);
     setShowWizard(false);
+    setProfileCreated(true);
 
-    // Show success message
     showAlert('Fitness profile successfully created!', 'success');
-
-    // In a real app, this would send the data to the backend
     console.log("Profile data to be sent to backend:", userData);
   };
 
@@ -71,13 +68,6 @@ const Calculators = () => {
     setTimeout(() => {
       setAlertOpen(false);
     }, 3000);
-  };
-
-  // Reset fitness profile (for testing purposes)
-  const resetFitnessProfile = () => {
-    localStorage.removeItem('fitnessProfileData');
-    setFitnessProfile(null);
-    setShowWizard(true);
   };
 
   // Mock training schedule data
@@ -217,8 +207,7 @@ const Calculators = () => {
       {/* Show wizard if needed */}
       {showWizard && (
         <FitnessProfileWizard
-          onComplete={handleWizardComplete}
-          onCancel={() => setShowWizard(false)}
+         onComplete={handleWizardComplete}
         />
       )}
 
