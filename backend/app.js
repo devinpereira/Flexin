@@ -13,9 +13,11 @@ import followRoutes from "./routes/followRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import workoutRoutes from "./routes/workoutRoutes.js";
+// Trainer related routes
 import trainerRoutes from "./routes/trainerRoutes.js";
 import trainerScheduleRoutes from "./routes/trainer.schedule.routes.js";
 import mealPlanRoutes from "./routes/mealPlanRoutes.js";
+import subscriptionRoutes from "./routes/trainer.subscription.routes.js";
 //store related routes
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
@@ -53,9 +55,11 @@ app.use("/api/v1/friends", followRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/workouts", workoutRoutes);
+// Trainer related routes
 app.use("/api/v1/trainers", trainerRoutes);
 app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
 app.use("/api/v1/meal-plans", mealPlanRoutes);
+app.use("/api/v1/subscription", subscriptionRoutes);
 // Store related routes
 app.use("/api/v1/store/products", productRoutes); 
 app.use("/api/v1/store/categories", categoryRoutes); 

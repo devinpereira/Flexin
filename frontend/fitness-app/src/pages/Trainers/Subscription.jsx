@@ -1,77 +1,82 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import TrainerLayout from '../../components/Trainers/TrainerLayout';
-import { FaStar, FaRegStar, FaCheckCircle } from 'react-icons/fa';
-import { MdCheckCircle } from 'react-icons/md';
-import { BsCalendarWeek, BsStarHalf } from 'react-icons/bs';
-import { GiMeal } from 'react-icons/gi';
-import { BiChat } from 'react-icons/bi';
-import { RiVipDiamondLine } from 'react-icons/ri';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import TrainerLayout from "../../components/Trainers/TrainerLayout";
+import { FaStar, FaRegStar, FaCheckCircle } from "react-icons/fa";
+import { MdCheckCircle } from "react-icons/md";
+import { BsCalendarWeek, BsStarHalf } from "react-icons/bs";
+import { GiMeal } from "react-icons/gi";
+import { BiChat } from "react-icons/bi";
+import { RiVipDiamondLine } from "react-icons/ri";
+import { motion } from "framer-motion";
+import { getTrainerById } from "../../api/trainer";
+import {
+  getSubscription,
+  subscribeToPackage,
+  cancelSubscription,
+} from "../../api/subscription";
 
 const Subscription = () => {
   const { trainerId } = useParams();
   const navigate = useNavigate();
-  const [selectedPackage, setSelectedPackage] = useState('silver'); // Default to currently subscribed package
+
+  // State for real data
+  const [trainer, setTrainer] = useState(null);
+  const [subscriptionPackages, setSubscriptionPackages] = useState({});
+  const [selectedPackage, setSelectedPackage] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
   const [rating, setRating] = useState(0);
-  const [reviewText, setReviewText] = useState('');
-  const [reviews, setReviews] = useState([
-    { id: 1, userName: 'Alex Johnson', rating: 4.5, text: 'Great trainer! Very knowledgeable and motivating.', date: '2025-03-01' },
-    { id: 2, userName: 'Sarah Miller', rating: 5, text: 'John has helped me achieve my fitness goals faster than I expected. Highly recommended!', date: '2025-02-15' }
-  ]);
+  const [reviewText, setReviewText] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [currentSubscription, setCurrentSubscription] = useState(null);
 
-  // Trainer data state (now with useState to allow updates)
-  const [trainer, setTrainer] = useState({
-    id: trainerId,
-    name: "John Smith",
-    image: "/src/assets/trainer.png",
-    specialty: "Strength & Conditioning",
-    rating: 4.8,
-    reviewCount: 28,
-    currentSubscription: "silver"
-  });
+  // Fetch trainer and subscription info
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Get trainer info (including packages)
+        const trainerData = await getTrainerById(trainerId);
+        setTrainer(trainerData);
 
-  // Mock subscription packages
-  const subscriptionPackages = {
-    silver: {
-      name: "Silver Package",
-      price: "$49.99/month",
-      benefits: [
-        "Weekly workout plan",
-        "Basic nutrition advice",
-        "Email support within 48 hours",
-        "1 video consultation per month"
-      ]
-    },
-    gold: {
-      name: "Gold Package",
-      price: "$89.99/month",
-      benefits: [
-        "Customized weekly workout plan",
-        "Detailed nutrition plan",
-        "Priority email support within 24 hours",
-        "2 video consultations per month",
-        "Real-time workout adjustments"
-      ]
-    },
-    ultimate: {
-      name: "Ultimate Package",
-      price: "$149.99/month",
-      benefits: [
-        "Fully personalized workout program",
-        "Customized meal plans with recipes",
-        "24/7 chat support",
-        "Weekly video consultations",
-        "Progress tracking and analysis",
-        "Access to exclusive workshops",
-        "Workout videos library"
-      ]
+        // Convert packages array to object for easy access (like your old mock)
+        const packagesObj = {};
+        if (Array.isArray(trainerData.packages)) {
+          trainerData.packages.forEach((pkg) => {
+            packagesObj[pkg.name.toLowerCase()] = {
+              name: pkg.name + " Package",
+              price: `$${pkg.price}/month`,
+              benefits: pkg.features,
+            };
+          });
+        }
+        setSubscriptionPackages(packagesObj);
+
+        // Get current subscription
+        const subData = await getSubscription(trainerId);
+        setCurrentSubscription(
+          subData.currentSubscription
+            ? subData.currentSubscription.toLowerCase()
+            : null
+        );
+
+        // Set selected package to current or default to first available
+        setSelectedPackage(
+          subData.currentSubscription
+            ? subData.currentSubscription.toLowerCase()
+            : trainerData.packages[0]?.name.toLowerCase() || null
+        );
+
+        // Optionally, set reviews if you fetch them from backend
+        // setReviews(trainerData.reviews || []);
+      } catch (err) {
+        setSuccessMessage("Failed to load trainer or subscription details.");
+        setShowSuccessModal(true);
+      }
     }
-  };
+    fetchData();
+  }, [trainerId]);
 
   // Handle package change
   const handlePackageChange = (packageName) => {
@@ -79,30 +84,33 @@ const Subscription = () => {
   };
 
   // Handle subscription confirmation
-  const handleConfirmSubscription = () => {
-    // In a real app, this would interact with a payment API
-    setSuccessMessage(`You've successfully subscribed to the ${subscriptionPackages[selectedPackage].name}!`);
-    setShowSuccessModal(true);
-
-    // Update trainer data
-    setTrainer(prev => ({
-      ...prev,
-      currentSubscription: selectedPackage
-    }));
+  const handleConfirmSubscription = async () => {
+    try {
+      await subscribeToPackage(trainerId, selectedPackage);
+      setCurrentSubscription(selectedPackage);
+      setSuccessMessage(
+        `You've successfully subscribed to the ${subscriptionPackages[selectedPackage].name}!`
+      );
+      setShowSuccessModal(true);
+    } catch {
+      setSuccessMessage("Failed to subscribe. Please try again.");
+      setShowSuccessModal(true);
+    }
   };
 
   // Handle subscription cancellation
-  const handleCancelSubscription = () => {
-    // In a real app, this would make an API call to cancel the subscription
-    setSuccessMessage('Your subscription has been cancelled successfully.');
-    setShowCancelModal(false);
-    setShowSuccessModal(true);
-
-    // Update trainer data
-    setTrainer(prev => ({
-      ...prev,
-      currentSubscription: null
-    }));
+  const handleCancelSubscription = async () => {
+    try {
+      await cancelSubscription(trainerId);
+      setCurrentSubscription(null);
+      setSuccessMessage("Your subscription has been cancelled successfully.");
+      setShowCancelModal(false);
+      setShowSuccessModal(true);
+    } catch {
+      setSuccessMessage("Failed to cancel subscription. Please try again.");
+      setShowCancelModal(false);
+      setShowSuccessModal(true);
+    }
   };
 
   // Handle review submission
@@ -111,27 +119,28 @@ const Subscription = () => {
 
     const newReview = {
       id: reviews.length + 1,
-      userName: 'You', // In a real app, this would be the logged-in user's name
+      userName: "You", // In a real app, this would be the logged-in user's name
       rating: rating,
       text: reviewText,
-      date: new Date().toISOString().substring(0, 10)
+      date: new Date().toISOString().substring(0, 10),
     };
 
     setReviews([newReview, ...reviews]);
     setShowReviewModal(false);
-    setSuccessMessage('Your review has been submitted successfully!');
+    setSuccessMessage("Your review has been submitted successfully!");
     setShowSuccessModal(true);
     setRating(0);
-    setReviewText('');
+    setReviewText("");
 
     // Update trainer rating
     const totalRatings = trainer.reviewCount + 1;
-    const newRating = ((trainer.rating * trainer.reviewCount) + rating) / totalRatings;
+    const newRating =
+      (trainer.rating * trainer.reviewCount + rating) / totalRatings;
 
-    setTrainer(prev => ({
+    setTrainer((prev) => ({
       ...prev,
       rating: parseFloat(newRating.toFixed(1)),
-      reviewCount: totalRatings
+      reviewCount: totalRatings,
     }));
   };
 
@@ -154,12 +163,20 @@ const Subscription = () => {
     return <div className="flex">{stars}</div>;
   };
 
-  // Reset selected package when trainer subscription changes
+  // Reset selected package when current subscription changes
   useEffect(() => {
-    if (trainer.currentSubscription) {
-      setSelectedPackage(trainer.currentSubscription);
+    if (currentSubscription) {
+      setSelectedPackage(currentSubscription);
     }
-  }, [trainer.currentSubscription]);
+  }, [currentSubscription]);
+
+  if (!trainer) {
+    return (
+      <TrainerLayout pageTitle="Subscription">
+        <div className="text-white p-8">Loading...</div>
+      </TrainerLayout>
+    );
+  }
 
   return (
     <TrainerLayout pageTitle={`${trainer.name}'s Subscription`}>
@@ -168,33 +185,41 @@ const Subscription = () => {
         <div className="lg:col-span-3">
           {/* Current Subscription */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
-            <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Your Current Subscription</h2>
+            <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+              Your Current Subscription
+            </h2>
 
-            {trainer.currentSubscription ? (
+            {currentSubscription ? (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-[#1A1A2F] p-4 sm:p-6 rounded-lg"
               >
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                  <h3 className="text-white text-lg sm:text-xl font-bold">{subscriptionPackages[trainer.currentSubscription].name}</h3>
-                  <span className="text-[#f67a45] font-bold text-base sm:text-lg">{subscriptionPackages[trainer.currentSubscription].price}</span>
+                  <h3 className="text-white text-lg sm:text-xl font-bold">
+                    {subscriptionPackages[currentSubscription]?.name}
+                  </h3>
+                  <span className="text-[#f67a45] font-bold text-base sm:text-lg">
+                    {subscriptionPackages[currentSubscription]?.price}
+                  </span>
                 </div>
                 <div className="mb-4">
                   <h4 className="text-white font-medium mb-2">Benefits:</h4>
                   <ul className="space-y-2">
-                    {subscriptionPackages[trainer.currentSubscription].benefits.map((benefit, index) => (
-                      <motion.li
-                        key={index}
-                        className="flex items-start text-white text-sm sm:text-base"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <FaCheckCircle className="text-[#f67a45] mr-3 mt-1 flex-shrink-0" />
-                        <span>{benefit}</span>
-                      </motion.li>
-                    ))}
+                    {subscriptionPackages[currentSubscription]?.benefits.map(
+                      (benefit, index) => (
+                        <motion.li
+                          key={index}
+                          className="flex items-start text-white text-sm sm:text-base"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          <FaCheckCircle className="text-[#f67a45] mr-3 mt-1 flex-shrink-0" />
+                          <span>{benefit}</span>
+                        </motion.li>
+                      )
+                    )}
                   </ul>
                 </div>
                 <button
@@ -210,125 +235,84 @@ const Subscription = () => {
                 animate={{ opacity: 1 }}
                 className="bg-[#1A1A2F] rounded-lg p-4 sm:p-6 text-center"
               >
-                <p className="text-white mb-2 sm:mb-4 text-sm sm:text-base">You don't have an active subscription with this trainer.</p>
-                <p className="text-white/70 mb-2 sm:mb-4 text-sm sm:text-base">Choose one of the packages below to get started.</p>
+                <p className="text-white mb-2 sm:mb-4 text-sm sm:text-base">
+                  You don't have an active subscription with this trainer.
+                </p>
+                <p className="text-white/70 mb-2 sm:mb-4 text-sm sm:text-base">
+                  Choose one of the packages below to get started.
+                </p>
               </motion.div>
             )}
           </div>
 
           {/* Available Packages */}
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-8 mb-4 sm:mb-8">
-            <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Available Packages</h2>
+            <h2 className="text-white text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+              Available Packages
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
-              {/* Silver Package */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${selectedPackage === 'silver'
-                  ? 'border-[#f67a45] bg-[#1A1A2F]'
-                  : 'border-gray-700 bg-[#121225] hover:border-[#f67a45]/50'
+              {Object.keys(subscriptionPackages).map((key) => (
+                <motion.div
+                  key={key}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${
+                    selectedPackage === key
+                      ? "border-[#f67a45] bg-[#1A1A2F]"
+                      : "border-gray-700 bg-[#121225] hover:border-[#f67a45]/50"
                   }`}
-                onClick={() => handlePackageChange('silver')}
-              >
-                <h3 className="text-white text-base sm:text-lg font-bold mb-1 sm:mb-2">Silver Package</h3>
-                <p className="text-[#f67a45] font-bold mb-3 sm:mb-4 text-sm sm:text-base">$49.99/month</p>
-                <ul className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
-                  {subscriptionPackages.silver.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start text-white text-xs sm:text-sm">
-                      <FaCheckCircle className="text-[#f67a45] mr-2 mt-0.5 flex-shrink-0" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-                {selectedPackage === 'silver' && (
-                  <div className="w-full bg-[#f67a45]/20 text-[#f67a45] py-1 sm:py-2 text-center rounded-full text-xs sm:text-sm">
-                    {trainer.currentSubscription === 'silver' ? 'Current Plan' : 'Selected'}
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Gold Package */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${selectedPackage === 'gold'
-                  ? 'border-[#f67a45] bg-[#1A1A2F]'
-                  : 'border-gray-700 bg-[#121225] hover:border-[#f67a45]/50'
-                  }`}
-                onClick={() => handlePackageChange('gold')}
-              >
-                <h3 className="text-white text-base sm:text-lg font-bold mb-1 sm:mb-2">Gold Package</h3>
-                <p className="text-[#f67a45] font-bold mb-3 sm:mb-4 text-sm sm:text-base">$89.99/month</p>
-                <ul className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
-                  {subscriptionPackages.gold.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start text-white text-xs sm:text-sm">
-                      <FaCheckCircle className="text-[#f67a45] mr-2 mt-0.5 flex-shrink-0" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-                {selectedPackage === 'gold' && (
-                  <div className="w-full bg-[#f67a45]/20 text-[#f67a45] py-1 sm:py-2 text-center rounded-full text-xs sm:text-sm">
-                    {trainer.currentSubscription === 'gold' ? 'Current Plan' : 'Selected'}
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Ultimate Package */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className={`border rounded-lg p-4 sm:p-6 cursor-pointer transition-all ${selectedPackage === 'ultimate'
-                  ? 'border-[#f67a45] bg-[#1A1A2F]'
-                  : 'border-gray-700 bg-[#121225] hover:border-[#f67a45]/50'
-                  } ${selectedPackage !== 'ultimate' ? 'relative overflow-hidden' : ''
-                  }`}
-                onClick={() => handlePackageChange('ultimate')}
-              >
-                {selectedPackage !== 'ultimate' && (
-                  <div className="absolute -right-10 top-4 bg-[#f67a45] text-white text-xs px-10 py-1 rotate-45">
-                    Best Value
-                  </div>
-                )}
-                <h3 className="text-white text-base sm:text-lg font-bold mb-1 sm:mb-2">Ultimate Package</h3>
-                <p className="text-[#f67a45] font-bold mb-3 sm:mb-4 text-sm sm:text-base">$149.99/month</p>
-                <ul className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
-                  {subscriptionPackages.ultimate.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start text-white text-xs sm:text-sm">
-                      <FaCheckCircle className="text-[#f67a45] mr-2 mt-0.5 flex-shrink-0" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-                {selectedPackage === 'ultimate' && (
-                  <div className="w-full bg-[#f67a45]/20 text-[#f67a45] py-1 sm:py-2 text-center rounded-full text-xs sm:text-sm">
-                    {trainer.currentSubscription === 'ultimate' ? 'Current Plan' : 'Selected'}
-                  </div>
-                )}
-              </motion.div>
+                  onClick={() => handlePackageChange(key)}
+                >
+                  <h3 className="text-white text-base sm:text-lg font-bold mb-1 sm:mb-2">
+                    {subscriptionPackages[key].name}
+                  </h3>
+                  <p className="text-[#f67a45] font-bold mb-3 sm:mb-4 text-sm sm:text-base">
+                    {subscriptionPackages[key].price}
+                  </p>
+                  <ul className="space-y-1 sm:space-y-2 mb-3 sm:mb-4">
+                    {subscriptionPackages[key].benefits.map(
+                      (benefit, index) => (
+                        <li
+                          key={index}
+                          className="flex items-start text-white text-xs sm:text-sm"
+                        >
+                          <FaCheckCircle className="text-[#f67a45] mr-2 mt-0.5 flex-shrink-0" />
+                          <span>{benefit}</span>
+                        </li>
+                      )
+                    )}
+                  </ul>
+                  {selectedPackage === key && (
+                    <div className="w-full bg-[#f67a45]/20 text-[#f67a45] py-1 sm:py-2 text-center rounded-full text-xs sm:text-sm">
+                      {currentSubscription === key
+                        ? "Current Plan"
+                        : "Selected"}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
             </div>
 
             <div className="mt-6 sm:mt-8 flex justify-center">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleConfirmSubscription}
-                disabled={trainer.currentSubscription === selectedPackage}
-                className={`bg-[#f67a45] text-white px-6 sm:px-10 py-2 sm:py-3 rounded-full transition-colors font-medium text-sm sm:text-base ${trainer.currentSubscription === selectedPackage
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'hover:bg-[#e56d3d]'
-                  }`}
+                disabled={currentSubscription === selectedPackage}
+                className={`bg-[#f67a45] text-white px-6 sm:px-10 py-2 sm:py-3 rounded-full transition-colors font-medium text-sm sm:text-base ${
+                  currentSubscription === selectedPackage
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-[#e56d3d]"
+                }`}
               >
-                {trainer.currentSubscription === selectedPackage
-                  ? 'Current Subscription'
-                  : trainer.currentSubscription
-                    ? 'Change Subscription'
-                    : 'Subscribe Now'}
+                {currentSubscription === selectedPackage
+                  ? "Current Subscription"
+                  : currentSubscription
+                  ? "Change Subscription"
+                  : "Subscribe Now"}
               </motion.button>
             </div>
           </div>
-
-         
         </div>
 
         {/* Right side - Trainer info and actions - Stacked on mobile */}
@@ -342,12 +326,16 @@ const Subscription = () => {
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = '/src/assets/profile1.png';
+                    e.target.src = "/src/assets/profile1.png";
                   }}
                 />
               </div>
-              <h3 className="text-white text-lg sm:text-xl font-medium">{trainer.name}</h3>
-              <p className="text-gray-400 mb-2 text-sm sm:text-base">{trainer.specialty}</p>
+              <h3 className="text-white text-lg sm:text-xl font-medium">
+                {trainer.name}
+              </h3>
+              <p className="text-gray-400 mb-2 text-sm sm:text-base">
+                {trainer.specialty}
+              </p>
               <a
                 onClick={() => navigate(`/trainers/${trainerId}`)}
                 className="text-[#f67a45] hover:underline text-sm cursor-pointer"
@@ -398,8 +386,15 @@ const Subscription = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 max-w-md w-full"
           >
-            <h3 className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4">Cancel Subscription</h3>
-            <p className="text-white/80 mb-4 sm:mb-6 text-sm sm:text-base">Are you sure you want to cancel your subscription to {subscriptionPackages[trainer.currentSubscription].name}? You will lose access to all premium features at the end of your current billing period.</p>
+            <h3 className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4">
+              Cancel Subscription
+            </h3>
+            <p className="text-white/80 mb-4 sm:mb-6 text-sm sm:text-base">
+              Are you sure you want to cancel your subscription to{" "}
+              {subscriptionPackages[currentSubscription]?.name}? You will lose
+              access to all premium features at the end of your current billing
+              period.
+            </p>
 
             <div className="flex justify-end gap-2 sm:gap-3">
               <button
@@ -419,8 +414,6 @@ const Subscription = () => {
         </div>
       )}
 
-   
-
       {/* Success Modal - Responsive */}
       {showSuccessModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
@@ -438,8 +431,12 @@ const Subscription = () => {
                 <MdCheckCircle className="text-[#f67a45] text-3xl sm:text-4xl" />
               </motion.div>
 
-              <h3 className="text-white text-lg sm:text-xl font-bold mb-1 sm:mb-2">Success!</h3>
-              <p className="text-white/80 mb-4 sm:mb-6 text-sm sm:text-base">{successMessage}</p>
+              <h3 className="text-white text-lg sm:text-xl font-bold mb-1 sm:mb-2">
+                Success!
+              </h3>
+              <p className="text-white/80 mb-4 sm:mb-6 text-sm sm:text-base">
+                {successMessage}
+              </p>
 
               <button
                 onClick={() => setShowSuccessModal(false)}
