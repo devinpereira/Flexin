@@ -14,9 +14,11 @@ import profileRoutes from "./routes/profileRoutes.js";
 import fitnessRoutes from "./routes/fitnessRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import workoutRoutes from "./routes/workoutRoutes.js";
+// Trainer related routes
 import trainerRoutes from "./routes/trainerRoutes.js";
 import trainerScheduleRoutes from "./routes/trainer.schedule.routes.js";
 import mealPlanRoutes from "./routes/mealPlanRoutes.js";
+import subscriptionRoutes from "./routes/trainer.subscription.routes.js";
 //store related routes
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
@@ -25,6 +27,15 @@ import addressRoutes from "./routes/addressRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 
+// Admin Store Routes
+import storeProductRoutes from "./routes/adminstore/storeProductRoutes.js";
+import storeCategoryRoutes from "./routes/adminstore/storeCategoryRoutes.js";
+import storeOrderRoutes from "./routes/adminstore/storeOrderRoutes.js";
+import storeInventoryRoutes from "./routes/adminstore/storeInventoryRoutes.js";
+import storeCouponRoutes from "./routes/adminstore/storeCouponRoutes.js";
+import storeReviewRoutes from "./routes/adminstore/storeReviewRoutes.js";
+import storeAnalyticsRoutes from "./routes/adminstore/storeAnalyticsRoutes.js";
+import storeMediaRoutes from "./routes/adminstore/storeMediaRoutes.js";
 
 const app = express();
 
@@ -55,16 +66,28 @@ app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/fitness", fitnessRoutes);
 app.use("/api/v1/workouts", workoutRoutes);
+// Trainer related routes
 app.use("/api/v1/trainers", trainerRoutes);
 app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
 app.use("/api/v1/meal-plans", mealPlanRoutes);
+app.use("/api/v1/subscription", subscriptionRoutes);
 // Store related routes
-app.use("/api/v1/store/products", productRoutes); 
-app.use("/api/v1/store/categories", categoryRoutes); 
-app.use("/api/v1/store/cart", cartRoutes); 
-app.use("/api/v1/store/addresses", addressRoutes); 
-app.use("/api/v1/store/coupons", couponRoutes); 
+app.use("/api/v1/store/products", productRoutes);
+app.use("/api/v1/store/categories", categoryRoutes);
+app.use("/api/v1/store/cart", cartRoutes);
+app.use("/api/v1/store/addresses", addressRoutes);
+app.use("/api/v1/store/coupons", couponRoutes);
 app.use("/api/v1/store/orders", orderRoutes);
+
+// Admin Store Routes 
+app.use("/api/v1/admin/store/products", storeProductRoutes);
+app.use("/api/v1/admin/store/categories", storeCategoryRoutes);
+app.use("/api/v1/admin/store/orders", storeOrderRoutes);
+app.use("/api/v1/admin/store/inventory", storeInventoryRoutes);
+app.use("/api/v1/admin/store/coupons", storeCouponRoutes);
+app.use("/api/v1/admin/store/reviews", storeReviewRoutes);
+app.use("/api/v1/admin/store/analytics", storeAnalyticsRoutes);
+app.use("/api/v1/admin/store/media", storeMediaRoutes);
 
 // Static folder
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

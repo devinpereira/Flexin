@@ -11,11 +11,6 @@ import {
   removeFollower,
   addFeedbackToTrainer,
 } from '../controllers/trainerController.js';
-import {
-  getSubscriptionDetails,
-  subscribeToPackage,
-  cancelSubscription,
-} from '../controllers/trainer.subscription.controller.js';
 
 
 const router = express.Router();
@@ -34,15 +29,6 @@ router
   .put(protect, updateTrainer)
   .delete(protect, deleteTrainer);
 
-
-// Get user's subscription details for a trainer
-router.get('/:id/subscription', protect, getSubscriptionDetails);
-
-// Subscribe to a package
-router.post('/:id/subscribe', protect, subscribeToPackage);
-
-// Cancel subscription
-router.post('/:id/unsubscribe', protect, cancelSubscription);
 
 // Add feedback to trainer
 router.post('/:id/feedback', protect, addFeedbackToTrainer);
