@@ -10,7 +10,8 @@ const fitnessProfileSchema = new mongoose.Schema(
     },
     experience: {
       type: String,
-      required: true, // beginner, intermediate, advanced
+      enum: ["Beginner", "Intermediate", "Advanced"],
+      required: true,
     },
     weight: {
       type: Number,
@@ -21,32 +22,40 @@ const fitnessProfileSchema = new mongoose.Schema(
       required: true,
     },
     gender: {
-      type: String, // male, female
+      type: String,
+      enum: ["Male", "Female", "Other"],
       required: true,
     },
     goal: {
-      type: String, // Loose weight, Build muscle, Improve endurance, General fitness
+      type: String,
+      enum: ["Lose weight", "Build muscle", "Improve endurance", "General fitness"],
       required: true,
     },
-    daysperweek: {
+    daysPerWeek: {
       type: Number,
       required: true,
+      min: 1,
+      max: 7,
     },
-    preferredDuration: {
-        type: String, // 15-30 minutes, 30-45 minutes, 45-60 minutes, 60+ minutes
-        required: true,
+    preferredWorkoutDuration: {
+      type: String,
+      enum: ["15-30", "30-45 minutes", "45-60 minutes", "60+ minutes"],
+      required: true,
     },
     activityLevel: {
-      type: String, // Sedentary, Lightly active, Moderately active, active, Very active
+      type: String,
+      enum: ["Sedentary", "Lightly active", "Moderately active", "Active", "Very active"],
       required: true,
     },
     equipmentAccess: {
-      type: String, // No equipment, Limited equipment, Full gym access
+      type: String,
+      enum: ["No equipment", "Limited equipment", "Full gym access"],
       required: true,
     },
     healthConditions: {
       type: [String],
-      default: [], // backpain, Joint pain, High blood pressure, Heart condition, Diabetes, Asthma, None
+      enum: ["Back pain", "Joint pain", "High blood pressure", "Heart condition", "Diabetes", "Asthma", "None"],
+      default: [],
     },
   },
   {
