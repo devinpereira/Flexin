@@ -54,6 +54,13 @@ export const API_PATHS = {
     DELETE_NOTIFICATION: (notificationId) => `/api/v1/notifications/delete/${notificationId}`,
     DELETE_ALL_NOTIFICATIONS: "/api/v1/notifications/delete-all",
   },
+  FITNESS: {
+    CREATE_FITNESS_PROFILE: "/api/v1/fitness/register",
+    GET_FITNESS_PROFILE: "/api/v1/fitness/profile",
+    UPDATE_FITNESS_PROFILE: "/api/v1/fitness/update-profile",
+    GET_FITNESS_PROFILES: "/api/v1/fitness/profiles",
+    GET_FITNESS_PROFILE_BY_USER: (userId) => `/api/v1/fitness/profile/user/${userId}`,
+  },
 
   //  Store: Products
   STORE_PRODUCTS: {
