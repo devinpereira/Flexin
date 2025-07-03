@@ -24,6 +24,15 @@ import addressRoutes from "./routes/addressRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 
+// Admin Store Routes
+import storeProductRoutes from "./routes/adminstore/storeProductRoutes.js";
+import storeCategoryRoutes from "./routes/adminstore/storeCategoryRoutes.js";
+import storeOrderRoutes from "./routes/adminstore/storeOrderRoutes.js";
+import storeInventoryRoutes from "./routes/adminstore/storeInventoryRoutes.js";
+import storeCouponRoutes from "./routes/adminstore/storeCouponRoutes.js";
+import storeReviewRoutes from "./routes/adminstore/storeReviewRoutes.js";
+import storeAnalyticsRoutes from "./routes/adminstore/storeAnalyticsRoutes.js";
+import storeMediaRoutes from "./routes/adminstore/storeMediaRoutes.js";
 
 const app = express();
 
@@ -57,12 +66,22 @@ app.use("/api/v1/trainers", trainerRoutes);
 app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
 app.use("/api/v1/meal-plans", mealPlanRoutes);
 // Store related routes
-app.use("/api/v1/store/products", productRoutes); 
-app.use("/api/v1/store/categories", categoryRoutes); 
-app.use("/api/v1/store/cart", cartRoutes); 
-app.use("/api/v1/store/addresses", addressRoutes); 
-app.use("/api/v1/store/coupons", couponRoutes); 
+app.use("/api/v1/store/products", productRoutes);
+app.use("/api/v1/store/categories", categoryRoutes);
+app.use("/api/v1/store/cart", cartRoutes);
+app.use("/api/v1/store/addresses", addressRoutes);
+app.use("/api/v1/store/coupons", couponRoutes);
 app.use("/api/v1/store/orders", orderRoutes);
+
+// Admin Store Routes 
+app.use("/api/v1/admin/store/products", storeProductRoutes);
+app.use("/api/v1/admin/store/categories", storeCategoryRoutes);
+app.use("/api/v1/admin/store/orders", storeOrderRoutes);
+app.use("/api/v1/admin/store/inventory", storeInventoryRoutes);
+app.use("/api/v1/admin/store/coupons", storeCouponRoutes);
+app.use("/api/v1/admin/store/reviews", storeReviewRoutes);
+app.use("/api/v1/admin/store/analytics", storeAnalyticsRoutes);
+app.use("/api/v1/admin/store/media", storeMediaRoutes);
 
 // Static folder
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
