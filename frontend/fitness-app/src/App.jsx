@@ -14,6 +14,17 @@ import {
   Subscription,
   TrainerProfile
 } from "./pages/Trainers";
+import {
+  Dashboard as TrainerDashboard,
+  Subscribers as TrainerSubscribers,
+  Requests as TrainerRequests,
+  Messages as TrainerMessages,
+  Analytics as TrainerAnalytics,
+  Profile as TrainerProfilePage,
+  Feedbacks as TrainerFeedbacks,
+  Settings as TrainerSettings,
+  SubscriberProfile as TrainerSubscriberProfile,
+} from "./pages/TrainerDashboard";
 import Calculators from "./pages/Calculator/Calculators";
 import CustomSchedules from "./pages/Calculator/CustomSchedules";
 import AddSchedule from "./pages/Calculator/AddSchedule";
@@ -103,6 +114,18 @@ function App() {
                     <Route path="/community/profile" element={<CommunityProfile />} />
                     <Route path="/community/profile/:userId" element={<CommunityProfile />} />
                     <Route path="/community/create" element={<CommunityHome />} />
+                  </Route>
+                  {/* Admin Routes */}
+                  <Route element={<PrivateRoute allowedRoles={["trainer"]} />}>
+                    <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
+                    <Route path="/trainer/subscribers" element={<TrainerSubscribers />} />
+                    <Route path="/trainer/requests" element={<TrainerRequests />} />
+                    <Route path="/trainer/messages" element={<TrainerMessages />} />
+                    <Route path="/trainer/analytics" element={<TrainerAnalytics />} />
+                    <Route path="/trainer/profile" element={<TrainerProfilePage />} />
+                    <Route path="/trainer/feedbacks" element={<TrainerFeedbacks />} />
+                    <Route path="/trainer/settings" element={<TrainerSettings />} />
+                    <Route path="/trainer/subscriber-profile/:subscriberId" element={<TrainerSubscriberProfile />} />
                   </Route>
                   {/* Admin Routes */}
                   <Route element={<PrivateRoute allowedRoles={["admin"]} />}>

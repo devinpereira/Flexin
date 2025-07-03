@@ -214,7 +214,7 @@ const Navbar = () => {
                       {user.role === 'trainer' && (
                         <button
                           className="w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/20 hover:text-[#f67a45] flex items-center gap-2"
-                          onClick={() => handleNavLinkClick('/trainers/dashboard')}
+                          onClick={() => handleNavLinkClick('/trainer/dashboard')}
                         >
                           <FaSignOutAlt /> Trainer Dashboard
                         </button>
