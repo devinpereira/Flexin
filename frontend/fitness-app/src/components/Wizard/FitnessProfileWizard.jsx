@@ -41,10 +41,10 @@ const FitnessProfileWizard = ({ onComplete }) => {
   // Health conditions options
   const healthConditionOptions = [
     { id: 'None', label: 'None' },
-    { id: 'Back Pain', label: 'Back Pain/Issues' },
-    { id: 'Joint Pain', label: 'Joint Pain' },
-    { id: 'High Blood Pressure', label: 'High Blood Pressure' },
-    { id: 'Heart Condition', label: 'Heart Condition' },
+    { id: 'Back pain', label: 'Back Pain/Issues' },
+    { id: 'Joint pain', label: 'Joint Pain' },
+    { id: 'High blood pressure', label: 'High Blood Pressure' },
+    { id: 'Heart condition', label: 'Heart Condition' },
     { id: 'Diabetes', label: 'Diabetes' },
     { id: 'Asthma', label: 'Asthma' }
   ];
@@ -546,7 +546,7 @@ const FitnessProfileWizard = ({ onComplete }) => {
                       className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
                     >
                       <option value="Sedentary" className="bg-[#1A1A2F]">Sedentary (little or no exercise)</option>
-                      <option value="Light active" className="bg-[#1A1A2F]">Light (light exercise 1-3 days/week)</option>
+                      <option value="Lightly active" className="bg-[#1A1A2F]">Light (light exercise 1-3 days/week)</option>
                       <option value="Moderately active" className="bg-[#1A1A2F]">Moderate (moderate exercise 3-5 days/week)</option>
                       <option value="Active" className="bg-[#1A1A2F]">Active (hard exercise 6-7 days/week)</option>
                       <option value="Very active" className="bg-[#1A1A2F]">Very Active (very hard exercise & physical job)</option>
@@ -656,7 +656,7 @@ const FitnessProfileWizard = ({ onComplete }) => {
                               : 'border border-white/30'
                             }`}>
                             {(userData.healthConditions.includes(condition.id) ||
-                              (condition.id === 'none' && userData.healthConditions.length === 0)) &&
+                              (condition.id === 'None' && userData.healthConditions.length === 0)) &&
                               <FaCheck className="text-white text-xs" />}
                           </div>
                           <span className="text-white text-sm">{condition.label}</span>
