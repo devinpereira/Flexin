@@ -27,7 +27,7 @@ const fitnessProfileSchema = new mongoose.Schema(
       required: true,
     },
     goal: {
-      type: String,
+      type: [String],
       enum: ["Lose weight", "Build muscle", "Improve endurance", "General fitness"],
       required: true,
     },
@@ -39,7 +39,7 @@ const fitnessProfileSchema = new mongoose.Schema(
     },
     preferredWorkoutDuration: {
       type: String,
-      enum: ["15-30", "30-45 minutes", "45-60 minutes", "60+ minutes"],
+      enum: ["15-30", "30-45", "45-60", "60+"],
       required: true,
     },
     activityLevel: {

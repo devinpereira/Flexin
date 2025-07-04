@@ -32,7 +32,7 @@ const Calculators = () => {
         const savedProfile = await axiosInstance.get(API_PATHS.FITNESS.GET_FITNESS_PROFILE);
 
         if (savedProfile.data.exists) {
-          setFitnessProfile(profileData.data.prof);
+          setFitnessProfile(savedProfile.data.profile);
           setShowWizard(false);
         } else {
           setShowWizard(true);
@@ -209,16 +209,6 @@ const Calculators = () => {
         <FitnessProfileWizard
          onComplete={handleWizardComplete}
         />
-      )}
-
-      {/* Debug button for testing - remove in production */}
-      {!showWizard && process.env.NODE_ENV === 'development' && (
-        <button
-          onClick={resetFitnessProfile}
-          className="mb-4 px-3 py-1 bg-red-500 text-white rounded-md text-sm"
-        >
-          Reset Profile (Debug)
-        </button>
       )}
 
       <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 max-w-full">

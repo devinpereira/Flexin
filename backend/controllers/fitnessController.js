@@ -43,7 +43,7 @@ export const createFitnessProfile = async (req, res) => {
         });
 
         await newProfile.save();
-        return res.status(201).json({ message: "Fitness profile created successfully", profile: newProfile });
+        return res.status(200).json({ message: "Fitness profile created successfully", profile: newProfile });
 
     } catch (error) {
         return res.status(500).json({ message: "Error checking existing profile", error: error.message });

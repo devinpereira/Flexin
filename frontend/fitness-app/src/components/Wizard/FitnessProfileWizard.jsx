@@ -11,19 +11,19 @@ const FitnessProfileWizard = ({ onComplete }) => {
 
   // User data state
   const [userData, setUserData] = useState({
-    experience: 'beginner', // beginner, intermediate, advanced
+    experience: 'Beginner', // beginner, Intermediate, advanced
     age: '',
-    gender: 'male', // male, female, other
+    gender: 'Male', // male, female, other
     weight: '',
     weightUnit: 'kg', // kg, lbs
     height: '',
     heightUnit: 'cm', // cm, ft
-    activityLevel: 'moderate', // sedentary, light, moderate, active, very_active
-    goals: ['lose_weight'], // lose_weight, build_muscle, improve_endurance, general_fitness
+    activityLevel: 'Moderately active', // sedentary, light, moderate, active, very_active
+    goals: ['Lose weight'], // lose_weight, build_muscle, improve_endurance, general_fitness
     preferredWorkoutDuration: '30-45', // 15-30, 30-45, 45-60, 60+
     workoutDaysPerWeek: 3, // 1-7
     healthConditions: [],
-    equipmentAccess: 'limited' // none, limited, full_gym
+    equipmentAccess: 'Limited equipment' // none, limited, full_gym
   });
 
   // Form validation state
@@ -32,21 +32,21 @@ const FitnessProfileWizard = ({ onComplete }) => {
 
   // Fitness goals options
   const fitnessGoalOptions = [
-    { id: 'lose_weight', label: 'Lose Weight', icon: <FaWeight /> },
-    { id: 'build_muscle', label: 'Build Muscle', icon: <FaDumbbell /> },
-    { id: 'improve_endurance', label: 'Improve Endurance', icon: <FaRunning /> },
-    { id: 'general_fitness', label: 'General Fitness', icon: <FaHeartbeat /> }
+    { id: 'Lose weight', label: 'Lose Weight', icon: <FaWeight /> },
+    { id: 'Build muscle', label: 'Build Muscle', icon: <FaDumbbell /> },
+    { id: 'Improve endurance', label: 'Improve Endurance', icon: <FaRunning /> },
+    { id: 'General fitness', label: 'General Fitness', icon: <FaHeartbeat /> }
   ];
 
   // Health conditions options
   const healthConditionOptions = [
-    { id: 'none', label: 'None' },
-    { id: 'back_pain', label: 'Back Pain/Issues' },
-    { id: 'joint_pain', label: 'Joint Pain' },
-    { id: 'high_blood_pressure', label: 'High Blood Pressure' },
-    { id: 'heart_condition', label: 'Heart Condition' },
-    { id: 'diabetes', label: 'Diabetes' },
-    { id: 'asthma', label: 'Asthma' }
+    { id: 'None', label: 'None' },
+    { id: 'Back Pain', label: 'Back Pain/Issues' },
+    { id: 'Joint Pain', label: 'Joint Pain' },
+    { id: 'High Blood Pressure', label: 'High Blood Pressure' },
+    { id: 'Heart Condition', label: 'Heart Condition' },
+    { id: 'Diabetes', label: 'Diabetes' },
+    { id: 'Asthma', label: 'Asthma' }
   ];
 
   // Handle form field changes
@@ -247,15 +247,15 @@ const FitnessProfileWizard = ({ onComplete }) => {
                 <div className="space-y-3 pt-2">
                   <button
                     type="button"
-                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'beginner'
+                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'Beginner'
                       ? 'border-[#f67a45] bg-[#f67a45]/10'
                       : 'border-white/10 hover:bg-[#1A1A2F]'} 
                       flex items-center transition-colors`}
-                    onClick={() => handleRadioChange('experience', 'beginner')}
+                    onClick={() => handleRadioChange('experience', 'Beginner')}
                   >
-                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'beginner' ? 'border-[#f67a45]' : 'border-white/30'
+                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'Beginner' ? 'border-[#f67a45]' : 'border-white/30'
                       }`}>
-                      {userData.experience === 'beginner' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
+                      {userData.experience === 'Beginner' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
                     </div>
                     <div className="flex-1 text-left">
                       <h4 className="text-white font-medium">Beginner</h4>
@@ -265,15 +265,15 @@ const FitnessProfileWizard = ({ onComplete }) => {
 
                   <button
                     type="button"
-                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'intermediate'
+                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'Intermediate'
                       ? 'border-[#f67a45] bg-[#f67a45]/10'
                       : 'border-white/10 hover:bg-[#1A1A2F]'} 
                       flex items-center transition-colors`}
-                    onClick={() => handleRadioChange('experience', 'intermediate')}
+                    onClick={() => handleRadioChange('experience', 'Intermediate')}
                   >
-                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'intermediate' ? 'border-[#f67a45]' : 'border-white/30'
+                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'Intermediate' ? 'border-[#f67a45]' : 'border-white/30'
                       }`}>
-                      {userData.experience === 'intermediate' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
+                      {userData.experience === 'Intermediate' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
                     </div>
                     <div className="flex-1 text-left">
                       <h4 className="text-white font-medium">Intermediate</h4>
@@ -283,15 +283,15 @@ const FitnessProfileWizard = ({ onComplete }) => {
 
                   <button
                     type="button"
-                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'advanced'
+                    className={`w-full p-4 sm:p-5 rounded-xl border ${userData.experience === 'Advanced'
                       ? 'border-[#f67a45] bg-[#f67a45]/10'
                       : 'border-white/10 hover:bg-[#1A1A2F]'} 
                       flex items-center transition-colors`}
-                    onClick={() => handleRadioChange('experience', 'advanced')}
+                    onClick={() => handleRadioChange('experience', 'Advanced')}
                   >
-                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'advanced' ? 'border-[#f67a45]' : 'border-white/30'
+                    <div className={`w-6 h-6 rounded-full mr-4 flex items-center justify-center border-2 ${userData.experience === 'Advanced' ? 'border-[#f67a45]' : 'border-white/30'
                       }`}>
-                      {userData.experience === 'advanced' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
+                      {userData.experience === 'Advanced' && <div className="w-3 h-3 rounded-full bg-[#f67a45]"></div>}
                     </div>
                     <div className="flex-1 text-left">
                       <h4 className="text-white font-medium">Advanced</h4>
@@ -322,35 +322,35 @@ const FitnessProfileWizard = ({ onComplete }) => {
                     <div className="flex gap-3">
                       <button
                         type="button"
-                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'male'
+                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'Male'
                           ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           text-center transition-colors`}
-                        onClick={() => handleRadioChange('gender', 'male')}
+                        onClick={() => handleRadioChange('gender', 'Male')}
                       >
-                        <span className={userData.gender === 'male' ? 'text-white' : 'text-white/70'}>Male</span>
+                        <span className={userData.gender === 'Male' ? 'text-white' : 'text-white/70'}>Male</span>
                       </button>
 
                       <button
                         type="button"
-                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'female'
+                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'Female'
                           ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           text-center transition-colors`}
-                        onClick={() => handleRadioChange('gender', 'female')}
+                        onClick={() => handleRadioChange('gender', 'Female')}
                       >
-                        <span className={userData.gender === 'female' ? 'text-white' : 'text-white/70'}>Female</span>
+                        <span className={userData.gender === 'Female' ? 'text-white' : 'text-white/70'}>Female</span>
                       </button>
 
                       <button
                         type="button"
-                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'other'
+                        className={`flex-1 p-3 rounded-lg border ${userData.gender === 'Other'
                           ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           text-center transition-colors`}
-                        onClick={() => handleRadioChange('gender', 'other')}
+                        onClick={() => handleRadioChange('Gender', 'Other')}
                       >
-                        <span className={userData.gender === 'other' ? 'text-white' : 'text-white/70'}>Other</span>
+                        <span className={userData.gender === 'Other' ? 'text-white' : 'text-white/70'}>Other</span>
                       </button>
                     </div>
                   </div>
@@ -545,11 +545,11 @@ const FitnessProfileWizard = ({ onComplete }) => {
                       onChange={handleChange}
                       className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
                     >
-                      <option value="sedentary" className="bg-[#1A1A2F]">Sedentary (little or no exercise)</option>
-                      <option value="light" className="bg-[#1A1A2F]">Light (light exercise 1-3 days/week)</option>
-                      <option value="moderate" className="bg-[#1A1A2F]">Moderate (moderate exercise 3-5 days/week)</option>
-                      <option value="active" className="bg-[#1A1A2F]">Active (hard exercise 6-7 days/week)</option>
-                      <option value="very_active" className="bg-[#1A1A2F]">Very Active (very hard exercise & physical job)</option>
+                      <option value="Sedentary" className="bg-[#1A1A2F]">Sedentary (little or no exercise)</option>
+                      <option value="Light active" className="bg-[#1A1A2F]">Light (light exercise 1-3 days/week)</option>
+                      <option value="Moderately active" className="bg-[#1A1A2F]">Moderate (moderate exercise 3-5 days/week)</option>
+                      <option value="Active" className="bg-[#1A1A2F]">Active (hard exercise 6-7 days/week)</option>
+                      <option value="Very active" className="bg-[#1A1A2F]">Very Active (very hard exercise & physical job)</option>
                     </select>
                   </div>
 
@@ -558,16 +558,16 @@ const FitnessProfileWizard = ({ onComplete }) => {
                     <div className="flex flex-col space-y-2">
                       <button
                         type="button"
-                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'none'
+                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'No equipment'
                           ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           transition-colors`}
-                        onClick={() => handleRadioChange('equipmentAccess', 'none')}
+                        onClick={() => handleRadioChange('equipmentAccess', 'No equipment')}
                       >
                         <div className="flex items-center">
-                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'none' ? 'border-[#f67a45]' : 'border-white/30'
+                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'No equipment' ? 'border-[#f67a45]' : 'border-white/30'
                             }`}>
-                            {userData.equipmentAccess === 'none' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
+                            {userData.equipmentAccess === 'No equipment' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
                           </div>
                           <div>
                             <span className="text-white">No Equipment</span>
@@ -578,16 +578,16 @@ const FitnessProfileWizard = ({ onComplete }) => {
 
                       <button
                         type="button"
-                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'limited'
+                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'Limited equipment'
                           ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           transition-colors`}
-                        onClick={() => handleRadioChange('equipmentAccess', 'limited')}
+                        onClick={() => handleRadioChange('equipmentAccess', 'Limited equipment')}
                       >
                         <div className="flex items-center">
-                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'limited' ? 'border-[#f67a45]' : 'border-white/30'
+                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'Limited equipment' ? 'border-[#f67a45]' : 'border-white/30'
                             }`}>
-                            {userData.equipmentAccess === 'limited' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
+                            {userData.equipmentAccess === 'Limited equipment' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
                           </div>
                           <div>
                             <span className="text-white">Limited Equipment</span>
@@ -598,16 +598,16 @@ const FitnessProfileWizard = ({ onComplete }) => {
 
                       <button
                         type="button"
-                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'full_gym'
+                        className={`p-3 rounded-lg border text-left ${userData.equipmentAccess === 'Full gym access'
                           ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           transition-colors`}
-                        onClick={() => handleRadioChange('equipmentAccess', 'full_gym')}
+                        onClick={() => handleRadioChange('equipmentAccess', 'Full gym access')}
                       >
                         <div className="flex items-center">
-                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'full_gym' ? 'border-[#f67a45]' : 'border-white/30'
+                          <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center border-2 ${userData.equipmentAccess === 'Full gym access' ? 'border-[#f67a45]' : 'border-white/30'
                             }`}>
-                            {userData.equipmentAccess === 'full_gym' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
+                            {userData.equipmentAccess === 'Full gym access' && <div className="w-2.5 h-2.5 rounded-full bg-[#f67a45]"></div>}
                           </div>
                           <div>
                             <span className="text-white">Full Gym Access</span>
@@ -625,7 +625,7 @@ const FitnessProfileWizard = ({ onComplete }) => {
                         <label
                           key={condition.id}
                           className={`p-2 rounded-lg border cursor-pointer 
-                            ${userData.healthConditions.includes(condition.id) || (condition.id === 'none' && userData.healthConditions.length === 0)
+                            ${userData.healthConditions.includes(condition.id) || (condition.id === 'None' && userData.healthConditions.length === 0)
                               ? 'border-[#f67a45] bg-[#f67a45]/10'
                               : 'border-white/10 hover:bg-[#1A1A2F]'} 
                             flex items-center transition-colors`}
@@ -635,15 +635,15 @@ const FitnessProfileWizard = ({ onComplete }) => {
                             name="healthConditions"
                             value={condition.id}
                             checked={
-                              condition.id === 'none'
+                              condition.id === 'None'
                                 ? userData.healthConditions.length === 0
                                 : userData.healthConditions.includes(condition.id)
                             }
                             onChange={(e) => {
-                              if (condition.id === 'none' && e.target.checked) {
+                              if (condition.id === 'None' && e.target.checked) {
                                 // If 'None' is selected, clear all other selections
                                 setUserData(prev => ({ ...prev, healthConditions: [] }));
-                              } else if (condition.id !== 'none') {
+                              } else if (condition.id !== 'None') {
                                 // For other conditions, handle normally
                                 handleChange(e);
                               }
@@ -651,7 +651,7 @@ const FitnessProfileWizard = ({ onComplete }) => {
                             className="sr-only"
                           />
                           <div className={`w-4 h-4 rounded flex items-center justify-center mr-2 ${(userData.healthConditions.includes(condition.id) ||
-                              (condition.id === 'none' && userData.healthConditions.length === 0))
+                              (condition.id === 'None' && userData.healthConditions.length === 0))
                               ? 'bg-[#f67a45]'
                               : 'border border-white/30'
                             }`}>
