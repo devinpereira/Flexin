@@ -107,6 +107,92 @@ export const API_PATHS = {
     GET_ACTIVE_COUPONS: "/api/v1/store/coupons/active",
     VALIDATE_COUPON: "/api/v1/store/coupons/validate",
   },
+  // Admin Store: Products Management
+  ADMIN_STORE_PRODUCTS: {
+    GET_ALL_PRODUCTS: "/api/v1/admin/store/products",
+    GET_PRODUCT: (productId) => `/api/v1/admin/store/products/${productId}`,
+    ADD_PRODUCT: "/api/v1/admin/store/products",
+    UPDATE_PRODUCT: (productId) => `/api/v1/admin/store/products/${productId}`,
+    DELETE_PRODUCT: (productId) => `/api/v1/admin/store/products/${productId}`,
+    UPDATE_PRODUCT_STATUS: (productId) => `/api/v1/admin/store/products/${productId}/status`,
+    BULK_UPDATE_PRODUCTS: "/api/v1/admin/store/products/bulk-update",
+    GET_PRODUCT_ANALYTICS: (productId) => `/api/v1/admin/store/products/${productId}/analytics`,
+  },
+
+  // Admin Store: Inventory Management
+  ADMIN_STORE_INVENTORY: {
+    GET_INVENTORY: "/api/v1/admin/store/inventory",
+    UPDATE_STOCK: (productId) => `/api/v1/admin/store/inventory/${productId}/stock`,
+    BULK_UPDATE_STOCK: "/api/v1/admin/store/inventory/bulk-update",
+    GET_LOW_STOCK_ALERTS: "/api/v1/admin/store/inventory/low-stock",
+    UPDATE_REORDER_POINT: (productId) => `/api/v1/admin/store/inventory/${productId}/reorder-point`,
+    GET_STOCK_HISTORY: (productId) => `/api/v1/admin/store/inventory/${productId}/history`,
+  },
+
+  // Admin Store: Orders Management
+  ADMIN_STORE_ORDERS: {
+    GET_ALL_ORDERS: "/api/v1/admin/store/orders",
+    GET_ORDER_DETAILS: (orderId) => `/api/v1/admin/store/orders/${orderId}`,
+    UPDATE_ORDER_STATUS: (orderId) => `/api/v1/admin/store/orders/${orderId}/status`,
+    GET_ORDERS_BY_STATUS: (status) => `/api/v1/admin/store/orders/status/${status}`,
+    GET_ORDER_ANALYTICS: "/api/v1/admin/store/orders/analytics",
+    BULK_UPDATE_ORDERS: "/api/v1/admin/store/orders/bulk-update",
+    EXPORT_ORDERS: "/api/v1/admin/store/orders/export",
+    GET_SHIPPING_LABELS: (orderId) => `/api/v1/admin/store/orders/${orderId}/shipping-label`,
+    PROCESS_REFUND: (orderId) => `/api/v1/admin/store/orders/${orderId}/refund`,
+  },
+
+  // Admin Store: Categories Management
+  ADMIN_STORE_CATEGORIES: {
+    GET_ALL_CATEGORIES: "/api/v1/admin/store/categories",
+    ADD_CATEGORY: "/api/v1/admin/store/categories",
+    UPDATE_CATEGORY: (categoryId) => `/api/v1/admin/store/categories/${categoryId}`,
+    DELETE_CATEGORY: (categoryId) => `/api/v1/admin/store/categories/${categoryId}`,
+    ADD_SUBCATEGORY: (categoryId) => `/api/v1/admin/store/categories/${categoryId}/subcategories`,
+    UPDATE_SUBCATEGORY: (categoryId, subcategoryId) => `/api/v1/admin/store/categories/${categoryId}/subcategories/${subcategoryId}`,
+    DELETE_SUBCATEGORY: (categoryId, subcategoryId) => `/api/v1/admin/store/categories/${categoryId}/subcategories/${subcategoryId}`,
+  },
+
+  // Admin Store: Coupons Management
+  ADMIN_STORE_COUPONS: {
+    GET_ALL_COUPONS: "/api/v1/admin/store/coupons",
+    GET_COUPON: (couponId) => `/api/v1/admin/store/coupons/${couponId}`,
+    CREATE_COUPON: "/api/v1/admin/store/coupons",
+    UPDATE_COUPON: (couponId) => `/api/v1/admin/store/coupons/${couponId}`,
+    DELETE_COUPON: (couponId) => `/api/v1/admin/store/coupons/${couponId}`,
+    ACTIVATE_COUPON: (couponId) => `/api/v1/admin/store/coupons/${couponId}/activate`,
+    DEACTIVATE_COUPON: (couponId) => `/api/v1/admin/store/coupons/${couponId}/deactivate`,
+    GET_COUPON_USAGE: (couponId) => `/api/v1/admin/store/coupons/${couponId}/usage`,
+  },
+
+  // Admin Store: Reviews Management
+  ADMIN_STORE_REVIEWS: {
+    GET_ALL_REVIEWS: "/api/v1/admin/store/reviews",
+    GET_PRODUCT_REVIEWS: (productId) => `/api/v1/admin/store/reviews/product/${productId}`,
+    APPROVE_REVIEW: (reviewId) => `/api/v1/admin/store/reviews/${reviewId}/approve`,
+    REJECT_REVIEW: (reviewId) => `/api/v1/admin/store/reviews/${reviewId}/reject`,
+    DELETE_REVIEW: (reviewId) => `/api/v1/admin/store/reviews/${reviewId}`,
+    GET_PENDING_REVIEWS: "/api/v1/admin/store/reviews/pending",
+  },
+
+  // Admin Store: Analytics & Reports
+  ADMIN_STORE_ANALYTICS: {
+    GET_SALES_ANALYTICS: "/api/v1/admin/store/analytics/sales",
+    GET_REVENUE_ANALYTICS: "/api/v1/admin/store/analytics/revenue",
+    GET_PRODUCT_PERFORMANCE: "/api/v1/admin/store/analytics/products",
+    GET_CUSTOMER_ANALYTICS: "/api/v1/admin/store/analytics/customers",
+    GET_INVENTORY_REPORTS: "/api/v1/admin/store/analytics/inventory",
+    GET_TOP_SELLING_PRODUCTS: "/api/v1/admin/store/analytics/top-products",
+    GET_SALES_BY_CATEGORY: "/api/v1/admin/store/analytics/sales-by-category",
+    EXPORT_ANALYTICS: "/api/v1/admin/store/analytics/export",
+  },
+
+  // File Upload for Store
+  STORE_UPLOADS: {
+    UPLOAD_PRODUCT_IMAGE: "/api/v1/store/uploads/product-image",
+    UPLOAD_CATEGORY_IMAGE: "/api/v1/store/uploads/category-image",
+    DELETE_IMAGE: (imageId) => `/api/v1/store/uploads/delete/${imageId}`,
+  },
 
   TRAINER: {
     GET_TRAINER: (trainerId) => `/api/v1/trainers/${trainerId}`,
