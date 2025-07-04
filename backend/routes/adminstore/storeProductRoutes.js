@@ -21,7 +21,8 @@ import {
     deleteProductVariant,
     updateInventoryStock,
     bulkUpdateStock,
-    cloneProduct
+    cloneProduct,
+    getProductReviews
 } from "../../controllers/adminstore/storeProductController.js";
 import upload from "../../middleware/uploadMiddleware.js";
 
@@ -62,5 +63,8 @@ router.patch("/:id/stock", updateInventoryStock);
 
 // Product Cloning
 router.post("/:id/clone", cloneProduct);
+
+// Product Reviews
+router.get("/:id/reviews", getProductReviews);
 
 export default router;

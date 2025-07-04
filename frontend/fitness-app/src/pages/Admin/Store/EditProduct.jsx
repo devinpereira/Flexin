@@ -4,6 +4,7 @@ import { FaSave, FaTimes, FaTrash, FaUpload, FaTag, FaTags, FaBox } from 'react-
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import ConfirmDialog from '../../../components/Admin/ConfirmDialog';
 import { useNotification } from '../../../hooks/useNotification';
+import { adminProductsApi, adminCategoriesApi } from '../../../api/adminStoreApi';
 
 const EditProduct = () => {
   const { productId } = useParams();
@@ -26,13 +27,13 @@ const EditProduct = () => {
 
   // Product form data
   const [formData, setFormData] = useState({
-    name: '',
+    productName: '',
     price: '',
-    discount: 0,
+    discountPercentage: 0,
     originalPrice: '',
-    category: '',
+    categoryId: '',
     description: '',
-    stock: '',
+    quantity: '',
     sku: '',
     brand: '',
     tags: [],
@@ -49,7 +50,7 @@ const EditProduct = () => {
   });
 
   // Available categories
-  const categories = ['Supplements', 'Equipment', 'Apparel', 'Accessories', 'Nutrition', 'Wellness'];
+  const [categories, setCategories] = useState([]);
 
   // Available sizes for apparel
   const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -60,91 +61,89 @@ const EditProduct = () => {
   // Available flavors for supplements
   const availableFlavors = ['Chocolate', 'Vanilla', 'Strawberry', 'Banana', 'Cookies & Cream', 'Unflavored'];
 
-  // Mock function to fetch product data based on ID
-  const fetchProductData = () => {
-    setIsLoading(true);
+  // Load product data and categories
+  useEffect(() => {
+    loadCategories();
+    if (productId) {
+      loadProductData();
+    }
+  }, [productId]);
 
-    // Simulating API call with setTimeout
-    setTimeout(() => {
-      try {
-        // Find product by ID in mock data (this would be an API call in a real application)
-        const product = {
-          id: productId,
-          name: 'Whey Protein',
-          price: 44.99,
-          discount: 10,
-          originalPrice: 49.99,
-          category: 'Supplements',
-          description: 'High-quality whey protein for muscle recovery and growth. 2kg pack, chocolate flavor.',
-          stock: 120,
-          sku: 'WP-2000-CHOC',
-          brand: 'MusclePro',
-          tags: ['protein', 'supplement', 'muscle'],
-          imagePreview: '/src/assets/products/product1.png',
-          attributes: {
-            sizes: [],
-            colors: [],
-            weight: '2kg',
-            dimensions: '',
-            material: '',
-            flavors: ['Chocolate', 'Vanilla']
-          }
-        };
-
-        if (product) {
-          // Make sure to properly merge the attributes object
-          setFormData({
-            ...formData,
-            ...product,
-            attributes: {
-              ...formData.attributes,
-              ...product.attributes
-            }
-          });
-          setIsLoading(false);
-        } else {
-          showError('Product not found');
-          navigate('/admin/store/products');
-        }
-      } catch (error) {
-        showError('Failed to load product data');
-        setIsLoading(false);
+  const loadCategories = async () => {
+    try {
+      const response = await adminCategoriesApi.getCategories();
+      if (response.success) {
+        setCategories(response.data);
       }
-    }, 700); // Simulated delay
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      // Use fallback categories if API fails
+      setCategories([
+        { _id: '1', name: 'Supplements' },
+        { _id: '2', name: 'Equipment' },
+        { _id: '3', name: 'Apparel' },
+        { _id: '4', name: 'Accessories' },
+        { _id: '5', name: 'Nutrition' },
+        { _id: '6', name: 'Wellness' }
+      ]);
+    }
   };
 
-  // Load product data on component mount
-  useEffect(() => {
-    const loadProductData = async () => {
-      try {
-        setIsLoading(true);
-        const product = await fetchProductData(productId);
+  const loadProductData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await adminProductsApi.getProduct(productId);
 
-        // Update form data with product details
+      if (response.success) {
+        const product = response.data;
+
+        // Convert attributes array back to object format for the form
+        const attributesObj = {
+          sizes: [],
+          colors: [],
+          weight: '',
+          dimensions: '',
+          material: '',
+          flavors: []
+        };
+
+        // Parse attributes array into object format
+        if (product.attributes && Array.isArray(product.attributes)) {
+          product.attributes.forEach(attr => {
+            if (attr.name === 'sizes' || attr.name === 'colors' || attr.name === 'flavors') {
+              try {
+                attributesObj[attr.name] = JSON.parse(attr.value);
+              } catch (e) {
+                attributesObj[attr.name] = [];
+              }
+            } else {
+              attributesObj[attr.name] = attr.value;
+            }
+          });
+        }
+
         setFormData({
-          name: product.name,
-          price: product.price,
-          discount: product.discount,
-          originalPrice: product.originalPrice,
-          category: product.category,
-          description: product.description,
-          stock: product.stock,
-          sku: product.sku,
-          brand: product.brand,
+          productName: product.productName || '',
+          price: product.price || '',
+          discountPercentage: product.discountPercentage || 0,
+          originalPrice: product.originalPrice || '',
+          categoryId: product.categoryId?._id || '',
+          description: product.description || '',
+          quantity: product.quantity || '',
+          sku: product.sku || '',
+          brand: product.brand || '',
           tags: product.tags || [],
           imageFile: null,
-          imagePreview: product.image
+          imagePreview: product.images?.[0]?.url || null,
+          attributes: attributesObj
         });
-
-        setIsLoading(false);
-      } catch {
-        showError('Failed to load product data');
-        setIsLoading(false);
       }
-    };
-
-    loadProductData();
-  }, [productId, showError]);
+    } catch (error) {
+      showError(error.message || 'Failed to load product data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -273,22 +272,23 @@ const EditProduct = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Product name is required';
+    if (!formData.productName.trim()) newErrors.productName = 'Product name is required';
     if (!formData.price) newErrors.price = 'Price is required';
     if (formData.price <= 0) newErrors.price = 'Price must be greater than zero';
-    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.categoryId) newErrors.categoryId = 'Category is required';
     if (!formData.sku.trim()) newErrors.sku = 'SKU is required';
-    if (!formData.stock && formData.stock !== 0) newErrors.stock = 'Stock quantity is required';
+    if (!formData.quantity && formData.quantity !== 0) newErrors.quantity = 'Stock quantity is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.brand.trim()) newErrors.brand = 'Brand is required';
 
     // Original price validation when discount is applied
-    if (formData.discount > 0 && (!formData.originalPrice || formData.originalPrice <= formData.price)) {
+    if (formData.discountPercentage > 0 && (!formData.originalPrice || formData.originalPrice <= formData.price)) {
       newErrors.originalPrice = 'Original price must be greater than current price when discount is applied';
     }
 
     // Category-specific validations
-    switch (formData.category) {
+    const selectedCategory = categories.find(cat => cat._id === formData.categoryId);
+    switch (selectedCategory?.name) {
       case 'Apparel':
         if (formData.attributes.sizes.length === 0) {
           newErrors.sizes = 'At least one size must be selected';
@@ -335,34 +335,137 @@ const EditProduct = () => {
 
     setIsSubmitting(true);
 
-    // Prepare data for submission including all attributes
-    const productData = {
-      ...formData,
-      // Make sure attributes are properly included
-      attributes: {
-        sizes: formData.attributes.sizes || [],
-        colors: formData.attributes.colors || [],
-        weight: formData.attributes.weight || '',
-        dimensions: formData.attributes.dimensions || '',
-        material: formData.attributes.material || '',
-        flavors: formData.attributes.flavors || []
+    try {
+      // Prepare data for submission
+      const selectedCategory = categories.find(cat => cat._id === formData.categoryId);
+
+      // Convert attributes object to array format expected by backend
+      const attributesArray = [];
+
+      if (selectedCategory?.name === 'Apparel') {
+        if (formData.attributes.sizes.length > 0) {
+          attributesArray.push({
+            name: 'sizes',
+            value: JSON.stringify(formData.attributes.sizes)
+          });
+        }
+        if (formData.attributes.colors.length > 0) {
+          attributesArray.push({
+            name: 'colors',
+            value: JSON.stringify(formData.attributes.colors)
+          });
+        }
+        if (formData.attributes.material.trim()) {
+          attributesArray.push({
+            name: 'material',
+            value: formData.attributes.material
+          });
+        }
       }
-    };
 
-    // Simulating API call with setTimeout
-    setTimeout(() => {
-      try {
-        // In a real application, this would be an API call to update the product
-        console.log('Product data being submitted:', productData);
+      if (selectedCategory?.name === 'Supplements') {
+        if (formData.attributes.flavors.length > 0) {
+          attributesArray.push({
+            name: 'flavors',
+            value: JSON.stringify(formData.attributes.flavors)
+          });
+        }
+        if (formData.attributes.weight.trim()) {
+          attributesArray.push({
+            name: 'weight',
+            value: formData.attributes.weight
+          });
+        }
+      }
 
+      if (selectedCategory?.name === 'Equipment') {
+        if (formData.attributes.weight.trim()) {
+          attributesArray.push({
+            name: 'weight',
+            value: formData.attributes.weight
+          });
+        }
+        if (formData.attributes.dimensions.trim()) {
+          attributesArray.push({
+            name: 'dimensions',
+            value: formData.attributes.dimensions
+          });
+        }
+        if (formData.attributes.material.trim()) {
+          attributesArray.push({
+            name: 'material',
+            value: formData.attributes.material
+          });
+        }
+        if (formData.attributes.colors.length > 0) {
+          attributesArray.push({
+            name: 'colors',
+            value: JSON.stringify(formData.attributes.colors)
+          });
+        }
+      }
+
+      if (selectedCategory?.name === 'Accessories') {
+        if (formData.attributes.material.trim()) {
+          attributesArray.push({
+            name: 'material',
+            value: formData.attributes.material
+          });
+        }
+        if (formData.attributes.dimensions.trim()) {
+          attributesArray.push({
+            name: 'dimensions',
+            value: formData.attributes.dimensions
+          });
+        }
+      }
+
+      if (selectedCategory?.name === 'Nutrition') {
+        if (formData.attributes.weight.trim()) {
+          attributesArray.push({
+            name: 'weight',
+            value: formData.attributes.weight
+          });
+        }
+        if (formData.attributes.flavors.length > 0) {
+          attributesArray.push({
+            name: 'flavors',
+            value: JSON.stringify(formData.attributes.flavors)
+          });
+        }
+      }
+
+      const productData = {
+        productName: formData.productName,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : parseFloat(formData.price),
+        discountPercentage: parseInt(formData.discountPercentage) || 0,
+        quantity: parseInt(formData.quantity),
+        sku: formData.sku,
+        brand: formData.brand,
+        categoryId: formData.categoryId,
+        tags: formData.tags,
+        attributes: attributesArray,
+        costPrice: parseFloat(formData.price) * 0.7 // Default cost price as 70% of selling price
+      };
+
+      // Add image if selected
+      if (formData.imageFile) {
+        productData.images = formData.imageFile;
+      }
+
+      const response = await adminProductsApi.updateProduct(productId, productData);
+
+      if (response.success) {
         showSuccess('Product updated successfully!');
         navigate('/admin/store/products');
-      } catch (err) {
-        showError('Failed to update product. Please try again.');
-      } finally {
-        setIsSubmitting(false);
       }
-    }, 800); // Simulated delay
+    } catch (error) {
+      showError(error.message || 'Failed to update product');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDeleteProduct = () => {
@@ -370,10 +473,16 @@ const EditProduct = () => {
       isOpen: true,
       title: 'Delete Product',
       message: 'Are you sure you want to delete this product? This action cannot be undone.',
-      onConfirm: () => {
-        // Delete logic will be implemented later
-        showSuccess('Product deleted successfully');
-        navigate('/admin/store/products');
+      onConfirm: async () => {
+        try {
+          const response = await adminProductsApi.deleteProduct(productId);
+          if (response.success) {
+            showSuccess('Product deleted successfully');
+            navigate('/admin/store/products');
+          }
+        } catch (error) {
+          showError(error.message || 'Failed to delete product');
+        }
       },
       type: 'danger'
     });
@@ -440,15 +549,15 @@ const EditProduct = () => {
                   </label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="productName"
+                    value={formData.productName}
                     onChange={handleChange}
-                    className={`w-full bg-[#121225] border ${errors.name ? 'border-red-500' : 'border-white/20'
+                    className={`w-full bg-[#121225] border ${errors.productName ? 'border-red-500' : 'border-white/20'
                       } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
                     placeholder="Enter product name"
                   />
-                  {errors.name && (
-                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                  {errors.productName && (
+                    <p className="text-red-500 text-xs mt-1">{errors.productName}</p>
                   )}
                 </div>
 
@@ -493,21 +602,21 @@ const EditProduct = () => {
                     Category *
                   </label>
                   <select
-                    name="category"
-                    value={formData.category}
+                    name="categoryId"
+                    value={formData.categoryId}
                     onChange={handleChange}
-                    className={`w-full bg-[#121225] border ${errors.category ? 'border-red-500' : 'border-white/20'
+                    className={`w-full bg-[#121225] border ${errors.categoryId ? 'border-red-500' : 'border-white/20'
                       } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
                   >
                     <option value="" disabled>Select a category</option>
                     {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
+                      <option key={category._id} value={category._id}>
+                        {category.name}
                       </option>
                     ))}
                   </select>
-                  {errors.category && (
-                    <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                  {errors.categoryId && (
+                    <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
                   )}
                 </div>
 
@@ -517,16 +626,16 @@ const EditProduct = () => {
                   </label>
                   <input
                     type="number"
-                    name="stock"
-                    value={formData.stock}
+                    name="quantity"
+                    value={formData.quantity}
                     onChange={handleNumberChange}
-                    className={`w-full bg-[#121225] border ${errors.stock ? 'border-red-500' : 'border-white/20'
+                    className={`w-full bg-[#121225] border ${errors.quantity ? 'border-red-500' : 'border-white/20'
                       } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
                     placeholder="Enter stock quantity"
                     min="0"
                   />
-                  {errors.stock && (
-                    <p className="text-red-500 text-xs mt-1">{errors.stock}</p>
+                  {errors.quantity && (
+                    <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
                   )}
                 </div>
               </div>
@@ -560,8 +669,8 @@ const EditProduct = () => {
                     </label>
                     <input
                       type="number"
-                      name="discount"
-                      value={formData.discount}
+                      name="discountPercentage"
+                      value={formData.discountPercentage}
                       onChange={handleNumberChange}
                       className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
                       placeholder="Enter discount"
@@ -573,7 +682,7 @@ const EditProduct = () => {
 
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">
-                    Original Price ($) {formData.discount > 0 && '*'}
+                    Original Price ($) {formData.discountPercentage > 0 && '*'}
                   </label>
                   <input
                     type="number"
@@ -585,7 +694,7 @@ const EditProduct = () => {
                     placeholder="Enter original price"
                     step="0.01"
                     min="0"
-                    disabled={formData.discount <= 0}
+                    disabled={formData.discountPercentage <= 0}
                   />
                   {errors.originalPrice && (
                     <p className="text-red-500 text-xs mt-1">{errors.originalPrice}</p>
@@ -710,13 +819,13 @@ const EditProduct = () => {
                     </h4>
                     <div className="flex items-center gap-6">
                       <div className="flex items-center">
-                        <div className={`h-2 w-2 rounded-full mr-2 ${formData.stock > 20 ? 'bg-green-500' : formData.stock > 5 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                        <div className={`h-2 w-2 rounded-full mr-2 ${formData.quantity > 20 ? 'bg-green-500' : formData.quantity > 5 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
                         <span className="text-white/80 text-sm">
-                          {formData.stock > 20 ? 'In Stock' : formData.stock > 5 ? 'Low Stock' : 'Critical Stock'}
+                          {formData.quantity > 20 ? 'In Stock' : formData.quantity > 5 ? 'Low Stock' : 'Critical Stock'}
                         </span>
                       </div>
                       <div className="text-white/80 text-sm">
-                        SKU: {formData.sku}
+                        Stock: {formData.quantity}
                       </div>
                     </div>
                   </div>
@@ -728,10 +837,10 @@ const EditProduct = () => {
             <div className="border-t border-white/10 pt-6 mt-6">
               <h3 className="text-white text-lg font-medium mb-4">Product Attributes</h3>
 
-              {formData.category && (
+              {formData.categoryId && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Apparel-specific attributes */}
-                  {formData.category === 'Apparel' && (
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Apparel' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">
@@ -744,8 +853,8 @@ const EditProduct = () => {
                               type="button"
                               onClick={() => handleSizeToggle(size)}
                               className={`px-3 py-1 rounded-md ${formData.attributes.sizes.includes(size)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                                ? 'bg-[#f67a45] text-white'
+                                : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
                                 }`}
                             >
                               {size}
@@ -770,8 +879,8 @@ const EditProduct = () => {
                               type="button"
                               onClick={() => handleColorToggle(color)}
                               className={`px-3 py-1 rounded-md ${formData.attributes.colors.includes(color)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                                ? 'bg-[#f67a45] text-white'
+                                : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
                                 }`}
                             >
                               {color}
@@ -801,7 +910,7 @@ const EditProduct = () => {
                   )}
 
                   {/* Supplements-specific attributes */}
-                  {formData.category === 'Supplements' && (
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Supplements' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">
@@ -814,8 +923,8 @@ const EditProduct = () => {
                               type="button"
                               onClick={() => handleFlavorToggle(flavor)}
                               className={`px-3 py-1 rounded-md ${formData.attributes.flavors.includes(flavor)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                                ? 'bg-[#f67a45] text-white'
+                                : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
                                 }`}
                             >
                               {flavor}
@@ -849,7 +958,7 @@ const EditProduct = () => {
                   )}
 
                   {/* Equipment-specific attributes */}
-                  {formData.category === 'Equipment' && (
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Equipment' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">
@@ -895,7 +1004,7 @@ const EditProduct = () => {
                   )}
 
                   {/* Accessories-specific attributes */}
-                  {formData.category === 'Accessories' && (
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Accessories' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">
@@ -925,7 +1034,7 @@ const EditProduct = () => {
                   )}
 
                   {/* Nutrition-specific attributes */}
-                  {formData.category === 'Nutrition' && (
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Nutrition' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">
@@ -954,8 +1063,8 @@ const EditProduct = () => {
                               type="button"
                               onClick={() => handleFlavorToggle(flavor)}
                               className={`px-3 py-1 rounded-md ${formData.attributes.flavors.includes(flavor)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                                ? 'bg-[#f67a45] text-white'
+                                : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
                                 }`}
                             >
                               {flavor}
@@ -971,7 +1080,7 @@ const EditProduct = () => {
                 </div>
               )}
 
-              {!formData.category && (
+              {!formData.categoryId && (
                 <p className="text-white/70 text-center py-4">
                   Select a product category to view specific attributes
                 </p>
