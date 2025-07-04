@@ -9,8 +9,9 @@ import CommunityProfileWizard from "../components/Wizard/CommunityWizard";
 
 const CommunityLayout = ({ children }) => {
   useUserAuth();
-  const { user, loading } = useContext(UserContext);
+  const { user, loading, updateUser } = useContext(UserContext);
   const [showWizard, setShowWizard] = useState(false);
+  const [profileCreated, setProfileCreated] = useState(false);
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -23,7 +24,19 @@ const CommunityLayout = ({ children }) => {
     };
 
     checkProfile();
-  }, []);
+  }, [profileCreated]);
+
+    // Handle wizard completion
+  const handleWizardComplete = (userData) => {
+    if (userData) {
+      updateUser(prev => ({
+        ...prev,
+        username: userData.profile.username,
+      }));
+      setShowWizard(false);
+      setProfileCreated(true);
+    };
+  };
 
   return (
     <div
@@ -55,7 +68,7 @@ const CommunityLayout = ({ children }) => {
           transition={{ duration: 0.3 }}
         >
           {showWizard && (
-            <CommunityProfileWizard profileImageUrl={user.profileImageUrl} onComplete={() => setShowWizard(false)} />
+            <CommunityProfileWizard profileImageUrl={user.profileImageUrl} onComplete={handleWizardComplete} />
           )}
           {!showWizard && children}
         </motion.div>

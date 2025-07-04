@@ -5,7 +5,7 @@ import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { UserContext } from '../../context/UserContext';
 
-const CommunityProfileWizard = ({ profileimageUrl, onComplete }) => {
+const CommunityProfileWizard = ({ profileImageUrl, onComplete }) => {
   const { updateUser } = useContext(UserContext);
   const [step, setStep] = useState(1);
   const totalSteps = 3;
@@ -13,7 +13,7 @@ const CommunityProfileWizard = ({ profileimageUrl, onComplete }) => {
   const [userData, setUserData] = useState({
     username: '',
     bio: '',
-    profileImage: profileimageUrl ? profileimageUrl : "/default.jpg",
+    profileImage: profileImageUrl ? profileImageUrl : "/default.jpg",
   });
 
   const [errors, setErrors] = useState({});
@@ -23,12 +23,6 @@ const CommunityProfileWizard = ({ profileimageUrl, onComplete }) => {
     let stepErrors = {};
     if (step === 1 && !userData.username.trim()) {
       stepErrors.username = 'Username is required';
-    }
-    if (step === 2 && !userData.bio.trim()) {
-      stepErrors.bio = 'Bio is required';
-    }
-    if (step === 3 && !userData.profileImage) {
-      stepErrors.profileImage = 'Please upload a profile image';
     }
 
     setErrors(stepErrors);
@@ -67,31 +61,29 @@ const CommunityProfileWizard = ({ profileimageUrl, onComplete }) => {
     const formData = new FormData();
     formData.append('username', userData.username);
     formData.append('bio', userData.bio);
-    formData.append('profileImage', userData.profileImage);
-
-    try {
-        const response = await axiosInstance.post(
-            API_PATHS.PROFILE.REGISTER_PROFILE,
-            formData,
-            {
-                headers: {
-                  "Content-Type": "multipart/form-data",
-                },
-            }
-        );
-    } catch (error) {
-        console.error('Profile submission failed:', error);
-    } finally {
-        setIsSubmitting(false);
+    
+    if (typeof userData.profileImage === 'object') {
+      formData.append('profileImage', userData.profileImage);
     }
-    onComplete?.();
-    window.location.reload();
 
     try {
-        const response = await axiosInstance.get(API_PATHS.PROFILE.GET_PROFILE_INFO);
-        updateUser(response.data);
+      const response = await axiosInstance.post(
+          API_PATHS.PROFILE.REGISTER_PROFILE,
+          formData,
+          {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+          }
+      );
+
+      if (response.status === 200) {
+        onComplete(response.data);
+      }
     } catch (error) {
-        console.error('Failed to fetch updated profile info:', error);
+      console.error('Profile submission failed:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

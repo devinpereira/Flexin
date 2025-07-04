@@ -36,7 +36,7 @@ export const registerProfile = async (req, res) => {
 
     await User.findByIdAndUpdate(userId, { profileImageUrl });
 
-    res.status(201).json({
+    res.status(200).json({
       message: "Profile created successfully",
       profile,
     });
