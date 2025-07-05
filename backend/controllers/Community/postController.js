@@ -4,8 +4,6 @@ import Comment from "../../models/Comment.js";
 import Follow from "../../models/Follow.js";
 import ProfileData from "../../models/ProfileData.js";
 import User from "../../models/User.js";
-import Notification from "../../models/Notification.js";
-const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 import { deleteNotification, sendNotification } from "../../utils/notificationHelper.js";
 
 // Get Feed Posts
@@ -278,7 +276,7 @@ export const likePost = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
     
-    const imageUrl = post.content[0] ? `${BASE_URL}/${post.content[0]}` : "/src/assets/profile1.png";
+    const imageUrl = post.content[0] ? post.content[0] : "/src/assets/profile1.png";
 
     if (existingLike) {
       // Unlike the post

@@ -2,7 +2,6 @@ import Notification from "../../models/Notification.js";
 import User from "../../models/User.js";
 import Post from "../../models/Post.js";
 import ProfileData from "../../models/ProfileData.js";
-const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
 export const getNotifications = async (req, res) => {
   try {
