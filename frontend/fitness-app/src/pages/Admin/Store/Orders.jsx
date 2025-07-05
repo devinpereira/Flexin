@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaSearch, FaFilter, FaTimes, FaEye, FaPrint, FaFileDownload, FaCheckCircle, FaTruck, FaTimesCircle } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaTimes, FaEye, FaPrint, FaFileDownload, FaCheckCircle, FaTruck, FaTimesCircle, FaClipboardCheck, FaShippingFast, FaCheck, FaUndo, FaEdit } from 'react-icons/fa';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { useNotification } from '../../../hooks/useNotification';
-import ConfirmDialog from '../../../components/ConfirmDialog';
+import ConfirmDialog from '../../../components/Admin/ConfirmDialog';
+import { adminOrdersApi } from '../../../api/adminStoreApi';
 
 const Orders = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [activeTab, setActiveTab] = useState('new');
+  const [activeTab, setActiveTab] = useState('pending');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [analytics, setAnalytics] = useState({
+    totalOrders: 0,
+    pendingOrders: 0,
+    confirmedOrders: 0,
+    processingOrders: 0,
+    shippedOrders: 0,
+    deliveredOrders: 0,
+    returnedOrders: 0,
+    refundedOrders: 0,
+    canceledOrders: 0,
+    totalRevenue: 0
+  });
 
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState({
@@ -22,95 +37,160 @@ const Orders = () => {
     type: 'warning'
   });
 
-  // Mock orders data
-  const orders = [
-    {
-      id: 'ORD-2025-001',
-      customerName: 'John Smith',
-      email: 'john.smith@example.com',
-      date: '2025-06-20',
-      status: 'new',
-      total: 149.97,
-      items: [
-        { id: 1, name: 'Whey Protein', quantity: 1, price: 49.99 },
-        { id: 2, name: 'BCAA Supplement', quantity: 2, price: 29.99 }
-      ],
-      paymentStatus: 'paid',
-      paymentMethod: 'credit_card',
-      shippingAddress: '123 Main St, City, Country',
-      notes: 'Priority shipping requested'
-    },
-    {
-      id: 'ORD-2025-002',
-      customerName: 'Emily Davis',
-      email: 'emily.davis@example.com',
-      date: '2025-06-20',
-      status: 'processing',
-      total: 89.99,
-      items: [
-        { id: 3, name: 'Yoga Mat', quantity: 1, price: 89.99 }
-      ],
-      paymentStatus: 'pending',
-      paymentMethod: 'bank_transfer',
-      shippingAddress: '456 Park Ave, City, Country'
+  // Load orders on component mount and when filters change
+  useEffect(() => {
+    loadOrders();
+    loadAnalytics();
+  }, [activeTab, searchQuery, dateRange]);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        status: activeTab === 'all' ? '' : activeTab,
+        search: searchQuery,
+        startDate: dateRange.from,
+        endDate: dateRange.to,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+        limit: 50
+      };
+
+      const response = await adminOrdersApi.getOrders(params);
+      if (response.success) {
+        // Map backend data to frontend format
+        const mappedOrders = response.data.map(order => ({
+          id: order.orderNumber,
+          orderId: order._id,
+          customerName: order.customerInfo?.name || order.userId?.fullName || 'Unknown Customer',
+          email: order.customerInfo?.email || order.userId?.email || '',
+          date: new Date(order.createdAt).toLocaleDateString(),
+          status: order.orderStatus,
+          total: order.pricing.totalPrice,
+          items: order.items || [],
+          paymentStatus: order.paymentStatus,
+          paymentMethod: order.paymentMethod,
+          shippingAddress: `${order.shippingAddress?.addressLine1 || ''}, ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.country || ''}`,
+          notes: order.notes?.customerNotes || order.notes?.adminNotes || ''
+        }));
+        setOrders(mappedOrders);
+      }
+    } catch (error) {
+      showError(error.message || 'Failed to load orders');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // Filter orders based on tab, search, and date range
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch =
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase());
+  const loadAnalytics = async () => {
+    try {
+      const response = await adminOrdersApi.getOrderAnalytics('30');
+      if (response.success) {
+        setAnalytics(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+    }
+  };
 
-    const matchesTab = activeTab === 'all' || order.status === activeTab;
-
-    const matchesDateRange = (!dateRange.from || new Date(order.date) >= new Date(dateRange.from)) &&
-      (!dateRange.to || new Date(order.date) <= new Date(dateRange.to));
-
-    return matchesSearch && matchesTab && matchesDateRange;
-  });
+  // Filter orders based on tab, search, and date range (now handled by backend)
+  const filteredOrders = orders;
 
   // Handle view order details
-  const handleViewOrder = (orderId) => {
-    navigate(`/admin/store/orders/${orderId}`);
+  const handleViewOrder = (orderNumber) => {
+    // Use the actual order ID from the database for navigation
+    const order = orders.find(o => o.id === orderNumber);
+    if (order && order.orderId) {
+      navigate(`/admin/store/orders/${order.orderId}`);
+    }
   };
 
   // Handle status change
-  const handleStatusChange = (orderId, newStatus) => {
+  const handleStatusChange = async (orderNumber, newStatus) => {
+    const order = orders.find(o => o.id === orderNumber);
+    if (!order) return;
+
+    // Create human-readable status names
+    const statusLabels = {
+      pending: 'Pending',
+      confirmed: 'Confirmed',
+      processing: 'Processing',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      canceled: 'Canceled',
+      returned: 'Returned',
+      refunded: 'Refunded'
+    };
+
+    const currentStatusLabel = statusLabels[order.status] || order.status;
+    const newStatusLabel = statusLabels[newStatus] || newStatus;
+
     setConfirmDialog({
       isOpen: true,
       title: 'Update Order Status',
-      message: `Are you sure you want to mark this order as ${newStatus}?`,
-      onConfirm: () => {
-        // Here you would typically make an API call to update the order status
-        showSuccess(`Order ${orderId} marked as ${newStatus}`);
+      message: `Are you sure you want to change order ${orderNumber} from "${currentStatusLabel}" to "${newStatusLabel}"?`,
+      onConfirm: async () => {
+        try {
+          const response = await adminOrdersApi.updateOrderStatus(order.orderId, newStatus);
+          if (response.success) {
+            showSuccess(`Order ${orderNumber} successfully updated to ${newStatusLabel}`);
+            loadOrders(); // Reload orders to reflect the change
+          }
+        } catch (error) {
+          showError(error.message || 'Failed to update order status');
+        }
       },
       type: 'warning'
     });
   };
 
   // Export orders data
-  const handleExportData = (format) => {
-    const data = filteredOrders.map(order => ({
-      'Order ID': order.id,
-      'Customer': order.customerName,
-      'Email': order.email,
-      'Date': order.date,
-      'Total': order.total,
-      'Status': order.status,
-      'Payment Status': order.paymentStatus
-    }));
+  const handleExportData = async (format) => {
+    try {
+      const filters = {
+        status: activeTab === 'all' ? '' : activeTab,
+        search: searchQuery,
+        startDate: dateRange.from,
+        endDate: dateRange.to
+      };
 
-    if (format === 'CSV') {
-      const csv = convertToCSV(data);
-      downloadFile(csv, 'orders.csv', 'text/csv');
-    } else if (format === 'JSON') {
-      const json = JSON.stringify(data, null, 2);
-      downloadFile(json, 'orders.json', 'application/json');
+      const response = await adminOrdersApi.exportOrders(format.toLowerCase(), filters);
+
+      // Create download
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `orders-${new Date().toISOString().split('T')[0]}.${format.toLowerCase()}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showSuccess(`Orders exported as ${format}`);
+    } catch (error) {
+      showError(error.message || 'Failed to export orders');
+
+      // Fallback to client-side export
+      const data = filteredOrders.map(order => ({
+        'Order ID': order.id,
+        'Customer': order.customerName,
+        'Email': order.email,
+        'Date': order.date,
+        'Total': order.total,
+        'Status': order.status,
+        'Payment Status': order.paymentStatus
+      }));
+
+      if (format === 'CSV') {
+        const csv = convertToCSV(data);
+        downloadFile(csv, 'orders.csv', 'text/csv');
+      } else if (format === 'JSON') {
+        const json = JSON.stringify(data, null, 2);
+        downloadFile(json, 'orders.json', 'application/json');
+      }
+      showSuccess(`Orders exported as ${format} (client-side)`);
     }
-
-    showSuccess(`Orders exported as ${format}`);
   };
 
   // Convert data to CSV format
@@ -142,20 +222,25 @@ const Orders = () => {
   const handleClearFilters = () => {
     setDateRange({ from: '', to: '' });
     setSearchQuery('');
+    setActiveTab('pending');
+    // Orders will reload automatically due to useEffect dependency
   };
 
   // Render status badge
   const renderStatusBadge = (status) => {
     const styles = {
-      new: 'bg-blue-500/20 text-blue-400 border-blue-500',
+      pending: 'bg-blue-500/20 text-blue-400 border-blue-500',
+      confirmed: 'bg-cyan-500/20 text-cyan-400 border-cyan-500',
       processing: 'bg-yellow-500/20 text-yellow-400 border-yellow-500',
       shipped: 'bg-purple-500/20 text-purple-400 border-purple-500',
-      completed: 'bg-green-500/20 text-green-400 border-green-500',
-      cancelled: 'bg-red-500/20 text-red-400 border-red-500'
+      delivered: 'bg-green-500/20 text-green-400 border-green-500',
+      canceled: 'bg-red-500/20 text-red-400 border-red-500',
+      refunded: 'bg-gray-500/20 text-gray-400 border-gray-500',
+      returned: 'bg-indigo-500/20 text-indigo-400 border-indigo-500'
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status]}`}>
+      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status] || styles.pending}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -164,14 +249,19 @@ const Orders = () => {
   // Render payment status badge
   const renderPaymentStatus = (status) => {
     const styles = {
-      paid: 'bg-green-500/20 text-green-400 border-green-500',
       pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500',
-      failed: 'bg-red-500/20 text-red-400 border-red-500'
+      paid: 'bg-green-500/20 text-green-400 border-green-500',
+      failed: 'bg-red-500/20 text-red-400 border-red-500',
+      refunded: 'bg-gray-500/20 text-gray-400 border-gray-500',
+      partially_refunded: 'bg-orange-500/20 text-orange-400 border-orange-500'
     };
 
+    const displayText = status === 'partially_refunded' ? 'Partially Refunded' :
+      status.charAt(0).toUpperCase() + status.slice(1);
+
     return (
-      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status] || styles.pending}`}>
+        {displayText}
       </span>
     );
   };
@@ -179,34 +269,52 @@ const Orders = () => {
   return (
     <AdminLayout pageTitle="View Orders">
       <div className="mb-6">
-        <div className="flex border-b border-white/10">
+        <div className="flex border-b border-white/10 overflow-x-auto">
           <button
-            className={`px-4 py-2 font-medium text-sm focus:outline-none ${activeTab === 'new' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
-            onClick={() => setActiveTab('new')}
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'pending' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            onClick={() => setActiveTab('pending')}
           >
-            New Orders
+            Pending Orders
           </button>
           <button
-            className={`px-4 py-2 font-medium text-sm focus:outline-none ${activeTab === 'processing' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'confirmed' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            onClick={() => setActiveTab('confirmed')}
+          >
+            Confirmed
+          </button>
+          <button
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'processing' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
             onClick={() => setActiveTab('processing')}
           >
             Processing
           </button>
           <button
-            className={`px-4 py-2 font-medium text-sm focus:outline-none ${activeTab === 'shipped' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'shipped' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
             onClick={() => setActiveTab('shipped')}
           >
             Shipped
           </button>
           <button
-            className={`px-4 py-2 font-medium text-sm focus:outline-none ${activeTab === 'completed' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
-            onClick={() => setActiveTab('completed')}
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'delivered' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            onClick={() => setActiveTab('delivered')}
           >
-            Completed
+            Delivered
           </button>
           <button
-            className={`px-4 py-2 font-medium text-sm focus:outline-none ${activeTab === 'cancelled' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
-            onClick={() => setActiveTab('cancelled')}
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'returned' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            onClick={() => setActiveTab('returned')}
+          >
+            Returned
+          </button>
+          <button
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'refunded' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            onClick={() => setActiveTab('refunded')}
+          >
+            Refunded
+          </button>
+          <button
+            className={`px-4 py-2 font-medium text-sm focus:outline-none whitespace-nowrap ${activeTab === 'canceled' ? 'text-[#f67a45] border-b-2 border-[#f67a45]' : 'text-white/70 hover:text-white'}`}
+            onClick={() => setActiveTab('canceled')}
           >
             Cancelled
           </button>
@@ -301,62 +409,181 @@ const Orders = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-[#121225]/50">
-                  <td className="px-6 py-4 text-sm text-white">{order.id}</td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-white">{order.customerName}</div>
-                    <div className="text-xs text-white/70">{order.email}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-white">{order.date}</td>
-                  <td className="px-6 py-4 text-sm text-white">{order.items.length}</td>
-                  <td className="px-6 py-4 text-sm text-white">${order.total.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-sm">
-                    {renderPaymentStatus(order.paymentStatus)}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    {renderStatusBadge(order.status)}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleViewOrder(order.id)}
-                        className="text-[#f67a45] hover:text-[#e56d3d] transition-colors"
-                        title="View Order"
-                      >
-                        <FaEye size={18} />
-                      </button>
-                      {order.status === 'new' && (
-                        <button
-                          onClick={() => handleStatusChange(order.id, 'processing')}
-                          className="text-yellow-400 hover:text-yellow-500 transition-colors"
-                          title="Mark as Processing"
-                        >
-                          <FaCheckCircle size={18} />
-                        </button>
-                      )}
-                      {order.status === 'processing' && (
-                        <button
-                          onClick={() => handleStatusChange(order.id, 'shipped')}
-                          className="text-purple-400 hover:text-purple-500 transition-colors"
-                          title="Mark as Shipped"
-                        >
-                          <FaTruck size={18} />
-                        </button>
-                      )}
-                      {['new', 'processing'].includes(order.status) && (
-                        <button
-                          onClick={() => handleStatusChange(order.id, 'cancelled')}
-                          className="text-red-400 hover:text-red-500 transition-colors"
-                          title="Cancel Order"
-                        >
-                          <FaTimesCircle size={18} />
-                        </button>
-                      )}
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <svg className="animate-spin h-8 w-8 text-[#f67a45] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <p className="text-white/70">Loading orders...</p>
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="px-6 py-12 text-center">
+                    <p className="text-white/70">No orders found</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr key={order.id} className="hover:bg-[#121225]/50">
+                    <td className="px-6 py-4 text-sm text-white">{order.id}</td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-white">{order.customerName}</div>
+                      <div className="text-xs text-white/70">{order.email}</div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white">{order.date}</td>
+                    <td className="px-6 py-4 text-sm text-white">{order.items.length}</td>
+                    <td className="px-6 py-4 text-sm text-white">${order.total.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm">
+                      {renderPaymentStatus(order.paymentStatus)}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      {renderStatusBadge(order.status)}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        {/* View Order Button - Always available */}
+                        <button
+                          onClick={() => handleViewOrder(order.id)}
+                          className="text-[#f67a45] hover:text-[#e56d3d] transition-colors"
+                          title="View Order Details"
+                        >
+                          <FaEye size={16} />
+                        </button>
+
+                        {/* Status-specific action buttons */}
+                        {order.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'confirmed')}
+                              className="text-green-400 hover:text-green-500 transition-colors"
+                              title="Confirm Order"
+                            >
+                              <FaCheckCircle size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'canceled')}
+                              className="text-red-400 hover:text-red-500 transition-colors"
+                              title="Cancel Order"
+                            >
+                              <FaTimesCircle size={16} />
+                            </button>
+                          </>
+                        )}
+
+                        {order.status === 'confirmed' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'processing')}
+                              className="text-yellow-400 hover:text-yellow-500 transition-colors"
+                              title="Start Processing"
+                            >
+                              <FaClipboardCheck size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'canceled')}
+                              className="text-red-400 hover:text-red-500 transition-colors"
+                              title="Cancel Order"
+                            >
+                              <FaTimesCircle size={16} />
+                            </button>
+                          </>
+                        )}
+
+                        {order.status === 'processing' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'shipped')}
+                              className="text-purple-400 hover:text-purple-500 transition-colors"
+                              title="Mark as Shipped"
+                            >
+                              <FaTruck size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'canceled')}
+                              className="text-red-400 hover:text-red-500 transition-colors"
+                              title="Cancel Order"
+                            >
+                              <FaTimesCircle size={16} />
+                            </button>
+                          </>
+                        )}
+
+                        {order.status === 'shipped' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'delivered')}
+                              className="text-green-400 hover:text-green-500 transition-colors"
+                              title="Mark as Delivered"
+                            >
+                              <FaCheck size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'returned')}
+                              className="text-indigo-400 hover:text-indigo-500 transition-colors"
+                              title="Mark as Returned"
+                            >
+                              <FaUndo size={16} />
+                            </button>
+                          </>
+                        )}
+
+                        {order.status === 'delivered' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'returned')}
+                              className="text-indigo-400 hover:text-indigo-500 transition-colors"
+                              title="Mark as Returned"
+                            >
+                              <FaUndo size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'refunded')}
+                              className="text-gray-400 hover:text-gray-500 transition-colors"
+                              title="Process Refund"
+                            >
+                              <FaEdit size={16} />
+                            </button>
+                          </>
+                        )}
+
+                        {order.status === 'canceled' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'pending')}
+                              className="text-blue-400 hover:text-blue-500 transition-colors"
+                              title="Reactivate Order"
+                            >
+                              <FaUndo size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'refunded')}
+                              className="text-gray-400 hover:text-gray-500 transition-colors"
+                              title="Process Refund"
+                            >
+                              <FaEdit size={16} />
+                            </button>
+                          </>
+                        )}
+
+                        {(order.status === 'returned' || order.status === 'refunded') && (
+                          <button
+                            onClick={() => handleStatusChange(order.id, 'pending')}
+                            className="text-blue-400 hover:text-blue-500 transition-colors"
+                            title="Reactivate Order"
+                          >
+                            <FaUndo size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -80,9 +80,9 @@ const EditProduct = () => {
       // Use fallback categories if API fails
       setCategories([
         { _id: '1', name: 'Supplements' },
-        { _id: '2', name: 'Equipment' },
-        { _id: '3', name: 'Apparel' },
-        { _id: '4', name: 'Accessories' },
+        { _id: '2', name: 'Fitness Equipment' },
+        { _id: '3', name: 'Workout Apparel' },
+        { _id: '4', name: 'Health Accessories' },
         { _id: '5', name: 'Nutrition' },
         { _id: '6', name: 'Wellness' }
       ]);
@@ -289,7 +289,7 @@ const EditProduct = () => {
     // Category-specific validations
     const selectedCategory = categories.find(cat => cat._id === formData.categoryId);
     switch (selectedCategory?.name) {
-      case 'Apparel':
+      case 'Workout Apparel':
         if (formData.attributes.sizes.length === 0) {
           newErrors.sizes = 'At least one size must be selected';
         }
@@ -310,7 +310,7 @@ const EditProduct = () => {
           newErrors.weight = 'Weight/Volume is required for nutrition products';
         }
         break;
-      case 'Equipment':
+      case 'Fitness Equipment':
         if (!formData.attributes.weight.trim()) {
           newErrors.weight = 'Weight information is required for equipment';
         }
@@ -342,7 +342,7 @@ const EditProduct = () => {
       // Convert attributes object to array format expected by backend
       const attributesArray = [];
 
-      if (selectedCategory?.name === 'Apparel') {
+      if (selectedCategory?.name === 'Workout Apparel') {
         if (formData.attributes.sizes.length > 0) {
           attributesArray.push({
             name: 'sizes',
@@ -378,7 +378,7 @@ const EditProduct = () => {
         }
       }
 
-      if (selectedCategory?.name === 'Equipment') {
+      if (selectedCategory?.name === 'Fitness Equipment') {
         if (formData.attributes.weight.trim()) {
           attributesArray.push({
             name: 'weight',
@@ -405,7 +405,7 @@ const EditProduct = () => {
         }
       }
 
-      if (selectedCategory?.name === 'Accessories') {
+      if (selectedCategory?.name === 'Health Accessories') {
         if (formData.attributes.material.trim()) {
           attributesArray.push({
             name: 'material',
@@ -839,8 +839,8 @@ const EditProduct = () => {
 
               {formData.categoryId && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Apparel-specific attributes */}
-                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Apparel' && (
+                  {/* Workout Apparel-specific attributes */}
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Workout Apparel' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">
@@ -957,8 +957,8 @@ const EditProduct = () => {
                     </>
                   )}
 
-                  {/* Equipment-specific attributes */}
-                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Equipment' && (
+                  {/* Fitness Equipment-specific attributes */}
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Fitness Equipment' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">
@@ -1003,8 +1003,8 @@ const EditProduct = () => {
                     </>
                   )}
 
-                  {/* Accessories-specific attributes */}
-                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Accessories' && (
+                  {/* Health Accessories-specific attributes */}
+                  {categories.find(cat => cat._id === formData.categoryId)?.name === 'Health Accessories' && (
                     <>
                       <div>
                         <label className="block text-white text-sm font-medium mb-2">

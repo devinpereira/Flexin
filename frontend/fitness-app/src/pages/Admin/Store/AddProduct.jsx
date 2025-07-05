@@ -217,7 +217,7 @@ const AddProduct = () => {
     // Category-specific validations
     const selectedCategory = categories.find(cat => cat._id === formData.categoryId);
     switch (selectedCategory?.name) {
-      case 'Apparel':
+      case 'Workout Apparel':
         if (formData.attributes.sizes.length === 0) {
           newErrors.sizes = 'At least one size must be selected';
         }
@@ -238,7 +238,7 @@ const AddProduct = () => {
           newErrors.weight = 'Weight/Volume is required for nutrition products';
         }
         break;
-      case 'Equipment':
+      case 'Fitness Equipment':
         if (!formData.attributes.weight.trim()) {
           newErrors.weight = 'Weight information is required for equipment';
         }
@@ -269,7 +269,7 @@ const AddProduct = () => {
       // Convert attributes object to array format expected by backend
       const attributesArray = [];
 
-      if (selectedCategory?.name === 'Apparel') {
+      if (selectedCategory?.name === 'Workout Apparel') {
         if (formData.attributes.sizes.length > 0) {
           attributesArray.push({
             name: 'sizes',
@@ -305,7 +305,7 @@ const AddProduct = () => {
         }
       }
 
-      if (selectedCategory?.name === 'Equipment') {
+      if (selectedCategory?.name === 'Fitness Equipment') {
         if (formData.attributes.weight.trim()) {
           attributesArray.push({
             name: 'weight',
@@ -867,8 +867,8 @@ const AddProduct = () => {
                   </>
                 )}
 
-                {/* Equipment-specific attributes */}
-                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Equipment' && (
+                {/* Fitness Equipment-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Fitness Equipment' && (
                   <>
                     <div>
                       <label className="block text-white text-sm font-medium mb-2">
@@ -913,8 +913,8 @@ const AddProduct = () => {
                   </>
                 )}
 
-                {/* Accessories-specific attributes */}
-                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Accessories' && (
+                {/* Health Accessories-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Health Accessories' && (
                   <>
                     <div>
                       <label className="block text-white text-sm font-medium mb-2">
@@ -938,6 +938,70 @@ const AddProduct = () => {
                         onChange={(e) => handleAttributeChange('dimensions', e.target.value)}
                         className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
                         placeholder="E.g. 20x15x5 cm"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Workout Apparel-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Workout Apparel' && (
+                  <>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Sizes
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableSizes.map(size => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handleSizeToggle(size)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.sizes.includes(size)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-white/60 text-xs mt-2">
+                        Select all available sizes for this apparel
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Colors
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableColors.map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => handleColorToggle(color)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.colors.includes(color)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {color}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-white/60 text-xs mt-2">
+                        Select all available colors for this apparel
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Material
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.material}
+                        onChange={(e) => handleAttributeChange('material', e.target.value)}
+                        className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                        placeholder="E.g. Cotton, Polyester, Spandex blend"
                       />
                     </div>
                   </>

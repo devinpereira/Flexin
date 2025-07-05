@@ -181,4 +181,164 @@ export const adminCategoriesApi = {
     },
 };
 
+// Admin Orders API
+export const adminOrdersApi = {
+    // Get all orders with filters
+    getOrders: async (params = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_ORDERS.GET_ALL_ORDERS, { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get single order
+    getOrder: async (orderId) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_ORDERS.GET_ORDER(orderId));
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Update order status
+    updateOrderStatus: async (orderId, status, notes = '') => {
+        try {
+            const response = await api.patch(API_PATHS.ADMIN_STORE_ORDERS.UPDATE_ORDER_STATUS(orderId), {
+                status,
+                notes
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Update payment status
+    updatePaymentStatus: async (orderId, paymentStatus) => {
+        try {
+            const response = await api.patch(API_PATHS.ADMIN_STORE_ORDERS.UPDATE_PAYMENT_STATUS(orderId), {
+                paymentStatus
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get orders by status
+    getOrdersByStatus: async (status, params = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_ORDERS.GET_ORDERS_BY_STATUS(status), { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get order analytics
+    getOrderAnalytics: async (period = '30') => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_ORDERS.GET_ORDER_ANALYTICS, {
+                params: { period }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Search orders
+    searchOrders: async (params = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_ORDERS.SEARCH_ORDERS, { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Export orders
+    exportOrders: async (format = 'csv', filters = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_ORDERS.EXPORT_ORDERS, {
+                params: { format, ...filters },
+                responseType: 'blob'
+            });
+            return response;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Cancel order
+    cancelOrder: async (orderId, reason = '') => {
+        try {
+            const response = await api.patch(API_PATHS.ADMIN_STORE_ORDERS.CANCEL_ORDER(orderId), {
+                reason
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Mark order as shipped
+    markAsShipped: async (orderId, shippingInfo = {}) => {
+        try {
+            const response = await api.patch(API_PATHS.ADMIN_STORE_ORDERS.MARK_SHIPPED(orderId), shippingInfo);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Mark order as delivered
+    markAsDelivered: async (orderId) => {
+        try {
+            const response = await api.patch(API_PATHS.ADMIN_STORE_ORDERS.MARK_DELIVERED(orderId));
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Process refund
+    processRefund: async (orderId, refundData) => {
+        try {
+            const response = await api.post(API_PATHS.ADMIN_STORE_ORDERS.PROCESS_REFUND(orderId), refundData);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Generate invoice
+    generateInvoice: async (orderId) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_ORDERS.GENERATE_INVOICE(orderId), {
+                responseType: 'blob'
+            });
+            return response;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Bulk update orders
+    bulkUpdateOrders: async (orderIds, updateData) => {
+        try {
+            const response = await api.post(API_PATHS.ADMIN_STORE_ORDERS.BULK_UPDATE_ORDERS, {
+                orderIds,
+                updateData
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    }
+};
+
 export default api;
