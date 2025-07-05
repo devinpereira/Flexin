@@ -57,20 +57,24 @@ app.use(session({ secret: "sessionSecret", resave: false, saveUninitialized: tru
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Routes
+// Community Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/posts", postRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/friends", followRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
+
+// Fitness related routes
 app.use("/api/v1/fitness", fitnessRoutes);
 app.use("/api/v1/workouts", workoutRoutes);
+
 // Trainer related routes
 app.use("/api/v1/trainers", trainerRoutes);
 app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
 app.use("/api/v1/meal-plans", mealPlanRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
+
 // Store related routes
 app.use("/api/v1/store/products", productRoutes);
 app.use("/api/v1/store/categories", categoryRoutes);
