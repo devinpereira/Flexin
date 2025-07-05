@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   FaEye,
   FaEdit,
@@ -8,8 +8,10 @@ import CalculatorLayout from '../../components/Calculator/CalculatorLayout';
 import FitnessProfileWizard from '../../components/Wizard/FitnessProfileWizard';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
+import { FitnessProfileContext } from '../../context/FitnessProfileContext';
 
 const Calculators = () => {
+  const { profile, updateProfile, calculateBMI, calculateBMR } = useContext(FitnessProfileContext);
   // Add state for the wizard visibility
   const [showWizard, setShowWizard] = useState(false);
   const [fitnessProfile, setFitnessProfile] = useState(null);
@@ -33,6 +35,7 @@ const Calculators = () => {
 
         if (savedProfile.data.exists) {
           setFitnessProfile(savedProfile.data.profile);
+          updateProfile(savedProfile.data.profile);
           setShowWizard(false);
         } else {
           setShowWizard(true);
@@ -107,71 +110,15 @@ const Calculators = () => {
   // Days of the week
   const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  // Mock BMI and BMR data
+  // BMI and BMR data
   const userStats = {
-    bmi: fitnessProfile ? calculateBMI(fitnessProfile.weight, fitnessProfile.height, fitnessProfile.weightUnit, fitnessProfile.heightUnit) : 23.4,
-    bmrCalories: fitnessProfile ? calculateBMR(fitnessProfile) : 1850,
-    weight: fitnessProfile ? convertWeight(fitnessProfile.weight, fitnessProfile.weightUnit) : 75,
-    height: fitnessProfile ? convertHeight(fitnessProfile.height, fitnessProfile.heightUnit) : 178,
-    age: fitnessProfile ? fitnessProfile.age : 28,
-    gender: fitnessProfile ? fitnessProfile.gender : 'Male'
+    bmi: profile ? calculateBMI() : 23.4,
+    bmrCalories: profile ? calculateBMR() : 1850,
+    weight: profile ? profile.weight : 75,
+    height: profile ? profile.height : 178,
+    age: profile ? profile.age : 28,
+    gender: profile ? profile.gender : 'Male'
   };
-
-  // Helper function to calculate BMI
-  function calculateBMI(weight, height, weightUnit, heightUnit) {
-    // Convert weight to kg if needed
-    const weightInKg = weightUnit === 'lbs' ? weight * 0.45359237 : weight;
-
-    // Convert height to meters
-    let heightInMeters;
-    if (heightUnit === 'ft') {
-      heightInMeters = height * 0.3048;
-    } else {
-      heightInMeters = height / 100;
-    }
-
-    // Calculate BMI: weight (kg) / height² (m)
-    const bmi = weightInKg / (heightInMeters * heightInMeters);
-    return parseFloat(bmi.toFixed(1));
-  }
-
-  // Helper function to calculate BMR
-  function calculateBMR(profile) {
-    const weight = convertWeight(profile.weight, profile.weightUnit);
-    const height = convertHeight(profile.height, profile.heightUnit);
-    const age = profile.age;
-    const gender = profile.gender;
-
-    // Mifflin-St Jeor Equation
-    let bmr;
-    if (gender === 'male') {
-      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-    } else {
-      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-    }
-
-    // Apply activity level multiplier
-    const activityMultipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9
-    };
-
-    const adjustedBmr = Math.round(bmr * activityMultipliers[profile.activityLevel]);
-    return adjustedBmr;
-  }
-
-  // Helper function to convert weight to kg
-  function convertWeight(weight, unit) {
-    return unit === 'lbs' ? weight * 0.45359237 : weight;
-  }
-
-  // Helper function to convert height to cm
-  function convertHeight(height, unit) {
-    return unit === 'ft' ? height * 30.48 : height;
-  }
 
   // Handler to view exercise details
   const handleViewExercise = (exercise) => {
@@ -319,7 +266,7 @@ const Calculators = () => {
             <h3 className="text-white text-lg sm:text-xl font-bold mb-3 sm:mb-4">BMR Calculator</h3>
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <span className="text-white text-sm sm:text-base">Daily Calories</span>
-              <span className="text-[#f67a45] text-lg sm:text-xl font-bold">{userStats.bmrCalories}</span>
+              <span className="text-[#f67a45] text-lg sm:text-xl font-bold">{userStats.bmrCalories} cal</span>
             </div>
             <div className="space-y-2 sm:space-y-3 text-sm sm:text-base">
               <div className="flex justify-between">

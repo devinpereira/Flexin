@@ -1,49 +1,40 @@
-const generateWorkoutPlan = (profile, exercises) => {
-  const { experience, goal, daysperweek, preferredDuration, equipmentAccess, healthConditions } = profile;
+import mongoose from "mongoose";
 
-  // Filter exercises based on equipment
-  let filteredExercises = exercises.filter(ex => {
-    if (equipmentAccess === "No equipment") return ex.equipment === "Bodyweight";
-    if (equipmentAccess === "Limited equipment") return ex.equipment !== "Gym only";
-    return true;
+async function generateWorkoutPlan(profile) {
+  const Exercise = mongoose.model("Exercise");
+  
+  // Example: fetch all exercises, you can filter smarter (e.g. difficulty, equipment)
+  const exercises = await Exercise.find({
+    difficulty: profile.experience,
+    equipment: { $in: [profile.equipmentAccess, "No equipment"] }, // flex this logic
   });
 
-  // Remove exercises for sensitive conditions
-  if (healthConditions.includes("backpain")) {
-    filteredExercises = filteredExercises.filter(ex => !ex.primaryMuscles.includes("Lower Back"));
-  }
+  // Shuffle + slice helper
+  const shuffle = arr => arr.sort(() => 0.5 - Math.random());
+  
+  const selectedExercises = shuffle(exercises).slice(0, profile.daysPerWeek * 3); // example logic
 
-  // Filter by experience (example)
-  filteredExercises = filteredExercises.filter(ex => {
-    if (experience === "beginner") return ex.difficulty === "easy" || ex.difficulty === "medium";
-    if (experience === "intermediate") return ex.difficulty !== "hard";
-    return true;
+  // Distribute over days
+  const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const selectedDays = shuffle(days).slice(0, profile.daysPerWeek);
+
+  const schedule = {};
+  selectedDays.forEach((day, idx) => {
+    schedule[day] = selectedExercises.slice(idx * 3, (idx + 1) * 3).map(ex => ({
+      name: ex.name,
+      reps: `${ex.reps}`,
+      image: ex.image,
+      modalImage: ex.modalImage,
+      description: ex.description
+    }));
   });
 
-  // Plan generator — Simple per day split logic
-  const workoutPlan = [];
+  // Fill empty days
+  days.forEach(day => {
+    if (!schedule[day]) schedule[day] = [];
+  });
 
-  for (let i = 0; i < daysperweek; i++) {
-    const dayPlan = {
-      day: `Day ${i + 1}`,
-      exercises: []
-    };
-
-    const selectedExercises = filteredExercises.sort(() => 0.5 - Math.random()).slice(0, 5);
-
-    selectedExercises.forEach(ex => {
-      dayPlan.exercises.push({
-        name: ex.name,
-        sets: ex.sets,
-        reps: ex.reps,
-        instructions: ex.instructions
-      });
-    });
-
-    workoutPlan.push(dayPlan);
-  }
-
-  return workoutPlan;
-};
+  return schedule;
+}
 
 export default generateWorkoutPlan;

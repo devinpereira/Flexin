@@ -1,4 +1,6 @@
 import FitnessProfile from "../../models/FitnessProfile.js";
+import WorkoutSchedule from "../../models/WorkoutSchedule.js";
+import generateWorkoutPlan from "../../utils/workoutGenerator.js";
 
 export const getFitnessProfile = async (req, res) => {
     const userId = req.user.id;
@@ -43,6 +45,15 @@ export const createFitnessProfile = async (req, res) => {
         });
 
         await newProfile.save();
+
+        // Generate initial workout plan
+        const schedule = await generateWorkoutPlan(newProfile);
+
+        await WorkoutSchedule.create({
+            userId,
+            schedule
+        });
+
         return res.status(200).json({ message: "Fitness profile created successfully", profile: newProfile });
 
     } catch (error) {

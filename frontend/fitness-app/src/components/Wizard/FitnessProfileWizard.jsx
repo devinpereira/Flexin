@@ -151,6 +151,7 @@ const FitnessProfileWizard = ({ onComplete }) => {
 
   // Submit the form data
   const submitForm = async () => {
+    console.log("Submitting form with data:", userData);
     setIsSubmitting(true);
       const response = await axiosInstance.post(API_PATHS.FITNESS.CREATE_FITNESS_PROFILE, userData);
 
@@ -348,7 +349,7 @@ const FitnessProfileWizard = ({ onComplete }) => {
                           ? 'border-[#f67a45] bg-[#f67a45]/10'
                           : 'border-white/10 hover:bg-[#1A1A2F]'} 
                           text-center transition-colors`}
-                        onClick={() => handleRadioChange('Gender', 'Other')}
+                        onClick={() => handleRadioChange('gender', 'Other')}
                       >
                         <span className={userData.gender === 'Other' ? 'text-white' : 'text-white/70'}>Other</span>
                       </button>
