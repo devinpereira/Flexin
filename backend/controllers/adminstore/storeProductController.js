@@ -6,6 +6,8 @@ import {
     StoreMedia
 } from "../../models/adminstore/index.js";
 import { cloudinary } from "../../config/cloudinary.js";
+import mongoose from "mongoose";
+import ProductReview from "../../models/ProductReview.js";
 
 // Get All Products (Admin)
 export const getAllProducts = async (req, res) => {
@@ -31,7 +33,34 @@ export const getAllProducts = async (req, res) => {
                 { brand: { $regex: search, $options: 'i' } }
             ];
         }
-        if (category) filter.categoryId = category;
+
+        // Handle category filtering - support both ObjectId and category name
+        if (category) {
+            if (mongoose.Types.ObjectId.isValid(category)) {
+                // If valid ObjectId, use it directly
+                filter.categoryId = category;
+            } else {
+                // If not ObjectId, find category by name
+                const categoryDoc = await StoreCategory.findOne({ name: { $regex: category, $options: 'i' } });
+                if (categoryDoc) {
+                    filter.categoryId = categoryDoc._id;
+                } else {
+                    // If category not found, return empty results
+                    return res.status(200).json({
+                        success: true,
+                        data: [],
+                        pagination: {
+                            currentPage: 1,
+                            totalPages: 0,
+                            totalProducts: 0,
+                            hasNextPage: false,
+                            hasPrevPage: false
+                        }
+                    });
+                }
+            }
+        }
+
         if (subcategory) filter.subcategoryId = subcategory;
         if (status) filter.status = status;
         if (isFeatured !== undefined) filter.isFeatured = isFeatured === 'true';
@@ -99,6 +128,23 @@ export const getProduct = async (req, res) => {
 export const addProduct = async (req, res) => {
     try {
         const productData = req.body;
+
+        // Parse JSON fields that come as strings from FormData
+        if (typeof productData.attributes === 'string') {
+            try {
+                productData.attributes = JSON.parse(productData.attributes);
+            } catch (e) {
+                productData.attributes = [];
+            }
+        }
+
+        if (typeof productData.tags === 'string') {
+            try {
+                productData.tags = JSON.parse(productData.tags);
+            } catch (e) {
+                productData.tags = [];
+            }
+        }
 
         // Handle image uploads
         if (req.files && req.files.length > 0) {
@@ -170,6 +216,23 @@ export const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
+
+        // Parse JSON fields that come as strings from FormData
+        if (typeof updateData.attributes === 'string') {
+            try {
+                updateData.attributes = JSON.parse(updateData.attributes);
+            } catch (e) {
+                updateData.attributes = [];
+            }
+        }
+
+        if (typeof updateData.tags === 'string') {
+            try {
+                updateData.tags = JSON.parse(updateData.tags);
+            } catch (e) {
+                updateData.tags = [];
+            }
+        }
 
         // Handle new image uploads
         if (req.files && req.files.length > 0) {
@@ -849,6 +912,48 @@ export const cloneProduct = async (req, res) => {
             success: true,
             data: newProduct,
             message: 'Product cloned successfully'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// Get Product Reviews
+export const getProductReviews = async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+
+        const reviews = await ProductReview.find({ productId })
+            .populate('userId', 'firstName lastName email profilePicture')
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const totalReviews = await ProductReview.countDocuments({ productId });
+
+        // Calculate average rating
+        const avgRating = await ProductReview.aggregate([
+            { $match: { productId: new mongoose.Types.ObjectId(productId) } },
+            { $group: { _id: null, averageRating: { $avg: '$rating' } } }
+        ]);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                reviews,
+                totalReviews,
+                averageRating: avgRating[0]?.averageRating || 0,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total: totalReviews,
+                    pages: Math.ceil(totalReviews / limit)
+                }
+            }
         });
     } catch (error) {
         res.status(500).json({

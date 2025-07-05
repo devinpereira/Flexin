@@ -1,26 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSave, FaTimes, FaUpload, FaTag, FaTags, FaBox } from 'react-icons/fa';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { useNotification } from '../../../hooks/useNotification';
+import { adminProductsApi, adminCategoriesApi } from '../../../api/adminStoreApi';
 
 const AddProduct = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState([]);
 
   // Form validation errors
   const [errors, setErrors] = useState({});
 
   // Product form data
   const [formData, setFormData] = useState({
-    name: '',
+    productName: '',
     price: '',
-    discount: 0,
+    discountPercentage: 0,
     originalPrice: '',
-    category: '',
+    categoryId: '',
     description: '',
-    stock: '',
+    quantity: '',
     sku: '',
     brand: '',
     tags: [],
@@ -36,8 +38,30 @@ const AddProduct = () => {
     }
   });
 
-  // Available categories
-  const categories = ['Supplements', 'Equipment', 'Apparel', 'Accessories', 'Nutrition', 'Wellness'];
+  // Load categories
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const response = await adminCategoriesApi.getCategories();
+      if (response.success) {
+        setCategories(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      // Use fallback categories if API fails
+      setCategories([
+        { _id: '1', name: 'Supplements' },
+        { _id: '2', name: 'Equipment' },
+        { _id: '3', name: 'Apparel' },
+        { _id: '4', name: 'Accessories' },
+        { _id: '5', name: 'Nutrition' },
+        { _id: '6', name: 'Wellness' }
+      ]);
+    }
+  };
 
   // Available sizes for apparel
   const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -74,6 +98,14 @@ const AddProduct = () => {
         [attribute]: value
       }
     });
+
+    // Clear error for this attribute when user changes it
+    if (errors[attribute]) {
+      setErrors({
+        ...errors,
+        [attribute]: null
+      });
+    }
   };
 
   // Toggle size selection
@@ -167,24 +199,25 @@ const AddProduct = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Product name is required';
+    if (!formData.productName.trim()) newErrors.productName = 'Product name is required';
     if (!formData.price) newErrors.price = 'Price is required';
     if (formData.price <= 0) newErrors.price = 'Price must be greater than zero';
-    if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.categoryId) newErrors.categoryId = 'Category is required';
     if (!formData.sku.trim()) newErrors.sku = 'SKU is required';
-    if (!formData.stock && formData.stock !== 0) newErrors.stock = 'Stock quantity is required';
+    if (!formData.quantity && formData.quantity !== 0) newErrors.quantity = 'Stock quantity is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.brand.trim()) newErrors.brand = 'Brand is required';
     if (!formData.imageFile && !formData.imagePreview) newErrors.imageFile = 'Product image is required';
 
     // Original price validation when discount is applied
-    if (formData.discount > 0 && (!formData.originalPrice || formData.originalPrice <= formData.price)) {
+    if (formData.discountPercentage > 0 && (!formData.originalPrice || formData.originalPrice <= formData.price)) {
       newErrors.originalPrice = 'Original price must be greater than current price when discount is applied';
     }
 
     // Category-specific validations
-    switch (formData.category) {
-      case 'Apparel':
+    const selectedCategory = categories.find(cat => cat._id === formData.categoryId);
+    switch (selectedCategory?.name) {
+      case 'Workout Apparel':
         if (formData.attributes.sizes.length === 0) {
           newErrors.sizes = 'At least one size must be selected';
         }
@@ -205,7 +238,7 @@ const AddProduct = () => {
           newErrors.weight = 'Weight/Volume is required for nutrition products';
         }
         break;
-      case 'Equipment':
+      case 'Fitness Equipment':
         if (!formData.attributes.weight.trim()) {
           newErrors.weight = 'Weight information is required for equipment';
         }
@@ -219,7 +252,6 @@ const AddProduct = () => {
   const handleCancelForm = () => {
     navigate('/admin/store/products');
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -230,41 +262,144 @@ const AddProduct = () => {
 
     setIsSubmitting(true);
 
-    // Prepare data for submission, including attributes based on category
-    const productData = {
-      ...formData,
-      // Clean up attributes based on category
-      attributes: {
-        ...formData.attributes,
-        // Only include relevant attributes based on category
-        sizes: formData.category === 'Apparel' ? formData.attributes.sizes : [],
-        colors: ['Apparel', 'Equipment'].includes(formData.category) ? formData.attributes.colors : [],
-        weight: ['Supplements', 'Equipment'].includes(formData.category) ? formData.attributes.weight : '',
-        dimensions: ['Equipment'].includes(formData.category) ? formData.attributes.dimensions : '',
-        material: ['Apparel', 'Equipment'].includes(formData.category) ? formData.attributes.material : '',
-        flavors: ['Supplements'].includes(formData.category) ? formData.attributes.flavors : []
+    try {
+      // Prepare data for submission
+      const selectedCategory = categories.find(cat => cat._id === formData.categoryId);
+
+      // Convert attributes object to array format expected by backend
+      const attributesArray = [];
+
+      if (selectedCategory?.name === 'Workout Apparel') {
+        if (formData.attributes.sizes.length > 0) {
+          attributesArray.push({
+            name: 'sizes',
+            value: JSON.stringify(formData.attributes.sizes)
+          });
+        }
+        if (formData.attributes.colors.length > 0) {
+          attributesArray.push({
+            name: 'colors',
+            value: JSON.stringify(formData.attributes.colors)
+          });
+        }
+        if (formData.attributes.material.trim()) {
+          attributesArray.push({
+            name: 'material',
+            value: formData.attributes.material
+          });
+        }
       }
-    };
 
-    // Simulating API call with setTimeout
-    setTimeout(() => {
-      try {
-        // In a real application, this would be an API call to create the product
-        console.log('Product data being submitted:', productData);
+      if (selectedCategory?.name === 'Supplements') {
+        if (formData.attributes.flavors.length > 0) {
+          attributesArray.push({
+            name: 'flavors',
+            value: JSON.stringify(formData.attributes.flavors)
+          });
+        }
+        if (formData.attributes.weight.trim()) {
+          attributesArray.push({
+            name: 'weight',
+            value: formData.attributes.weight
+          });
+        }
+      }
 
+      if (selectedCategory?.name === 'Fitness Equipment') {
+        if (formData.attributes.weight.trim()) {
+          attributesArray.push({
+            name: 'weight',
+            value: formData.attributes.weight
+          });
+        }
+        if (formData.attributes.dimensions.trim()) {
+          attributesArray.push({
+            name: 'dimensions',
+            value: formData.attributes.dimensions
+          });
+        }
+        if (formData.attributes.material.trim()) {
+          attributesArray.push({
+            name: 'material',
+            value: formData.attributes.material
+          });
+        }
+        if (formData.attributes.colors.length > 0) {
+          attributesArray.push({
+            name: 'colors',
+            value: JSON.stringify(formData.attributes.colors)
+          });
+        }
+      }
+
+      if (selectedCategory?.name === 'Accessories') {
+        if (formData.attributes.material.trim()) {
+          attributesArray.push({
+            name: 'material',
+            value: formData.attributes.material
+          });
+        }
+        if (formData.attributes.dimensions.trim()) {
+          attributesArray.push({
+            name: 'dimensions',
+            value: formData.attributes.dimensions
+          });
+        }
+      }
+
+      if (selectedCategory?.name === 'Nutrition') {
+        if (formData.attributes.weight.trim()) {
+          attributesArray.push({
+            name: 'weight',
+            value: formData.attributes.weight
+          });
+        }
+        if (formData.attributes.flavors.length > 0) {
+          attributesArray.push({
+            name: 'flavors',
+            value: JSON.stringify(formData.attributes.flavors)
+          });
+        }
+      }
+
+      const productData = {
+        productName: formData.productName,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : parseFloat(formData.price),
+        discountPercentage: parseInt(formData.discountPercentage) || 0,
+        quantity: parseInt(formData.quantity),
+        sku: formData.sku,
+        brand: formData.brand,
+        categoryId: formData.categoryId,
+        tags: formData.tags,
+        attributes: attributesArray,
+        costPrice: parseFloat(formData.price) * 0.7, // Default cost price as 70% of selling price
+        status: 'active'
+      };
+
+      // Add image if selected
+      if (formData.imageFile) {
+        productData.images = formData.imageFile;
+      }
+
+      const response = await adminProductsApi.createProduct(productData);
+
+      if (response.success) {
         showSuccess('Product created successfully!');
         navigate('/admin/store/products');
-      } catch (err) {
-        showError('Failed to create product. Please try again.');
-      } finally {
-        setIsSubmitting(false);
       }
-    }, 800); // Simulated delay
+    } catch (error) {
+      showError(error.message || 'Failed to create product');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Generate a random SKU suggestion
   const generateSkuSuggestion = () => {
-    const prefix = formData.category ? formData.category.substring(0, 2).toUpperCase() : 'PR';
+    const selectedCategory = categories.find(cat => cat._id === formData.categoryId);
+    const prefix = selectedCategory ? selectedCategory.name.substring(0, 2).toUpperCase() : 'PR';
     const randomNum = Math.floor(1000 + Math.random() * 9000);
 
     setFormData({
@@ -318,15 +453,15 @@ const AddProduct = () => {
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name="productName"
+                  value={formData.productName}
                   onChange={handleChange}
-                  className={`w-full bg-[#121225] border ${errors.name ? 'border-red-500' : 'border-white/20'
+                  className={`w-full bg-[#121225] border ${errors.productName ? 'border-red-500' : 'border-white/20'
                     } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
                   placeholder="Enter product name"
                 />
-                {errors.name && (
-                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                {errors.productName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.productName}</p>
                 )}
               </div>
 
@@ -380,21 +515,21 @@ const AddProduct = () => {
                   Category *
                 </label>
                 <select
-                  name="category"
-                  value={formData.category}
+                  name="categoryId"
+                  value={formData.categoryId}
                   onChange={handleChange}
-                  className={`w-full bg-[#121225] border ${errors.category ? 'border-red-500' : 'border-white/20'
+                  className={`w-full bg-[#121225] border ${errors.categoryId ? 'border-red-500' : 'border-white/20'
                     } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
                 >
                   <option value="" disabled>Select a category</option>
                   {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                    <option key={category._id} value={category._id}>
+                      {category.name}
                     </option>
                   ))}
                 </select>
-                {errors.category && (
-                  <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                {errors.categoryId && (
+                  <p className="text-red-500 text-xs mt-1">{errors.categoryId}</p>
                 )}
               </div>
 
@@ -404,16 +539,16 @@ const AddProduct = () => {
                 </label>
                 <input
                   type="number"
-                  name="stock"
-                  value={formData.stock}
+                  name="quantity"
+                  value={formData.quantity}
                   onChange={handleNumberChange}
-                  className={`w-full bg-[#121225] border ${errors.stock ? 'border-red-500' : 'border-white/20'
+                  className={`w-full bg-[#121225] border ${errors.quantity ? 'border-red-500' : 'border-white/20'
                     } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
                   placeholder="Enter stock quantity"
                   min="0"
                 />
-                {errors.stock && (
-                  <p className="text-red-500 text-xs mt-1">{errors.stock}</p>
+                {errors.quantity && (
+                  <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>
                 )}
               </div>
             </div>
@@ -447,8 +582,8 @@ const AddProduct = () => {
                   </label>
                   <input
                     type="number"
-                    name="discount"
-                    value={formData.discount}
+                    name="discountPercentage"
+                    value={formData.discountPercentage}
                     onChange={handleNumberChange}
                     className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
                     placeholder="Enter discount"
@@ -460,7 +595,7 @@ const AddProduct = () => {
 
               <div>
                 <label className="block text-white text-sm font-medium mb-2">
-                  Original Price ($) {formData.discount > 0 && '*'}
+                  Original Price ($) {formData.discountPercentage > 0 && '*'}
                 </label>
                 <input
                   type="number"
@@ -472,7 +607,7 @@ const AddProduct = () => {
                   placeholder="Enter original price"
                   step="0.01"
                   min="0"
-                  disabled={formData.discount <= 0}
+                  disabled={formData.discountPercentage <= 0}
                 />
                 {errors.originalPrice && (
                   <p className="text-red-500 text-xs mt-1">{errors.originalPrice}</p>
@@ -608,265 +743,352 @@ const AddProduct = () => {
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/10">          {/* Product attributes section based on category */}
-            <div className="border-t border-white/10 pt-6 mt-6">
-              <h3 className="text-white text-lg font-medium mb-4">Product Attributes</h3>
+          {/* Product attributes section based on category */}
+          <div className="border-t border-white/10 pt-6 mt-6">
+            <h3 className="text-white text-lg font-medium mb-4">Product Attributes</h3>
 
-              {formData.category && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Apparel-specific attributes */}
-                  {formData.category === 'Apparel' && (
-                    <>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Available Sizes
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {availableSizes.map(size => (
-                            <button
-                              key={size}
-                              type="button"
-                              onClick={() => handleSizeToggle(size)}
-                              className={`px-3 py-1 rounded-md ${formData.attributes.sizes.includes(size)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
-                                }`}
-                            >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-white/60 text-xs mt-2">
-                          Select all available sizes for this product
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Available Colors
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {availableColors.map(color => (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => handleColorToggle(color)}
-                              className={`px-3 py-1 rounded-md ${formData.attributes.colors.includes(color)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
-                                }`}
-                            >
-                              {color}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-white/60 text-xs mt-2">
-                          Select all available colors for this product
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Material
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.material}
-                          onChange={(e) => handleAttributeChange('material', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. Cotton, Polyester, etc."
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Supplements-specific attributes */}
-                  {formData.category === 'Supplements' && (
-                    <>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Available Flavors
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {availableFlavors.map(flavor => (
-                            <button
-                              key={flavor}
-                              type="button"
-                              onClick={() => handleFlavorToggle(flavor)}
-                              className={`px-3 py-1 rounded-md ${formData.attributes.flavors.includes(flavor)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
-                                }`}
-                            >
-                              {flavor}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-white/60 text-xs mt-2">
-                          Select all available flavors for this supplement
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Weight/Volume
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.weight}
-                          onChange={(e) => handleAttributeChange('weight', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. 2kg, 500g, 1L, etc."
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Equipment-specific attributes */}
-                  {formData.category === 'Equipment' && (
-                    <>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Weight
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.weight}
-                          onChange={(e) => handleAttributeChange('weight', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. 10kg, 5lb, etc."
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Dimensions
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.dimensions}
-                          onChange={(e) => handleAttributeChange('dimensions', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. 100x50x20 cm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Material
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.material}
-                          onChange={(e) => handleAttributeChange('material', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. Steel, Rubber, etc."
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Accessories-specific attributes */}
-                  {formData.category === 'Accessories' && (
-                    <>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Material
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.material}
-                          onChange={(e) => handleAttributeChange('material', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. Nylon, Leather, etc."
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Dimensions
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.dimensions}
-                          onChange={(e) => handleAttributeChange('dimensions', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. 20x15x5 cm"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Nutrition-specific attributes */}
-                  {formData.category === 'Nutrition' && (
-                    <>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Weight/Volume
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.attributes.weight}
-                          onChange={(e) => handleAttributeChange('weight', e.target.value)}
-                          className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-                          placeholder="E.g. 250g, 500ml, etc."
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Available Flavors
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {availableFlavors.map(flavor => (
-                            <button
-                              key={flavor}
-                              type="button"
-                              onClick={() => handleFlavorToggle(flavor)}
-                              className={`px-3 py-1 rounded-md ${formData.attributes.flavors.includes(flavor)
-                                  ? 'bg-[#f67a45] text-white'
-                                  : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
-                                }`}
-                            >
-                              {flavor}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {!formData.category && (
-                <p className="text-white/70 text-center py-4">
-                  Select a product category to view specific attributes
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-3 mt-4">
-              <button
-                type="button"
-                onClick={handleCancelForm}
-                className="px-4 py-2 bg-gray-700 text-white hover:bg-gray-600 rounded-lg transition-colors"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-[#f67a45] text-white hover:bg-[#e56d3d] rounded-lg transition-colors flex items-center gap-2"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
+            {formData.categoryId && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Apparel-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Apparel' && (
                   <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <FaSave /> Save Product
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Sizes
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableSizes.map(size => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handleSizeToggle(size)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.sizes.includes(size)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.sizes && (
+                        <p className="text-red-500 text-xs mt-1">{errors.sizes}</p>
+                      )}
+                      <p className="text-white/60 text-xs mt-2">
+                        Select all available sizes for this product
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Colors
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableColors.map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => handleColorToggle(color)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.colors.includes(color)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {color}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.colors && (
+                        <p className="text-red-500 text-xs mt-1">{errors.colors}</p>
+                      )}
+                      <p className="text-white/60 text-xs mt-2">
+                        Select all available colors for this product
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Material
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.material}
+                        onChange={(e) => handleAttributeChange('material', e.target.value)}
+                        className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                        placeholder="E.g. Cotton, Polyester, etc."
+                      />
+                    </div>
                   </>
                 )}
-              </button>
-            </div>
+
+                {/* Supplements-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Supplements' && (
+                  <>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Flavors
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableFlavors.map(flavor => (
+                          <button
+                            key={flavor}
+                            type="button"
+                            onClick={() => handleFlavorToggle(flavor)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.flavors.includes(flavor)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.flavors && (
+                        <p className="text-red-500 text-xs mt-1">{errors.flavors}</p>
+                      )}
+                      <p className="text-white/60 text-xs mt-2">
+                        Select all available flavors for this supplement
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Weight/Volume
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.weight}
+                        onChange={(e) => handleAttributeChange('weight', e.target.value)}
+                        className={`w-full bg-[#121225] border ${errors.weight ? 'border-red-500' : 'border-white/20'
+                          } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
+                        placeholder="E.g. 2kg, 500g, 1L, etc."
+                      />
+                      {errors.weight && (
+                        <p className="text-red-500 text-xs mt-1">{errors.weight}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Fitness Equipment-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Fitness Equipment' && (
+                  <>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Weight
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.weight}
+                        onChange={(e) => handleAttributeChange('weight', e.target.value)}
+                        className={`w-full bg-[#121225] border ${errors.weight ? 'border-red-500' : 'border-white/20'
+                          } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
+                        placeholder="E.g. 10kg, 5lb, etc."
+                      />
+                      {errors.weight && (
+                        <p className="text-red-500 text-xs mt-1">{errors.weight}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Dimensions
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.dimensions}
+                        onChange={(e) => handleAttributeChange('dimensions', e.target.value)}
+                        className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                        placeholder="E.g. 100x50x20 cm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Material
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.material}
+                        onChange={(e) => handleAttributeChange('material', e.target.value)}
+                        className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                        placeholder="E.g. Steel, Rubber, etc."
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Health Accessories-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Health Accessories' && (
+                  <>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Material
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.material}
+                        onChange={(e) => handleAttributeChange('material', e.target.value)}
+                        className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                        placeholder="E.g. Nylon, Leather, etc."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Dimensions
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.dimensions}
+                        onChange={(e) => handleAttributeChange('dimensions', e.target.value)}
+                        className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                        placeholder="E.g. 20x15x5 cm"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Workout Apparel-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Workout Apparel' && (
+                  <>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Sizes
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableSizes.map(size => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => handleSizeToggle(size)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.sizes.includes(size)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-white/60 text-xs mt-2">
+                        Select all available sizes for this apparel
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Colors
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableColors.map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => handleColorToggle(color)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.colors.includes(color)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {color}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-white/60 text-xs mt-2">
+                        Select all available colors for this apparel
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Material
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.material}
+                        onChange={(e) => handleAttributeChange('material', e.target.value)}
+                        className="w-full bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                        placeholder="E.g. Cotton, Polyester, Spandex blend"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Nutrition-specific attributes */}
+                {categories.find(cat => cat._id === formData.categoryId)?.name === 'Nutrition' && (
+                  <>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Weight/Volume
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.attributes.weight}
+                        onChange={(e) => handleAttributeChange('weight', e.target.value)}
+                        className={`w-full bg-[#121225] border ${errors.weight ? 'border-red-500' : 'border-white/20'
+                          } rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]`}
+                        placeholder="E.g. 250g, 500ml, etc."
+                      />
+                      {errors.weight && (
+                        <p className="text-red-500 text-xs mt-1">{errors.weight}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Available Flavors
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {availableFlavors.map(flavor => (
+                          <button
+                            key={flavor}
+                            type="button"
+                            onClick={() => handleFlavorToggle(flavor)}
+                            className={`px-3 py-1 rounded-md ${formData.attributes.flavors.includes(flavor)
+                              ? 'bg-[#f67a45] text-white'
+                              : 'bg-[#121225] text-white/70 hover:bg-[#1d1d3a]'
+                              }`}
+                          >
+                            {flavor}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.flavors && (
+                        <p className="text-red-500 text-xs mt-1">{errors.flavors}</p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {!formData.categoryId && (
+              <p className="text-white/70 text-center py-4">
+                Select a product category to view specific attributes
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-3 mt-4">
+            <button
+              type="button"
+              onClick={handleCancelForm}
+              className="px-4 py-2 bg-gray-700 text-white hover:bg-gray-600 rounded-lg transition-colors"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-[#f67a45] text-white hover:bg-[#e56d3d] rounded-lg transition-colors flex items-center gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <FaSave /> Save Product
+                </>
+              )}
+            </button>
           </div>
         </form>
       </div>

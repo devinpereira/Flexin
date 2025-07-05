@@ -1,102 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaArrowLeft, FaEdit, FaTrash, FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa';
+import { FaArrowLeft, FaEdit, FaTrash, FaStar, FaStarHalfAlt, FaRegStar, FaBox, FaTags } from 'react-icons/fa';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import ConfirmDialog from '../../../components/Admin/ConfirmDialog';
 import { useNotification } from '../../../hooks/useNotification';
-
-const mockProducts = [
-  {
-    id: 1,
-    name: 'Whey Protein',
-    price: 49.99,
-    discount: 10,
-    image: '/src/assets/products/product1.png',
-    category: 'Supplements',
-    description:
-      'High-quality whey protein for muscle recovery and growth. 2kg pack, chocolate flavor.',
-    stock: 120,
-    sku: 'WP-2000-CHOC',
-    brand: 'MusclePro',
-    tags: ['protein', 'supplement', 'muscle'],
-    rating: 4.7,
-    reviews: 124,
-    originalPrice: 54.99
-  },
-  {
-    id: 2,
-    name: 'Yoga Mat',
-    price: 19.99,
-    discount: 0,
-    image: '/src/assets/products/product2.png',
-    category: 'Equipment',
-    description:
-      'Non-slip yoga mat, 6mm thick, perfect for all yoga and pilates routines.',
-    stock: 60,
-    sku: 'YM-6MM-GREEN',
-    brand: 'FlexFit',
-    tags: ['yoga', 'mat', 'equipment'],
-    rating: 4.5,
-    reviews: 87,
-    originalPrice: 19.99
-  },
-  {
-    id: 3,
-    name: 'Dumbbells Set',
-    price: 89.99,
-    discount: 15,
-    image: '/src/assets/products/product3.png',
-    category: 'Equipment',
-    description:
-      'Adjustable dumbbells set (2x10kg) for strength training at home.',
-    stock: 30,
-    sku: 'DB-20KG-SET',
-    brand: 'IronFlex',
-    tags: ['dumbbells', 'weights', 'equipment'],
-    rating: 4.8,
-    reviews: 56,
-    originalPrice: 105.99
-  },
-  {
-    id: 4,
-    name: 'BCAA Supplement',
-    price: 29.99,
-    discount: 5,
-    image: '/src/assets/products/product4.png',
-    category: 'Supplements',
-    description: 'BCAA powder for muscle recovery, 400g, lemon flavor.',
-    stock: 80,
-    sku: 'BCAA-400G-LEMON',
-    brand: 'NutriPlus',
-    tags: ['bcaa', 'supplement', 'recovery'],
-    rating: 4.3,
-    reviews: 42,
-    originalPrice: 31.49
-  },
-  {
-    id: 5,
-    name: 'Running Shoes',
-    price: 59.99,
-    discount: 20,
-    image: '/src/assets/products/product5.png',
-    category: 'Apparel',
-    description:
-      'Lightweight running shoes for men and women, size range 6-12.',
-    stock: 45,
-    sku: 'RS-UNISEX',
-    brand: 'RunMax',
-    tags: ['shoes', 'running', 'apparel'],
-    rating: 4.6,
-    reviews: 94,
-    originalPrice: 74.99
-  },
-];
+import { adminProductsApi } from '../../../api/adminStoreApi';
 
 const ProductView = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { showSuccess } = useNotification();
+  const { showSuccess, showError } = useNotification();
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsStats, setReviewsStats] = useState({
+    totalReviews: 0,
+    averageRating: 0
+  });
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     title: '',
@@ -125,10 +46,46 @@ const ProductView = () => {
   };
 
   useEffect(() => {
-    // Simulate fetching product by ID
-    const found = mockProducts.find((p) => String(p.id) === String(productId));
-    setProduct(found || null);
+    loadProductData();
+    loadProductReviews();
   }, [productId]);
+
+  const loadProductReviews = async () => {
+    try {
+      setReviewsLoading(true);
+      const response = await adminProductsApi.getProductReviews(productId, { limit: 5 });
+      if (response.success) {
+        setReviews(response.data.reviews);
+        setReviewsStats({
+          totalReviews: response.data.totalReviews,
+          averageRating: response.data.averageRating
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const loadProductData = async () => {
+    try {
+      setLoading(true);
+      const response = await adminProductsApi.getProduct(productId);
+      if (response.success) {
+        setProduct(response.data);
+      } else {
+        setProduct(null);
+        showError('Product not found');
+      }
+    } catch (error) {
+      console.error('Failed to load product:', error);
+      setProduct(null);
+      showError(error.message || 'Failed to load product');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoBack = () => {
     navigate('/admin/store/products');
@@ -142,15 +99,37 @@ const ProductView = () => {
     setConfirmDialog({
       isOpen: true,
       title: 'Delete Product',
-      message: `Are you sure you want to delete ${product?.name}? This action cannot be undone.`,
-      onConfirm: () => {
-        // Mock deletion
-        showSuccess('Product deleted successfully');
-        navigate('/admin/store/products');
+      message: `Are you sure you want to delete "${product?.productName}"? This action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          const response = await adminProductsApi.deleteProduct(productId);
+          if (response.success) {
+            showSuccess('Product deleted successfully');
+            navigate('/admin/store/products');
+          }
+        } catch (error) {
+          showError(error.message || 'Failed to delete product');
+        }
       },
       type: 'danger'
     });
   };
+
+  if (loading) {
+    return (
+      <AdminLayout pageTitle="Product Details">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="bg-black/40 rounded-lg p-8 text-center max-w-md">
+            <svg className="animate-spin h-8 w-8 text-[#f67a45] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-white/70">Loading product details...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!product) {
     return (
@@ -171,6 +150,56 @@ const ProductView = () => {
     );
   }
 
+  // Helper function to get product image
+  const getProductImage = () => {
+    if (product.images && product.images.length > 0) {
+      return product.images.find(img => img.isPrimary)?.url || product.images[0]?.url;
+    }
+    return null;
+  };
+
+  // Helper function to parse attributes
+  const getAttributeValue = (attributeName) => {
+    if (!product.attributes || !Array.isArray(product.attributes)) return null;
+    const attr = product.attributes.find(a => a.name === attributeName);
+    if (!attr) return null;
+
+    try {
+      // Try to parse as JSON for arrays
+      return JSON.parse(attr.value);
+    } catch {
+      // Return as string for simple values
+      return attr.value;
+    }
+  };
+
+  // Review Card Component
+  const ReviewCard = ({ review }) => (
+    <div className="bg-[#0A0A1F]/50 rounded-lg p-4 border border-white/10">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 bg-[#f67a45] rounded-full flex items-center justify-center text-white font-medium">
+          {review.userId?.firstName?.[0] || 'U'}
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h4 className="text-white font-medium">
+                {review.userId?.firstName} {review.userId?.lastName}
+              </h4>
+              <div className="flex items-center gap-2">
+                <RatingStars rating={review.rating} />
+                <span className="text-white/60 text-sm">
+                  {new Date(review.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </div>
+          <p className="text-white/80 text-sm">{review.comment}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <AdminLayout pageTitle="Product Details">
       <div className="flex items-center gap-2 mb-6">
@@ -186,16 +215,23 @@ const ProductView = () => {
         {/* Product Image Section */}
         <div className="bg-black/40 rounded-2xl shadow-lg p-6 flex flex-col items-center group">
           <div className="relative w-full aspect-square bg-gray-700/30 rounded-xl flex items-center justify-center overflow-hidden">
-            {product.discount > 0 && (
+            {product.discountPercentage > 0 && (
               <div className="w-[48px] h-[48px] absolute top-3 right-3 bg-[#e50909] rounded-tr-lg rounded-bl-lg flex items-center justify-center text-white text-sm font-bold shadow-lg z-10">
-                -{product.discount}%
+                -{product.discountPercentage}%
               </div>
             )}
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-            />
+            {getProductImage() ? (
+              <img
+                src={getProductImage()}
+                alt={product.productName}
+                className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="text-white/50 flex flex-col items-center">
+                <FaBox size={48} />
+                <span className="mt-2 text-sm">No image available</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -205,21 +241,23 @@ const ProductView = () => {
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-white text-3xl font-bold mb-2">
-                  {product.name}
+                  {product.productName}
                 </h2>
                 <p className="text-white/60 mb-1">
-                  {product.category}
+                  {product.categoryId?.name || 'Uncategorized'}
                 </p>
                 <div className="flex items-center gap-2 mb-4">
-                  <RatingStars rating={product.rating} />
-                  <span className="text-white/60 text-sm">({product.reviews} reviews)</span>
+                  <RatingStars rating={reviewsStats.averageRating || product.averageRating || 0} />
+                  <span className="text-white/60 text-sm">
+                    ({reviewsStats.totalReviews || product.reviewCount || 0} reviews)
+                  </span>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-[#f67a45] text-2xl font-bold mb-1">
                   ${product.price.toFixed(2)}
                 </div>
-                {product.discount > 0 && (
+                {product.discountPercentage > 0 && (
                   <div className="flex items-center gap-2">
                     <span className="text-white/60 line-through text-sm">
                       ${product.originalPrice.toFixed(2)}
@@ -247,12 +285,18 @@ const ProductView = () => {
                     <span>SKU:</span> <span className="text-white font-medium">{product.sku}</span>
                   </p>
                   <p className="text-white/80 flex justify-between">
-                    <span>Brand:</span> <span className="text-white font-medium">{product.brand}</span>
+                    <span>Brand:</span> <span className="text-white font-medium">{product.brand || 'N/A'}</span>
                   </p>
                   <p className="text-white/80 flex justify-between">
                     <span>Stock:</span>
-                    <span className={`font-medium ${product.stock > 20 ? 'text-green-400' : product.stock > 5 ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {product.stock} {product.stock <= 5 && '(Low Stock)'}
+                    <span className={`font-medium ${product.quantity > 20 ? 'text-green-400' : product.quantity > 5 ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {product.quantity} {product.quantity <= 5 && '(Low Stock)'}
+                    </span>
+                  </p>
+                  <p className="text-white/80 flex justify-between">
+                    <span>Status:</span>
+                    <span className={`font-medium capitalize ${product.status === 'active' ? 'text-green-400' : 'text-yellow-400'}`}>
+                      {product.status}
                     </span>
                   </p>
                 </div>
@@ -275,41 +319,49 @@ const ProductView = () => {
               )}
             </div>
 
-            {/* Ratings and Reviews Section */}
+            {/* Updated Ratings and Reviews Section */}
             <div className="bg-[#121225]/50 rounded-lg p-4 mb-6">
-              <h3 className="text-white text-lg font-semibold mb-2">Ratings & Reviews</h3>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, idx) => (
-                    <svg
-                      key={idx}
-                      xmlns="http://www.w3.org/2000/svg"
-                      className={`h-5 w-5 ${idx < Math.floor(product.rating) ? 'text-[#f67a45]' : 'text-gray-400'}`}
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path d="M10 15l-5.878 3.09L5.24 12.45 0 8.91l7.236-.635L10 0l2.764 8.275L20 8.91l-5.24 3.54L15.878 18z" />
-                    </svg>
-                  ))}
-                </div>
-                <span className="text-white text-sm font-medium">
-                  ({product.reviews} Reviews)
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-lg font-semibold">Customer Reviews</h3>
+                <span className="text-white/60 text-sm">
+                  {reviewsStats.totalReviews} review{reviewsStats.totalReviews !== 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between">
-                  <span className="text-white/80 text-sm">Original Price:</span>
-                  <span className="text-white font-medium line-through">
-                    ${product.originalPrice.toFixed(2)}
+
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <RatingStars rating={reviewsStats.averageRating} />
+                  <span className="text-white text-lg font-medium">
+                    {reviewsStats.averageRating.toFixed(1)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-white/80 text-sm">Discounted Price:</span>
-                  <span className="text-[#f67a45] font-medium">
-                    ${product.price.toFixed(2)}
-                  </span>
-                </div>
+                <span className="text-white/60 text-sm">
+                  ({reviewsStats.totalReviews} reviews)
+                </span>
               </div>
+
+              {reviewsLoading ? (
+                <div className="text-center py-4">
+                  <div className="text-white/60">Loading reviews...</div>
+                </div>
+              ) : reviews.length > 0 ? (
+                <div className="space-y-3">
+                  {reviews.map((review) => (
+                    <ReviewCard key={review._id} review={review} />
+                  ))}
+                  {reviewsStats.totalReviews > reviews.length && (
+                    <div className="text-center pt-2">
+                      <span className="text-white/60 text-sm">
+                        Showing {reviews.length} of {reviewsStats.totalReviews} reviews
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-white/60">No reviews yet</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -330,38 +382,6 @@ const ProductView = () => {
               </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Related Products Section */}
-      <div className="mt-10">
-        <h3 className="text-white text-xl font-bold mb-6">Related Products</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {mockProducts
-            .filter(p => p.id !== product.id && p.category === product.category)
-            .slice(0, 5)
-            .map(relatedProduct => (
-              <div
-                key={relatedProduct.id}
-                className="bg-black/40 rounded-lg p-3 cursor-pointer hover:bg-black/60 transition-colors"
-                onClick={() => navigate(`/admin/store/products/view/${relatedProduct.id}`)}
-              >
-                <div className="relative w-full aspect-square bg-gray-700/30 rounded-lg flex items-center justify-center overflow-hidden mb-3">
-                  {relatedProduct.discount > 0 && (
-                    <div className="w-[29px] h-[29px] absolute top-1 right-1 bg-[#e50909] rounded-tr-sm rounded-bl-[7px] flex items-center justify-center text-white text-xs">
-                      -{relatedProduct.discount}%
-                    </div>
-                  )}
-                  <img
-                    src={relatedProduct.image}
-                    alt={relatedProduct.name}
-                    className="w-full h-full object-contain p-2"
-                  />
-                </div>
-                <h4 className="text-white text-sm font-medium mb-1 line-clamp-1">{relatedProduct.name}</h4>
-                <p className="text-[#f67a45] text-sm font-medium">${relatedProduct.price.toFixed(2)}</p>
-              </div>
-            ))}
         </div>
       </div>
 

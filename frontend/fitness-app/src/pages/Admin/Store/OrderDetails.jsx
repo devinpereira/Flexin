@@ -6,11 +6,12 @@ import AdminLayout from '../../../components/Admin/AdminLayout';
 import { useNotification } from '../../../hooks/useNotification';
 import ConfirmDialog from '../../../components/Admin/ConfirmDialog';
 import PrintableInvoice from '../../../components/Admin/Store/PrintableInvoice';
+import { adminOrdersApi } from '../../../api/adminStoreApi';
 
 const OrderDetails = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const { showSuccess } = useNotification();
+  const { showSuccess, showError } = useNotification();
   const [order, setOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const printRef = useRef();
@@ -24,55 +25,83 @@ const OrderDetails = () => {
     type: 'warning'
   });
 
-  // Mock order data
+  // Load order data from backend
   useEffect(() => {
-    // Simulating API call
-    setTimeout(() => {
-      setOrder({
-        id: orderId,
-        customerName: 'John Smith',
-        email: 'john.smith@example.com',
-        date: '2025-06-20',
-        status: 'new',
-        total: 149.97,
-        items: [
-          { id: 1, name: 'Whey Protein', quantity: 1, price: 49.99, total: 49.99 },
-          { id: 2, name: 'BCAA Supplement', quantity: 2, price: 29.99, total: 59.98 },
-          { id: 3, name: 'Shaker Bottle', quantity: 1, price: 9.99, total: 9.99 }
-        ],
-        subtotal: 119.96,
-        tax: 10.80,
-        shipping: 19.21,
-        paymentStatus: 'paid',
-        paymentMethod: 'credit_card',
-        shippingAddress: {
-          street: '123 Main St',
-          city: 'Fitness City',
-          state: 'FC',
-          zip: '12345',
-          country: 'United States'
-        },
-        billingAddress: {
-          street: '123 Main St',
-          city: 'Fitness City',
-          state: 'FC',
-          zip: '12345',
-          country: 'United States'
-        },
-        notes: 'Priority shipping requested'
-      });
-      setIsLoading(false);
-    }, 1000);
+    loadOrderData();
   }, [orderId]);
 
-  const handleStatusChange = (newStatus) => {
+  const loadOrderData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await adminOrdersApi.getOrder(orderId);
+      if (response.success) {
+        // Map backend data to frontend format
+        const orderData = response.data;
+        const mappedOrder = {
+          id: orderData.orderNumber,
+          orderId: orderData._id,
+          customerName: orderData.customerInfo?.name || orderData.userId?.fullName || 'Unknown Customer',
+          email: orderData.customerInfo?.email || orderData.userId?.email || '',
+          phone: orderData.customerInfo?.phone || orderData.userId?.phone || '',
+          date: new Date(orderData.createdAt).toLocaleDateString(),
+          status: orderData.orderStatus,
+          paymentStatus: orderData.paymentStatus,
+          paymentMethod: orderData.paymentMethod || 'card',
+          items: orderData.items.map(item => ({
+            id: item.productId?._id || item.productId,
+            name: item.productName,
+            sku: item.sku,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.totalPrice,
+            image: item.productImage
+          })),
+          subtotal: orderData.pricing.subtotal,
+          tax: orderData.pricing.taxAmount || 0,
+          shipping: orderData.pricing.shippingCost || 0,
+          discount: orderData.pricing.discountAmount || 0,
+          total: orderData.pricing.totalPrice,
+          shippingAddress: {
+            fullName: orderData.shippingAddress?.fullName || '',
+            street: orderData.shippingAddress?.addressLine1 || '',
+            city: orderData.shippingAddress?.city || '',
+            state: orderData.shippingAddress?.state || '',
+            zip: orderData.shippingAddress?.postalCode || '',
+            country: orderData.shippingAddress?.country || ''
+          },
+          notes: orderData.notes?.customerNotes || orderData.notes?.adminNotes || '',
+          trackingNumber: orderData.shipping?.trackingNumber || '',
+          statusHistory: orderData.statusHistory || []
+        };
+        setOrder(mappedOrder);
+      } else {
+        setOrder(null);
+        showError('Order not found');
+      }
+    } catch (error) {
+      console.error('Failed to load order:', error);
+      setOrder(null);
+      showError(error.message || 'Failed to load order details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (newStatus) => {
     setConfirmDialog({
       isOpen: true,
       title: 'Update Order Status',
       message: `Are you sure you want to mark this order as ${newStatus}?`,
-      onConfirm: () => {
-        setOrder(prev => ({ ...prev, status: newStatus }));
-        showSuccess(`Order status updated to ${newStatus}`);
+      onConfirm: async () => {
+        try {
+          const response = await adminOrdersApi.updateOrderStatus(order.orderId, newStatus);
+          if (response.success) {
+            showSuccess(`Order status updated to ${newStatus}`);
+            loadOrderData(); // Reload order data to reflect changes
+          }
+        } catch (error) {
+          showError(error.message || 'Failed to update order status');
+        }
       },
       type: 'warning'
     });
@@ -91,15 +120,19 @@ const OrderDetails = () => {
   // Render status badge
   const renderStatusBadge = (status) => {
     const styles = {
-      new: 'bg-blue-500/20 text-blue-400 border-blue-500',
+      pending: 'bg-blue-500/20 text-blue-400 border-blue-500',
+      confirmed: 'bg-cyan-500/20 text-cyan-400 border-cyan-500',
       processing: 'bg-yellow-500/20 text-yellow-400 border-yellow-500',
+      picked: 'bg-orange-500/20 text-orange-400 border-orange-500',
       shipped: 'bg-purple-500/20 text-purple-400 border-purple-500',
-      completed: 'bg-green-500/20 text-green-400 border-green-500',
-      cancelled: 'bg-red-500/20 text-red-400 border-red-500'
+      delivered: 'bg-green-500/20 text-green-400 border-green-500',
+      canceled: 'bg-red-500/20 text-red-400 border-red-500',
+      refunded: 'bg-gray-500/20 text-gray-400 border-gray-500',
+      returned: 'bg-indigo-500/20 text-indigo-400 border-indigo-500'
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status]}`}>
+      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status] || styles.pending}`}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -108,14 +141,19 @@ const OrderDetails = () => {
   // Render payment status badge
   const renderPaymentStatus = (status) => {
     const styles = {
-      paid: 'bg-green-500/20 text-green-400 border-green-500',
       pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500',
-      failed: 'bg-red-500/20 text-red-400 border-red-500'
+      paid: 'bg-green-500/20 text-green-400 border-green-500',
+      failed: 'bg-red-500/20 text-red-400 border-red-500',
+      refunded: 'bg-gray-500/20 text-gray-400 border-gray-500',
+      partially_refunded: 'bg-orange-500/20 text-orange-400 border-orange-500'
     };
 
+    const displayText = status === 'partially_refunded' ? 'Partially Refunded' :
+      status.charAt(0).toUpperCase() + status.slice(1);
+
     return (
-      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <span className={`px-2 py-1 rounded-full text-xs border ${styles[status] || styles.pending}`}>
+        {displayText}
       </span>
     );
   };
@@ -163,7 +201,16 @@ const OrderDetails = () => {
             <FaPrint /> Print Order
           </button>
 
-          {order.status === 'new' && (
+          {order.status === 'pending' && (
+            <button
+              onClick={() => handleStatusChange('confirmed')}
+              className="bg-cyan-600 text-white px-4 py-2 rounded-lg hover:bg-cyan-700 transition-colors flex items-center gap-2"
+            >
+              <FaCheckCircle /> Confirm Order
+            </button>
+          )}
+
+          {order.status === 'confirmed' && (
             <button
               onClick={() => handleStatusChange('processing')}
               className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2"
@@ -181,9 +228,18 @@ const OrderDetails = () => {
             </button>
           )}
 
-          {['new', 'processing'].includes(order.status) && (
+          {order.status === 'shipped' && (
             <button
-              onClick={() => handleStatusChange('cancelled')}
+              onClick={() => handleStatusChange('delivered')}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+            >
+              <FaCheckCircle /> Mark as Delivered
+            </button>
+          )}
+
+          {['pending', 'confirmed', 'processing'].includes(order.status) && (
+            <button
+              onClick={() => handleStatusChange('canceled')}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
             >
               <FaTimesCircle /> Cancel Order

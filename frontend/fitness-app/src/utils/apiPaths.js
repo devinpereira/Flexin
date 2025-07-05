@@ -132,14 +132,21 @@ export const API_PATHS = {
   // Admin Store: Orders Management
   ADMIN_STORE_ORDERS: {
     GET_ALL_ORDERS: "/api/v1/admin/store/orders",
+    GET_ORDER: (orderId) => `/api/v1/admin/store/orders/${orderId}`,
     GET_ORDER_DETAILS: (orderId) => `/api/v1/admin/store/orders/${orderId}`,
     UPDATE_ORDER_STATUS: (orderId) => `/api/v1/admin/store/orders/${orderId}/status`,
+    UPDATE_PAYMENT_STATUS: (orderId) => `/api/v1/admin/store/orders/${orderId}/payment-status`,
     GET_ORDERS_BY_STATUS: (status) => `/api/v1/admin/store/orders/status/${status}`,
     GET_ORDER_ANALYTICS: "/api/v1/admin/store/orders/analytics",
+    SEARCH_ORDERS: "/api/v1/admin/store/orders/search",
     BULK_UPDATE_ORDERS: "/api/v1/admin/store/orders/bulk-update",
     EXPORT_ORDERS: "/api/v1/admin/store/orders/export",
-    GET_SHIPPING_LABELS: (orderId) => `/api/v1/admin/store/orders/${orderId}/shipping-label`,
+    CANCEL_ORDER: (orderId) => `/api/v1/admin/store/orders/${orderId}/cancel`,
+    MARK_SHIPPED: (orderId) => `/api/v1/admin/store/orders/${orderId}/mark-shipped`,
+    MARK_DELIVERED: (orderId) => `/api/v1/admin/store/orders/${orderId}/mark-delivered`,
     PROCESS_REFUND: (orderId) => `/api/v1/admin/store/orders/${orderId}/refund`,
+    GENERATE_INVOICE: (orderId) => `/api/v1/admin/store/orders/${orderId}/invoice`,
+    GET_SHIPPING_LABELS: (orderId) => `/api/v1/admin/store/orders/${orderId}/shipping-label`,
   },
 
   // Admin Store: Categories Management
@@ -196,9 +203,9 @@ export const API_PATHS = {
 
   TRAINER: {
     GET_TRAINER: (trainerId) => `/api/v1/trainers/${trainerId}`,
-    GET_MY_TRAINERS: "/api/v1/trainers/my-trainers", 
-    ADD_FOLLOWER: "/api/v1/trainers/add-follower",   
-    REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower", 
+    GET_MY_TRAINERS: "/api/v1/trainers/my-trainers",
+    ADD_FOLLOWER: "/api/v1/trainers/add-follower",
+    REMOVE_FOLLOWER: "/api/v1/trainers/remove-follower",
     ADD_FEEDBACK: (trainerId) => `/api/v1/trainers/${trainerId}/feedback`,
     GET_TRAINER_SCHEDULE: (trainerId) => `/api/v1/trainer-schedules/${trainerId}`,
   },

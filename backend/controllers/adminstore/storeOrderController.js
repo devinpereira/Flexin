@@ -45,7 +45,7 @@ export const getAllOrders = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const orders = await StoreOrder.find(filter)
-            .populate('userId', 'name email')
+            .populate('userId', 'fullName email phone')
             .populate('items.productId', 'productName sku images')
             .sort(sort)
             .skip(skip)
@@ -75,7 +75,7 @@ export const getAllOrders = async (req, res) => {
 export const getOrderDetails = async (req, res) => {
     try {
         const order = await StoreOrder.findById(req.params.id)
-            .populate('userId', 'name email phone')
+            .populate('userId', 'fullName email phone')
             .populate('items.productId', 'productName sku images price');
 
         if (!order) {
@@ -355,15 +355,15 @@ export const exportOrders = async (req, res) => {
         }
 
         const orders = await StoreOrder.find(filter)
-            .populate('userId', 'name email')
+            .populate('userId', 'fullName email')
             .populate('items.productId', 'productName sku')
             .sort({ createdAt: -1 });
 
         // Transform data for export
         const exportData = orders.map(order => ({
             orderNumber: order.orderNumber,
-            customerName: order.customerInfo.name,
-            customerEmail: order.customerInfo.email,
+            customerName: order.customerInfo?.name || order.userId?.fullName || 'Unknown',
+            customerEmail: order.customerInfo?.email || order.userId?.email || '',
             totalAmount: order.pricing.totalPrice,
             orderStatus: order.orderStatus,
             paymentStatus: order.paymentStatus,

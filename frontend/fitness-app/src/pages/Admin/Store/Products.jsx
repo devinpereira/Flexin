@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaSearch, FaFilter, FaTimes, FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import ConfirmDialog from '../../../components/Admin/ConfirmDialog';
 import { useNotification } from '../../../hooks/useNotification';
+import { adminProductsApi, adminCategoriesApi } from '../../../api/adminStoreApi';
 
 const Products = () => {
   const navigate = useNavigate();
@@ -12,6 +13,9 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([{ _id: 'all', name: 'all' }]);
 
   // State for confirm dialog
   const [confirmDialog, setConfirmDialog] = useState({
@@ -34,58 +38,79 @@ const Products = () => {
     navigate(`/admin/store/products/view/${productId}`);
   };
 
-  // Mock categories
-  const categories = ['all', 'Supplements', 'Equipment', 'Apparel'];
+  // Load products and categories
+  useEffect(() => {
+    loadProducts();
+    loadCategories();
+  }, []);
 
-  // Mock products data (replace with real data or API call later)
-  const [products, setProducts] = useState([
-    {
-      id: 1,
-      name: 'Whey Protein',
-      price: 49.99,
-      discount: 10,
-      image: '/src/assets/products/product1.png',
-      category: 'Supplements',
-    },
-    {
-      id: 2,
-      name: 'Yoga Mat',
-      price: 19.99,
-      discount: 0,
-      image: '/src/assets/products/product2.png',
-      category: 'Equipment',
-    },
-    {
-      id: 3,
-      name: 'Dumbbells Set',
-      price: 89.99,
-      discount: 15,
-      image: '/src/assets/products/product3.png',
-      category: 'Equipment',
-    },
-    {
-      id: 4,
-      name: 'BCAA Supplement',
-      price: 29.99,
-      discount: 5,
-      image: '/src/assets/products/product4.png',
-      category: 'Supplements',
-    },
-    {
-      id: 5,
-      name: 'Running Shoes',
-      price: 59.99,
-      discount: 20,
-      image: '/src/assets/products/product5.png',
-      category: 'Apparel',
-    },
-  ]);
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await adminProductsApi.getProducts({
+        search: searchQuery,
+        category: selectedCategory === 'all' ? '' : selectedCategory,
+        limit: 50
+      });
+
+      if (response.success) {
+        // Map backend data to frontend format
+        const mappedProducts = response.data.map(product => ({
+          id: product._id,
+          name: product.productName,
+          price: product.price,
+          discount: product.discountPercentage || 0,
+          image: product.images?.[0]?.url || '/src/assets/products/default.png',
+          category: product.categoryId?.name || 'Uncategorized',
+          stock: product.quantity,
+          status: product.status
+        }));
+        setProducts(mappedProducts);
+      }
+    } catch (error) {
+      showError(error.message || 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await adminCategoriesApi.getCategories();
+      if (response.success) {
+        const categoryOptions = [{ _id: 'all', name: 'All Categories' }, ...response.data];
+        setCategories(categoryOptions);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+      // Use fallback categories if API fails
+      setCategories([
+        { _id: 'all', name: 'All Categories' },
+        { _id: 'fallback1', name: 'Supplements' },
+        { _id: 'fallback2', name: 'Equipment' },
+        { _id: 'fallback3', name: 'Apparel' }
+      ]);
+    }
+  };
+
+  // Reload products when search or category changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadProducts();
+    }, 300); // Debounce search
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, selectedCategory]);
 
   // Filtered products
   const filteredProducts = products.filter(
-    (product) =>
-      (selectedCategory === 'all' || product.category === selectedCategory) &&
-      product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (product) => {
+      const selectedCategoryName = categories.find(cat => cat._id === selectedCategory)?.name;
+      return (
+        (selectedCategory === 'all' || product.category === selectedCategoryName) &&
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
   );
 
   // Delete product handler
@@ -94,9 +119,16 @@ const Products = () => {
       isOpen: true,
       title: 'Delete Product',
       message: 'Are you sure you want to delete this product? This action cannot be undone.',
-      onConfirm: () => {
-        setProducts((prev) => prev.filter((p) => p.id !== productId));
-        showSuccess('Product deleted successfully');
+      onConfirm: async () => {
+        try {
+          const response = await adminProductsApi.deleteProduct(productId);
+          if (response.success) {
+            showSuccess('Product deleted successfully');
+            loadProducts(); // Reload the products list
+          }
+        } catch (error) {
+          showError(error.message || 'Failed to delete product');
+        }
       },
       type: 'danger',
     });
@@ -141,7 +173,7 @@ const Products = () => {
             className="bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45] ml-2"
           >
             {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat === 'all' ? 'All Categories' : cat}</option>
+              <option key={cat._id} value={cat._id}>{cat.name}</option>
             ))}
           </select>
         </div>
@@ -156,7 +188,9 @@ const Products = () => {
       </div>
 
       <div className="bg-[#0A0A1F] rounded-lg p-6">
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <div className="text-center text-white/70 py-12">Loading products...</div>
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center text-white/70 py-12">No products found.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
