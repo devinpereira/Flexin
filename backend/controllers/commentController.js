@@ -2,7 +2,6 @@ import Post from "../models/Post.js";
 import Comment from "../models/Comment.js";
 import User from "../models/User.js";
 import { deleteNotification, sendNotification } from "../utils/notificationHelper.js";
-const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
 
 // Add a Comment
 export const commentPost = async (req, res) => {
@@ -21,7 +20,7 @@ export const commentPost = async (req, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const imageUrl = post.content[0]
-      ? `${BASE_URL}/${post.content[0]}`
+      ? post.content[0]
       : "/src/assets/profile1.png";
 
     const newComment = new Comment({
