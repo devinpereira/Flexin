@@ -1,7 +1,7 @@
-import Post from "../models/Post.js";
-import Comment from "../models/Comment.js";
-import User from "../models/User.js";
-import { deleteNotification, sendNotification } from "../utils/notificationHelper.js";
+import Post from "../../models/Post.js";
+import Comment from "../../models/Comment.js";
+import User from "../../models/User.js";
+import { deleteNotification, sendNotification } from "../../utils/notificationHelper.js";
 
 // Add a Comment
 export const commentPost = async (req, res) => {

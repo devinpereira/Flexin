@@ -1,7 +1,7 @@
 import express from "express";
-import User from "../models/User.js";
-import ProfileData from "../models/ProfileData.js";
-import Post from "../models/Post.js";
+import User from "../../models/User.js";
+import ProfileData from "../../models/ProfileData.js";
+import Post from "../../models/Post.js";
 
 export const registerProfile = async (req, res) => {
   const userId = req.user._id;

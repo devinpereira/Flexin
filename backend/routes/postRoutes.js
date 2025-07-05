@@ -9,7 +9,7 @@ import {
   editPost,
   getFeedPosts,
   getPostsByUserId,
-} from "../controllers/postController.js";
+} from "../controllers/Community/postController.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();

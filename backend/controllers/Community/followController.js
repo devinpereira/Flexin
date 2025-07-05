@@ -1,6 +1,6 @@
-import Follow from "../models/Follow.js";
-import User from "../models/User.js";
-import ProfileData from "../models/ProfileData.js";
+import Follow from "../../models/Follow.js";
+import User from "../../models/User.js";
+import ProfileData from "../../models/ProfileData.js";
 
 // Search for Friends
 export const searchFriends = async (req, res) => {

@@ -1,6 +1,6 @@
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js";
-import { searchFriends, sendFollowRequest, approveFollowRequest, rejectFollowRequest, unfollowUser, getFriends, getFollowers, getFollowing, suggestFriends, getFollowRequests } from "../controllers/followController.js";
+import { searchFriends, sendFollowRequest, approveFollowRequest, rejectFollowRequest, unfollowUser, getFriends, getFollowers, getFollowing, suggestFriends, getFollowRequests } from "../controllers/Community/followController.js";
 
 const router = express.Router();
 

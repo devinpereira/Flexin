@@ -1,12 +1,12 @@
-import Post from "../models/Post.js";
-import Like from "../models/Like.js";
-import Comment from "../models/Comment.js";
-import Follow from "../models/Follow.js";
-import ProfileData from "../models/ProfileData.js";
-import User from "../models/User.js";
-import Notification from "../models/Notification.js";
+import Post from "../../models/Post.js";
+import Like from "../../models/Like.js";
+import Comment from "../../models/Comment.js";
+import Follow from "../../models/Follow.js";
+import ProfileData from "../../models/ProfileData.js";
+import User from "../../models/User.js";
+import Notification from "../../models/Notification.js";
 const BASE_URL = process.env.BASE_URL || "http://localhost:8000";
-import { deleteNotification, sendNotification } from "../utils/notificationHelper.js";
+import { deleteNotification, sendNotification } from "../../utils/notificationHelper.js";
 
 // Get Feed Posts
 export const getFeedPosts = async (req, res) => {

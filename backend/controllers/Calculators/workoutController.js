@@ -1,10 +1,10 @@
-import FitnessProfile from "../models/FitnessProfile.js";
-import Exercise from "../models/Exercise.js";
-import generateWorkoutPlan from "../utils/workoutGenerator.js";
+import FitnessProfile from "../../models/FitnessProfile.js";
+import Exercise from "../../models/Exercise.js";
+import generateWorkoutPlan from "../../utils/workoutGenerator.js";
 
 export const generateWorkout = async (req, res) => {
   try {
-    const userId  = "680e416740baf4c326213ce9";
+    const userId  = req.user.id;
     const profile = await FitnessProfile.findOne({ userId });
 
     if (!profile) {

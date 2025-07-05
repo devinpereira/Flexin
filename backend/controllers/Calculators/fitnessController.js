@@ -1,4 +1,4 @@
-import FitnessProfile from "../models/FitnessProfile.js";
+import FitnessProfile from "../../models/FitnessProfile.js";
 
 export const getFitnessProfile = async (req, res) => {
     const userId = req.user.id;
