@@ -14,6 +14,7 @@ import profileRoutes from "./routes/profileRoutes.js";
 import fitnessRoutes from "./routes/fitnessRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import workoutRoutes from "./routes/workoutRoutes.js";
+import exerciseRoutes from "./routes/exerciseRoutes.js";
 // Trainer related routes
 import trainerRoutes from "./routes/trainerRoutes.js";
 import trainerScheduleRoutes from "./routes/trainer.schedule.routes.js";
@@ -68,6 +69,7 @@ app.use("/api/v1/notifications", notificationRoutes);
 // Fitness related routes
 app.use("/api/v1/fitness", fitnessRoutes);
 app.use("/api/v1/workouts", workoutRoutes);
+app.use("/api/v1/exercises", exerciseRoutes);
 
 // Trainer related routes
 app.use("/api/v1/trainers", trainerRoutes);

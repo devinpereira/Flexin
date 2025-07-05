@@ -12,7 +12,7 @@ const exerciseSchema = new mongoose.Schema({
   primaryMuscles: { type: [String], required: true },
   secondaryMuscles: { type: [String], default: [] },
   sets: { type: Number, required: true },
-  reps: { type: Number, required: true }
+  reps: { type: Number, required: true },
 });
 
 export default mongoose.model("Exercise", exerciseSchema);

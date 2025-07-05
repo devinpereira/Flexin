@@ -1,4 +1,4 @@
-import Exercise from "../models/Exercise.js";
+import Exercise from "../../models/Exercise.js";
 
 export const addExercise = async (req, res) => {
     const { name, image, modalImage, bodyPart, description, equipment, difficulty, type, primaryMuscles, secondaryMuscles, sets, reps } = req.body;
