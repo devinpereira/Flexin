@@ -21,7 +21,7 @@ const ApproveTrainers = () => {
   // Mock data for pending trainers
   const pendingTrainers = [
     {
-      id: 1,
+      _id: "686a8652498bf988074afbcb",
       name: 'David Brown',
       email: 'david.brown@example.com',
       phone: '+1 555-567-8901',
@@ -122,7 +122,7 @@ const ApproveTrainers = () => {
 
   // Handle view trainer application
   const handleViewTrainer = (trainer) => {
-    navigate(`/admin/trainers/edit-trainer?id=${trainer.id}`);
+    navigate(`/admin/trainers/edit-trainer?id=${trainer._id}`);
   };
 
   // Count verification checks

@@ -59,7 +59,7 @@ const EditTrainer = () => {
 
   // Certification fields
   const [certification, setCertification] = useState({
-    name: "",
+    title: "",
     issuer: "",
     year: "",
   });
@@ -110,7 +110,7 @@ const EditTrainer = () => {
         imagePreview: trainer.profilePhoto || null,
         certificates: trainer.certificates
           ? trainer.certificates.map((cert) => ({
-              name: cert.title,
+              title: cert.title,
               issuer: cert.issuer,
               year: cert.year,
             }))
@@ -178,7 +178,7 @@ const EditTrainer = () => {
     }
   };
 
-  // Handle certification form
+  // Certification input change handler
   const handleCertificationChange = (e) => {
     const { name, value } = e.target;
     setCertification((prev) => ({
@@ -189,7 +189,7 @@ const EditTrainer = () => {
 
   // Add certification to list
   const handleAddCertification = () => {
-    if (!certification.name || !certification.issuer || !certification.year) {
+    if (!certification.title || !certification.issuer || !certification.year) {
       setErrors((prev) => ({
         ...prev,
         certifications: "Please fill in all certification fields",
@@ -202,7 +202,7 @@ const EditTrainer = () => {
       certificates: [...prev.certificates, { ...certification }],
     }));
 
-    setCertification({ name: "", issuer: "", year: "" });
+    setCertification({ title: "", issuer: "", year: "" });
 
     if (errors.certifications) {
       setErrors((prev) => ({
@@ -808,7 +808,7 @@ const EditTrainer = () => {
                         className="flex justify-between items-center bg-gray-800/50 rounded-lg p-3 mb-2"
                       >
                         <div>
-                          <p className="text-white font-medium">{cert.name}</p>
+                          <p className="text-white font-medium">{cert.title}</p>
                           <p className="text-gray-400 text-sm">
                             {cert.issuer} • {cert.year}
                           </p>
@@ -834,8 +834,8 @@ const EditTrainer = () => {
                       </label>
                       <input
                         type="text"
-                        name="name"
-                        value={certification.name}
+                        name="title"
+                        value={certification.title}
                         onChange={handleCertificationChange}
                         className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45]"
                       />
