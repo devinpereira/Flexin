@@ -6,7 +6,7 @@ export const createTrainer = async (req, res) => {
         const userId = req.user._id;
         const{
             name,
-            age,
+            phone,
             bio,
             profilePhoto,
             certificates,
@@ -17,14 +17,15 @@ export const createTrainer = async (req, res) => {
             feedbacks, // <-- Add this line
             socialMedia, // (optional, if you want to allow setting social links at creation)
             rating,      // (optional)
-            reviewCount  // (optional)
+            reviewCount,
+            status, 
         } = req.body;
 
         const trainer = new Trainer(
             {
                 userId,
                 name,
-                age,
+                phone,
                 bio,
                 profilePhoto,
                 certificates,
@@ -35,7 +36,8 @@ export const createTrainer = async (req, res) => {
                 feedbacks: feedbacks || [], 
                 socialMedia: socialMedia || {},
                 rating: rating || 0,
-                reviewCount: reviewCount || 0
+                reviewCount: reviewCount || 0,
+                status: status || 'pending',
             }
         );
         await trainer.save();
@@ -112,7 +114,8 @@ export const updateTrainer = async (req, res) => {
 export const getTrainerById = async (req, res) => {
     try {
         const trainerId = req.params.id;
-        const trainer = await Trainer.findById(trainerId);
+        const trainer = await Trainer.findById(trainerId).populate('userId', 'fullName email ');
+        
 
         if (!trainer) {
             return res.status(404).json({
@@ -137,7 +140,8 @@ export const getTrainerById = async (req, res) => {
 //Get all trainers
 export const getAllTrainers = async (req, res) => { 
     try {
-        const trainers = await Trainer.find().populate('userId', 'name email');
+        const trainers = await Trainer.find().populate('userId', 'fullName email'); // Populate userId with name and email
+
 
         res.status(200).json({
             success: true,

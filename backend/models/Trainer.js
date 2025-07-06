@@ -49,11 +49,15 @@ const trainerSchema = new mongoose.Schema(
       required: true,
       default: "Certified Trainer",
     },
-    age: {
+    phone: {
       type: Number,
       required: true,
-      min: 18,
-      max: 100,
+      validate: {
+        validator: function (v) {
+          return /\d{10}/.test(v); // Validates a 10-digit phone number
+        },
+        message: (props) => `${props.value} is not a valid phone number!`,
+      },
     },
     bio: {
       type: String,
@@ -124,6 +128,11 @@ specialties: {
     "Cardio & HIIT",
     "Pilates"
   ]
+},
+status: {
+  type: String,
+  enum: ['active', 'inactive', 'pending'],
+  default: 'pending'
 },
   },
   {
