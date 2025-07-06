@@ -31,7 +31,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     const handleLogin = () => {
       const token = localStorage.getItem("token");
-      if (!token) return;
+      if (!token || (socket && socket.connected)) return;
 
       const s = connectSocket(token);
       setSocket(s);
@@ -45,11 +45,18 @@ export const SocketProvider = ({ children }) => {
     window.addEventListener("login", handleLogin);
     window.addEventListener("logout", handleLogout);
 
+    // ⚠️ Vite Hot Reload cleanup
+    if (import.meta.hot) {
+      import.meta.hot.dispose(() => {
+        disconnectSocket();
+      });
+    }
+
     return () => {
       window.removeEventListener("login", handleLogin);
       window.removeEventListener("logout", handleLogout);
     };
-  }, []);
+  }, [socket]);
 
   return (
     <SocketContext.Provider value={socket}>
