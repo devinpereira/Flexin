@@ -61,6 +61,10 @@ export const API_PATHS = {
     GET_FITNESS_PROFILES: "/api/v1/fitness/profiles",
     GET_FITNESS_PROFILE_BY_USER: (userId) => `/api/v1/fitness/profile/user/${userId}`,
   },
+  WORKOUT: {
+    GET_WORKOUT_PLANS: "/api/v1/workouts", // Done
+    GENERATE_WORKOUT: "/api/v1/workout/generate", // Done
+    },
 
   //  Store: Products
   STORE_PRODUCTS: {

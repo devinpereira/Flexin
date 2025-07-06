@@ -17,6 +17,10 @@ const Calculators = () => {
   const [fitnessProfile, setFitnessProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [profileCreated, setProfileCreated] = useState(false);
+  const [trainingSchedule, setTrainingSchedule] = useState({
+  Monday: [], Tuesday: [], Wednesday: [],
+  Thursday: [], Friday: [], Saturday: [], Sunday: []
+  });
 
   // Existing state and variables
   const [selectedDay, setSelectedDay] = useState('Monday');
@@ -51,6 +55,23 @@ const Calculators = () => {
     checkFitnessProfile();
   }, [profileCreated]);
 
+  // Get the workout plan for the week
+  useEffect(() => {
+    const loadSchedule = async () => {
+      try {
+        const workout = await axiosInstance.get(API_PATHS.WORKOUT.GET_WORKOUT_PLANS);
+
+        if (workout.status === 200) {
+          setTrainingSchedule(workout.data.schedule);
+        }
+      } catch (error) {
+        console.error("Error loading workout plans:", error);
+      }
+    };
+
+    loadSchedule();
+  }, []);
+
   // Handle wizard completion
   const handleWizardComplete = (userData) => {
     setFitnessProfile(userData);
@@ -74,7 +95,7 @@ const Calculators = () => {
   };
 
   // Mock training schedule data
-  const trainingSchedule = {
+  const trainingSchedule1 = {
     Monday: [
       { id: 1, name: 'Push-ups', reps: '3 x 15', image: '/src/assets/exercise1.png', modalImage: '/src/assets/exercise2.png', description: 'Start in a plank position with your hands slightly wider than your shoulders. Lower your body until your chest nearly touches the floor, then push yourself back up.' },
       { id: 2, name: 'Squats', reps: '3 x 20', image: '/src/assets/exercise1.png', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Stand with feet shoulder-width apart. Lower your body as if sitting in a chair, keeping knees behind toes. Return to standing position.' },
@@ -193,8 +214,8 @@ const Calculators = () => {
             </div>
 
             <div className="space-y-3 sm:space-y-4 overflow-hidden">
-              {trainingSchedule[selectedDay].map((exercise) => (
-                <div key={exercise.id} className="bg-[#1A1A2F] rounded-lg p-3 sm:p-4 flex items-center justify-between flex-wrap sm:flex-nowrap">
+              {trainingSchedule[selectedDay].map((exercise, index) => (
+                <div key={index} className="bg-[#1A1A2F] rounded-lg p-3 sm:p-4 flex items-center justify-between flex-wrap sm:flex-nowrap">
                   <div className="flex items-center w-full sm:w-auto">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden mr-2 sm:mr-4 flex-shrink-0">
                       <img

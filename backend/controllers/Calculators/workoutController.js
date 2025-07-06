@@ -1,7 +1,6 @@
-import FitnessProfile from "../../models/FitnessProfile.js";
-import Exercise from "../../models/Exercise.js";
-import generateWorkoutPlan from "../../utils/workoutGenerator.js";
+import WorkoutSchedule from "../../models/WorkoutSchedule.js";
 
+// Get the workout plan for the week
 export const getWorkoutPlans = async (req, res) => {
   const userId = req.user.id;
   try {
@@ -11,7 +10,7 @@ export const getWorkoutPlans = async (req, res) => {
     if (!currentPlan) {
       return res.status(404).json({ message: "No workout plan found" });
     }
-    res.json(currentPlan);
+    res.status(200).json(currentPlan);
 
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -19,20 +18,3 @@ export const getWorkoutPlans = async (req, res) => {
 };
 
 export const editWorkoutPlan = async (req, res) => {};
-
-export const generateWorkout = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const profile = await FitnessProfile.findOne({ userId });
-
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
-
-    const workoutPlan = generateWorkoutPlan(profile);
-
-    res.json(workoutPlan);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};

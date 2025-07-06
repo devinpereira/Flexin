@@ -13,6 +13,12 @@ const fitnessProfileSchema = new mongoose.Schema(
       enum: ["Beginner", "Intermediate", "Advanced"],
       required: true,
     },
+    age: {
+      type: Number,
+      required: true,
+      min: 13,
+      max: 80,
+    },
     weight: {
       type: Number,
       required: true,

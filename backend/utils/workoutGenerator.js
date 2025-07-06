@@ -59,7 +59,6 @@ async function generateWorkoutPlan(profile) {
   const selectedDays = weekDays.slice(0, profile.daysPerWeek);
 
   const restDay = {
-    id: 7,
     name: "Rest Day",
     reps: "Active Recovery",
     image: "https://res.cloudinary.com/dwpv4g1cb/image/upload/v1751708770/exercise1_wnehud.png",
