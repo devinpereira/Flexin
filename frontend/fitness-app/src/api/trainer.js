@@ -61,7 +61,7 @@ export async function removeTrainerFollower(trainerId) {
 
 // add feedback for a trainer
 export async function addTrainerFeedback(trainerId, feedback) {
-  const res = await fetch(`${BASE_URL}/api/v1/trainers/${trainerId}/feedback`, {
+  const res = await fetch(`${BASE_URL}${API_PATHS.TRAINER.ADD_FEEDBACK(trainerId)}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
