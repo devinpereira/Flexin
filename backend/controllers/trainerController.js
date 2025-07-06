@@ -14,10 +14,11 @@ export const createTrainer = async (req, res) => {
             photos,
             packages,
             availabilityStatus,
-            feedbacks, // <-- Add this line
-            socialMedia, // (optional, if you want to allow setting social links at creation)
-            rating,      // (optional)
+            feedbacks, 
+            socialMedia, 
+            rating,     
             reviewCount,
+            specialties,
             status, 
         } = req.body;
 
@@ -37,6 +38,7 @@ export const createTrainer = async (req, res) => {
                 socialMedia: socialMedia || {},
                 rating: rating || 0,
                 reviewCount: reviewCount || 0,
+                specialties: specialties || [],
                 status: status || 'pending',
             }
         );
@@ -197,6 +199,7 @@ export const getTrainersForUser = async (req, res) => {
   }
 };
 
+// Add feedback to trainer
 export const addFeedbackToTrainer = async (req, res) => {
   try {
     const trainerId = req.params.id;
@@ -216,7 +219,11 @@ export const addFeedbackToTrainer = async (req, res) => {
       { new: true }
     );
 
-// Calculate average rating from feedbacks
+    if (!trainer) {
+      return res.status(404).json({ success: false, message: "Trainer not found" });
+    }
+
+    // Calculate average rating from feedbacks
         const feedbacks = trainer.feedbacks || [];
         const ratings = feedbacks.map(fb => fb.rating);
         const avgRating = ratings.length
@@ -226,10 +233,6 @@ export const addFeedbackToTrainer = async (req, res) => {
         trainer.rating = avgRating;
         trainer.reviewCount = trainer.feedbacks.length;
         await trainer.save(); // Save the updated rating
-    
-    if (!trainer) {
-      return res.status(404).json({ success: false, message: "Trainer not found" });
-    }
 
     res.json({ success: true, feedbacks: trainer.feedbacks });
   } catch (err) {

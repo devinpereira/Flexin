@@ -13,7 +13,11 @@ const serviceSchema = new mongoose.Schema({
 });
 
 const packageSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: { 
+    type: String, 
+    required: true,
+    enum: ["Silver", "Gold", "Ultimate"]
+  },
   price: { type: Number, required: true },
   features: [{ type: String, required: true }],
 });
@@ -93,16 +97,16 @@ const trainerSchema = new mongoose.Schema(
       required: true,
       default: [],
     },
-    socialMedia: { // <-- Added
+    socialMedia: { // need when creating a trainer profile
       type: socialMediaSchema,
       required: true,
       default: {},
     },
-    rating: { // <-- Added
+    rating: { 
       type: Number,
       default: 0
     },
-    reviewCount: { // <-- Added
+    reviewCount: {
       type: Number,
       default: 0,
       min: 0,

@@ -378,7 +378,7 @@ const Trainers = () => {
                         {trainer.userId?.email}
                       </div>
                       <div className="text-sm text-gray-400">
-                        {trainer.availabilityStatus}
+                        {trainer.phone}
                       </div>
                     </td>
                     <td className="py-3 px-4 whitespace-nowrap text-sm text-white">

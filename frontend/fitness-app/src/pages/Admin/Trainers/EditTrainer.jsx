@@ -299,21 +299,16 @@ const EditTrainer = () => {
     setConfirmDialog({
       isOpen: true,
       title: "Delete Trainer",
-      message: `Are you sure you want to delete ${formData.name}? This action cannot be undone.`,
-      type: "danger",
+      message: `Are you sure you want to delete ${formData.name}'s account? This cannot be undone.`,
       onConfirm: async () => {
-        setIsSubmitting(true);
-
         try {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          showSuccess(`Trainer "${formData.name}" deleted successfully!`);
-          setTimeout(() => {
-            navigate("/admin/trainers");
-          }, 1500);
+          await axiosInstance.delete(`/api/v1/trainers/${formData.id}`);
+          showSuccess(`Trainer ${formData.name} has been deleted.`);
+          navigate("/admin/trainers");
         } catch (err) {
-          showError("Failed to delete trainer. Please try again.");
-          setIsSubmitting(false);
+          showError("Failed to delete trainer.");
         }
+        setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
       },
     });
   };
