@@ -29,8 +29,7 @@ export const generateWorkout = async (req, res) => {
       return res.status(404).json({ message: "Profile not found" });
     }
 
-    const exercises = await Exercise.find({});
-    const workoutPlan = generateWorkoutPlan(profile, exercises);
+    const workoutPlan = generateWorkoutPlan(profile);
 
     res.json(workoutPlan);
   } catch (err) {
