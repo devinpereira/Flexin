@@ -115,7 +115,7 @@ function App() {
                     <Route path="/community/profile/:userId" element={<CommunityProfile />} />
                     <Route path="/community/create" element={<CommunityHome />} />
                   </Route>
-                  {/* Admin Routes */}
+                  {/* Trainer Admin Routes */}
                   <Route element={<PrivateRoute allowedRoles={["trainer"]} />}>
                     <Route path="/trainer/dashboard" element={<TrainerDashboard />} />
                     <Route path="/trainer/subscribers" element={<TrainerSubscribers />} />
