@@ -204,8 +204,8 @@ export const addFeedbackToTrainer = async (req, res) => {
   try {
     const trainerId = req.params.id;
     const { comment, rating } = req.body;
-    const userName = req.user.fullName; // Assuming user has a name field
-
+    const userName = req.user.fullName; 
+    
     const feedback = {
       userName,
       comment,
@@ -213,29 +213,30 @@ export const addFeedbackToTrainer = async (req, res) => {
       createdAt: new Date()
     };
 
-    const trainer = await Trainer.findByIdAndUpdate(
+    await Trainer.findByIdAndUpdate(
       trainerId,
-      { $push: { feedbacks: feedback } },
-      { new: true }
+      { $push: { feedbacks: feedback } }
     );
+
+    const trainer = await Trainer.findById(trainerId);
 
     if (!trainer) {
       return res.status(404).json({ success: false, message: "Trainer not found" });
     }
 
-    // Calculate average rating from feedbacks
-        const feedbacks = trainer.feedbacks || [];
-        const ratings = feedbacks.map(fb => fb.rating);
-        const avgRating = ratings.length
-            ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
-            : 0;
+    const feedbacks = trainer.feedbacks || [];
+    const ratings = feedbacks.map(fb => fb.rating);
+    const avgRating = ratings.length
+      ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+      : 0;
 
-        trainer.rating = avgRating;
-        trainer.reviewCount = trainer.feedbacks.length;
-        await trainer.save(); // Save the updated rating
+    trainer.rating = avgRating;
+    trainer.reviewCount = feedbacks.length;
+    await trainer.save();
 
-    res.json({ success: true, feedbacks: trainer.feedbacks });
+    res.json({ success: true, feedbacks: trainer.feedbacks, rating: trainer.rating, reviewCount: trainer.reviewCount });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: "Failed to add feedback", error: err.message });
   }
 };

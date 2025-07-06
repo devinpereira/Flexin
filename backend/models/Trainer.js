@@ -94,12 +94,10 @@ const trainerSchema = new mongoose.Schema(
     },
     feedbacks: {
       type: [feedbackSchema],
-      required: true,
       default: [],
     },
     socialMedia: { // need when creating a trainer profile
       type: socialMediaSchema,
-      required: true,
       default: {},
     },
     rating: { 
