@@ -64,7 +64,7 @@ export const API_PATHS = {
   WORKOUT: {
     GET_WORKOUT_PLANS: "/api/v1/workouts", // Done
     GENERATE_WORKOUT: "/api/v1/workout/generate", // Done
-    },
+  },
 
   //  Store: Products
   STORE_PRODUCTS: {
@@ -131,6 +131,15 @@ export const API_PATHS = {
     GET_LOW_STOCK_ALERTS: "/api/v1/admin/store/inventory/low-stock",
     UPDATE_REORDER_POINT: (productId) => `/api/v1/admin/store/inventory/${productId}/reorder-point`,
     GET_STOCK_HISTORY: (productId) => `/api/v1/admin/store/inventory/${productId}/history`,
+    SEARCH_INVENTORY: "/api/v1/admin/store/inventory/search",
+    GET_ANALYTICS: "/api/v1/admin/store/inventory/analytics",
+    EXPORT_INVENTORY: "/api/v1/admin/store/inventory/export",
+    GET_ALERTS: "/api/v1/admin/store/inventory/alerts",
+    ADJUST_STOCK: (productId) => `/api/v1/admin/store/inventory/${productId}/adjust`,
+    BULK_ADJUST: "/api/v1/admin/store/inventory/bulk-adjust",
+    IMPORT_INVENTORY: "/api/v1/admin/store/inventory/import",
+    SYNC_PRODUCTS: "/api/v1/admin/store/inventory/sync-products",
+    GENERATE_REPORT: "/api/v1/admin/store/inventory/report",
   },
 
   // Admin Store: Orders Management
@@ -156,6 +165,7 @@ export const API_PATHS = {
   // Admin Store: Categories Management
   ADMIN_STORE_CATEGORIES: {
     GET_ALL_CATEGORIES: "/api/v1/admin/store/categories",
+    GET_CATEGORY: (categoryId) => `/api/v1/admin/store/categories/${categoryId}`,
     ADD_CATEGORY: "/api/v1/admin/store/categories",
     UPDATE_CATEGORY: (categoryId) => `/api/v1/admin/store/categories/${categoryId}`,
     DELETE_CATEGORY: (categoryId) => `/api/v1/admin/store/categories/${categoryId}`,

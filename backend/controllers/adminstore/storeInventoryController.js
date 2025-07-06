@@ -46,7 +46,14 @@ export const getInventory = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const inventory = await StoreInventory.find(filter)
-            .populate('productId', 'productName sku images price')
+            .populate({
+                path: 'productId',
+                select: 'productName sku images price categoryId subcategoryId',
+                populate: [
+                    { path: 'categoryId', select: 'name' },
+                    { path: 'subcategoryId', select: 'name' }
+                ]
+            })
             .sort(sort)
             .skip(skip)
             .limit(parseInt(limit));
@@ -74,7 +81,7 @@ export const getInventory = async (req, res) => {
 // Update Stock
 export const updateStock = async (req, res) => {
     try {
-        const { productId } = req.params;
+        const { id } = req.params; // This should be the inventory ID or productId
         const { quantity, reason = 'adjustment', notes } = req.body;
 
         if (typeof quantity !== 'number') {
@@ -84,7 +91,12 @@ export const updateStock = async (req, res) => {
             });
         }
 
-        const inventory = await StoreInventory.findOne({ productId });
+        // Try to find inventory by productId first, then by inventory ID
+        let inventory = await StoreInventory.findOne({ productId: id });
+        if (!inventory) {
+            inventory = await StoreInventory.findById(id);
+        }
+
         if (!inventory) {
             return res.status(404).json({
                 success: false,
@@ -92,6 +104,7 @@ export const updateStock = async (req, res) => {
             });
         }
 
+        const productId = inventory.productId;
         const previousStock = inventory.stock.currentStock;
         const difference = quantity - previousStock;
 
@@ -121,7 +134,14 @@ export const updateStock = async (req, res) => {
         });
 
         const updatedInventory = await StoreInventory.findOne({ productId })
-            .populate('productId', 'productName sku');
+            .populate({
+                path: 'productId',
+                select: 'productName sku images price categoryId subcategoryId',
+                populate: [
+                    { path: 'categoryId', select: 'name' },
+                    { path: 'subcategoryId', select: 'name' }
+                ]
+            });
 
         res.status(200).json({
             success: true,
@@ -220,20 +240,41 @@ export const getLowStockAlerts = async (req, res) => {
             'alerts.lowStockAlert': true,
             isActive: true
         })
-            .populate('productId', 'productName sku images')
+            .populate({
+                path: 'productId',
+                select: 'productName sku images categoryId subcategoryId',
+                populate: [
+                    { path: 'categoryId', select: 'name' },
+                    { path: 'subcategoryId', select: 'name' }
+                ]
+            })
             .sort({ 'stock.currentStock': 1 });
 
         const outOfStockItems = await StoreInventory.find({
             'alerts.outOfStockAlert': true,
             isActive: true
         })
-            .populate('productId', 'productName sku images');
+            .populate({
+                path: 'productId',
+                select: 'productName sku images categoryId subcategoryId',
+                populate: [
+                    { path: 'categoryId', select: 'name' },
+                    { path: 'subcategoryId', select: 'name' }
+                ]
+            });
 
         const reorderItems = await StoreInventory.find({
             'alerts.reorderAlert': true,
             isActive: true
         })
-            .populate('productId', 'productName sku images');
+            .populate({
+                path: 'productId',
+                select: 'productName sku images categoryId subcategoryId',
+                populate: [
+                    { path: 'categoryId', select: 'name' },
+                    { path: 'subcategoryId', select: 'name' }
+                ]
+            });
 
         res.status(200).json({
             success: true,
@@ -295,13 +336,29 @@ export const updateReorderPoint = async (req, res) => {
 // Get Stock History
 export const getStockHistory = async (req, res) => {
     try {
-        const { productId } = req.params;
-        const { page = 1, limit = 50, type, reason } = req.query;
+        const { id } = req.params; // Change from productId to id
+        const { page = 1, limit = 50, type, reason, days } = req.query;
+
+        // Find inventory by productId first, then use the productId for history
+        let productId = id;
+
+        // If id is not a valid ObjectId, try to find the inventory record
+        const inventory = await StoreInventory.findOne({ productId: id });
+        if (inventory) {
+            productId = inventory.productId;
+        }
 
         // Build filter
         const filter = { productId };
         if (type) filter['transaction.type'] = type;
         if (reason) filter['transaction.reason'] = reason;
+
+        // Add date filter if specified
+        if (days && days !== 'all') {
+            const daysAgo = new Date();
+            daysAgo.setDate(daysAgo.getDate() - parseInt(days));
+            filter.createdAt = { $gte: daysAgo };
+        }
 
         const skip = (page - 1) * limit;
 
@@ -618,7 +675,29 @@ export const searchInventory = async (req, res) => {
                     as: 'product'
                 }
             },
-            { $unwind: '$product' }
+            { $unwind: '$product' },
+            {
+                $lookup: {
+                    from: 'storecategories',
+                    localField: 'product.categoryId',
+                    foreignField: '_id',
+                    as: 'product.category'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'storesubcategories',
+                    localField: 'product.subcategoryId',
+                    foreignField: '_id',
+                    as: 'product.subcategory'
+                }
+            },
+            {
+                $addFields: {
+                    'product.category': { $arrayElemAt: ['$product.category', 0] },
+                    'product.subcategory': { $arrayElemAt: ['$product.subcategory', 0] }
+                }
+            }
         ];
 
         const matchConditions = {};

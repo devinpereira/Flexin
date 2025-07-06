@@ -56,6 +56,7 @@ import AdminStore from "./pages/Admin/Store";
 import AdminProducts from "./pages/Admin/Store/Products";
 import AdminAddProduct from "./pages/Admin/Store/AddProduct";
 import AdminEditProduct from "./pages/Admin/Store/EditProduct";
+import AdminProductView from "./pages/Admin/Store/ProductView";
 import AdminOrders from "./pages/Admin/Store/Orders";
 import AdminOrderDetails from "./pages/Admin/Store/OrderDetails";
 import AdminInventory from "./pages/Admin/Store/Inventory";
@@ -64,7 +65,6 @@ import AdminFitness from "./pages/Admin/Fitness";
 import AdminAddExercise from "./pages/Admin/Fitness/AddExercise";
 import AdminEditExercise from "./pages/Admin/Fitness/EditExercise";
 import AdminSettings from "./pages/Admin/Settings";
-import AdminProductView from "./pages/Admin/Store/ProductView";
 
 import { NotificationProvider } from "./context/NotificationContext";
 

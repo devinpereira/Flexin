@@ -99,7 +99,7 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
       path: '/admin/store',
       subItems: [
         { id: 'Product Management', path: '/admin/store/products' },
-        { id: 'View Orders', path: '/admin/store/orders' },
+        { id: 'Order Management', path: '/admin/store/orders' },
         { id: 'Inventory Management', path: '/admin/store/inventory' }
       ]
     },

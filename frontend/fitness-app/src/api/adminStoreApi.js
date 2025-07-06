@@ -171,9 +171,137 @@ export const adminProductsApi = {
 // Admin Categories API (for the dropdown in product forms)
 export const adminCategoriesApi = {
     // Get all categories
-    getCategories: async () => {
+    getCategories: async (params = {}) => {
         try {
-            const response = await api.get(API_PATHS.ADMIN_STORE_CATEGORIES.GET_ALL_CATEGORIES);
+            const response = await api.get(API_PATHS.ADMIN_STORE_CATEGORIES.GET_ALL_CATEGORIES, { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get single category
+    getCategory: async (categoryId) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_CATEGORIES.GET_CATEGORY(categoryId));
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Create new category
+    createCategory: async (categoryData) => {
+        try {
+            // Create FormData for file upload
+            const formData = new FormData();
+
+            // Append all category data
+            Object.keys(categoryData).forEach(key => {
+                if (key === 'image' && categoryData[key]) {
+                    formData.append('image', categoryData[key]);
+                } else if (categoryData[key] !== null && categoryData[key] !== undefined) {
+                    formData.append(key, categoryData[key]);
+                }
+            });
+
+            const response = await api.post(API_PATHS.ADMIN_STORE_CATEGORIES.ADD_CATEGORY, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Update category
+    updateCategory: async (categoryId, categoryData) => {
+        try {
+            // Create FormData for file upload
+            const formData = new FormData();
+
+            // Append all category data
+            Object.keys(categoryData).forEach(key => {
+                if (key === 'image' && categoryData[key]) {
+                    formData.append('image', categoryData[key]);
+                } else if (categoryData[key] !== null && categoryData[key] !== undefined) {
+                    formData.append(key, categoryData[key]);
+                }
+            });
+
+            const response = await api.put(API_PATHS.ADMIN_STORE_CATEGORIES.UPDATE_CATEGORY(categoryId), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Delete category
+    deleteCategory: async (categoryId) => {
+        try {
+            const response = await api.delete(API_PATHS.ADMIN_STORE_CATEGORIES.DELETE_CATEGORY(categoryId));
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Create subcategory
+    createSubcategory: async (categoryId, subcategoryData) => {
+        try {
+            const formData = new FormData();
+            Object.keys(subcategoryData).forEach(key => {
+                if (key === 'image' && subcategoryData[key]) {
+                    formData.append('image', subcategoryData[key]);
+                } else if (subcategoryData[key] !== null && subcategoryData[key] !== undefined) {
+                    formData.append(key, subcategoryData[key]);
+                }
+            });
+
+            const response = await api.post(API_PATHS.ADMIN_STORE_CATEGORIES.ADD_SUBCATEGORY(categoryId), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Update subcategory
+    updateSubcategory: async (categoryId, subcategoryId, subcategoryData) => {
+        try {
+            const formData = new FormData();
+            Object.keys(subcategoryData).forEach(key => {
+                if (key === 'image' && subcategoryData[key]) {
+                    formData.append('image', subcategoryData[key]);
+                } else if (subcategoryData[key] !== null && subcategoryData[key] !== undefined) {
+                    formData.append(key, subcategoryData[key]);
+                }
+            });
+
+            const response = await api.put(API_PATHS.ADMIN_STORE_CATEGORIES.UPDATE_SUBCATEGORY(categoryId, subcategoryId), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Delete subcategory
+    deleteSubcategory: async (categoryId, subcategoryId) => {
+        try {
+            const response = await api.delete(API_PATHS.ADMIN_STORE_CATEGORIES.DELETE_SUBCATEGORY(categoryId, subcategoryId));
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
@@ -334,6 +462,171 @@ export const adminOrdersApi = {
                 orderIds,
                 updateData
             });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    }
+};
+
+// Admin Inventory API
+export const adminInventoryApi = {
+    // Get all inventory with filters
+    getInventory: async (params = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.GET_INVENTORY, { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Update stock quantity
+    updateStock: async (productId, stockData) => {
+        try {
+            const response = await api.patch(API_PATHS.ADMIN_STORE_INVENTORY.UPDATE_STOCK(productId), stockData);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Bulk update stock
+    bulkUpdateStock: async (updates) => {
+        try {
+            const response = await api.post(API_PATHS.ADMIN_STORE_INVENTORY.BULK_UPDATE_STOCK, { updates });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get low stock alerts
+    getLowStockAlerts: async () => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.GET_LOW_STOCK_ALERTS);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Update reorder point
+    updateReorderPoint: async (productId, reorderData) => {
+        try {
+            const response = await api.patch(API_PATHS.ADMIN_STORE_INVENTORY.UPDATE_REORDER_POINT(productId), reorderData);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get stock history
+    getStockHistory: async (productId, params = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.GET_STOCK_HISTORY(productId), { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Search inventory
+    searchInventory: async (params = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.SEARCH_INVENTORY, { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get inventory analytics
+    getInventoryAnalytics: async (period = 'monthly') => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.GET_ANALYTICS, {
+                params: { period }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Export inventory
+    exportInventory: async (format = 'csv') => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.EXPORT_INVENTORY, {
+                params: { format },
+                responseType: 'blob'
+            });
+            return response;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Adjust stock (manual adjustment)
+    adjustStock: async (productId, adjustmentData) => {
+        try {
+            const response = await api.post(API_PATHS.ADMIN_STORE_INVENTORY.ADJUST_STOCK(productId), adjustmentData);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Get inventory alerts (low stock, out of stock, reorder)
+    getInventoryAlerts: async () => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.GET_ALERTS);
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Generate stock report
+    generateStockReport: async (params = {}) => {
+        try {
+            const response = await api.get(API_PATHS.ADMIN_STORE_INVENTORY.GENERATE_REPORT, { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Bulk stock adjustment
+    bulkStockAdjustment: async (adjustments) => {
+        try {
+            const response = await api.post(API_PATHS.ADMIN_STORE_INVENTORY.BULK_ADJUST, { adjustments });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Import inventory from file
+    importInventory: async (fileData) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', fileData);
+
+            const response = await api.post(API_PATHS.ADMIN_STORE_INVENTORY.IMPORT_INVENTORY, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
+
+    // Sync inventory with products
+    syncWithProducts: async () => {
+        try {
+            const response = await api.post(API_PATHS.ADMIN_STORE_INVENTORY.SYNC_PRODUCTS);
             return response.data;
         } catch (error) {
             throw error.response?.data || error.message;
