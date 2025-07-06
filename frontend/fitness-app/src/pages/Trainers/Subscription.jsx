@@ -321,7 +321,7 @@ const Subscription = () => {
             <div className="flex flex-col items-center mb-4 sm:mb-6">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-3 sm:mb-4 border-2 border-[#f67a45]/30">
                 <img
-                  src={trainer.image}
+                  src={trainer.profilePhoto}
                   alt={trainer.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {

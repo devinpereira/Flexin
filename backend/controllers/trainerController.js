@@ -164,7 +164,7 @@ export const addFollower = async (req, res) => {
     const { trainerId } = req.body;
     await Trainer.findByIdAndUpdate(
       trainerId,
-      { $addToSet: { followers: userId } }, // prevents duplicates
+      { $addToSet: { followers: userId } },
       { new: true }
     );
     res.json({ success: true });
@@ -179,7 +179,7 @@ export const removeFollower = async (req, res) => {
     const { trainerId } = req.body;
     await Trainer.findByIdAndUpdate( 
       trainerId,
-      { $pull: { followers: userId } }, // removes the userId from followers
+      { $pull: { followers: userId } },
       { new: true }
     ); 
 
@@ -191,7 +191,7 @@ export const removeFollower = async (req, res) => {
 
 export const getTrainersForUser = async (req, res) => {
   try {
-    const userId = req.user._id; // from auth middleware
+    const userId = req.user._id;
     const trainers = await Trainer.find({ followers: userId });
     res.json({ success: true, trainers });
   } catch (err) {
@@ -205,12 +205,14 @@ export const addFeedbackToTrainer = async (req, res) => {
     const trainerId = req.params.id;
     const { comment, rating } = req.body;
     const userName = req.user.fullName; 
+    const profilePhoto = req.user.profileImageUrl || req.user.profilePhoto || ""; 
     
     const feedback = {
       userName,
       comment,
       rating,
-      createdAt: new Date()
+      createdAt: new Date(),
+      profilePhoto
     };
 
     await Trainer.findByIdAndUpdate(

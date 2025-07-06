@@ -447,8 +447,8 @@ const TrainerProfile = () => {
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden mr-3">
                       <img
                         src={
-                          review.photos && review.photos[0]
-                            ? review.photos[0]
+                          review.profilePhoto
+                            ? review.profilePhoto
                             : "/src/assets/profile1.png"
                         }
                         alt={review.userName}
