@@ -9,11 +9,22 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Determine active section based on current path
+  // Determine active section based on current path and referring page
   const getActiveSection = () => {
     const path = location.pathname;
-    if (path === '/trainers/my-trainers' || path.includes('/trainer-profile')) return 'My Trainers';
+
+    // Check if we came from explore page (using state from navigation)
+    const fromExplore = location.state?.fromExplore;
+
+    // If viewing a trainer profile and we came from explore, keep Explore active
+    if (path.includes('/trainers/') && fromExplore) {
+      return 'Explore';
+    }
+
+    // Check standard routes
+    if (path === '/apply-as-trainer') return 'Explore';
     if (path === '/explore') return 'Explore';
+    if (path === '/trainers/my-trainers' || path.includes('/trainers/')) return 'My Trainers';
     return 'My Trainers'; // Default
   };
 
@@ -22,7 +33,7 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
   // Update active section when route changes
   useEffect(() => {
     setActiveSection(getActiveSection());
-  }, [location.pathname]);
+  }, [location.pathname, location.state]);
 
   // Handle window resize to close mobile menu on larger screens
   useEffect(() => {
@@ -36,7 +47,7 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle navigation
+  // Handle navigation with state to track source
   const handleNavigation = (section) => {
     setActiveSection(section);
     if (section === 'Explore') {
@@ -71,8 +82,8 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
             <a
               href="#"
               className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'My Trainers'
-                  ? 'bg-[#f67a45] text-white font-medium'
-                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+                ? 'bg-[#f67a45] text-white font-medium'
+                : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
                 }`}
               onClick={(e) => {
                 e.preventDefault();
@@ -86,8 +97,8 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
             <a
               href="#"
               className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'Explore'
-                  ? 'bg-[#f67a45] text-white font-medium'
-                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+                ? 'bg-[#f67a45] text-white font-medium'
+                : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
                 }`}
               onClick={(e) => {
                 e.preventDefault();
@@ -111,8 +122,8 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
                 <a
                   href="#"
                   className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'My Trainers'
-                      ? 'bg-[#f67a45] text-white font-medium'
-                      : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+                    ? 'bg-[#f67a45] text-white font-medium'
+                    : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
                     }`}
                   onClick={(e) => {
                     e.preventDefault();
@@ -126,8 +137,8 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
                 <a
                   href="#"
                   className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'Explore'
-                      ? 'bg-[#f67a45] text-white font-medium'
-                      : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
+                    ? 'bg-[#f67a45] text-white font-medium'
+                    : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
                     }`}
                   onClick={(e) => {
                     e.preventDefault();
