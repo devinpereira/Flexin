@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TrainerLayout from "../../components/Trainers/TrainerLayout";
-import { FaSearch, FaPlus } from "react-icons/fa";
+import { FaSearch, FaPlus, FaUserTie } from "react-icons/fa";
 import {
   getAllTrainers,
   addTrainerFollower,
@@ -82,7 +82,8 @@ const Explore = () => {
   // Handle viewing trainer profile
   const handleViewTrainerProfile = (trainerId) => {
     console.log("Viewing trainer profile:", trainerId);
-    navigate(`/trainers/${trainerId}`);
+    // Pass state to indicate we're coming from explore page
+    navigate(`/trainers/${trainerId}`, { state: { fromExplore: true } });
   };
 
   // Handle adding a trainer
@@ -113,6 +114,25 @@ const Explore = () => {
 
   return (
     <TrainerLayout pageTitle="Discover New Trainers">
+      {/* Banner for trainer applications */}
+      <div className="bg-gradient-to-r from-[#1A1A2F] to-[#f67a45]/30 rounded-lg p-5 mb-6 flex flex-col md:flex-row items-center justify-between">
+        <div className="mb-4 md:mb-0">
+          <h3 className="text-white text-xl font-bold mb-2">
+            Are You a Professional Trainer?
+          </h3>
+          <p className="text-white/80">
+            Join our platform and connect with clients looking for your expertise.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate("/apply-as-trainer")}
+          className="bg-[#f67a45] text-white px-5 py-3 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center"
+        >
+          <FaUserTie className="mr-2" />
+          Apply as a Trainer
+        </button>
+      </div>
+
       {/* Search and Filter - Responsive version */}
       <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-6 mb-6">
         <div className="flex items-center justify-between mb-3 md:hidden">
@@ -170,70 +190,117 @@ const Explore = () => {
         </p>
       </div>
 
-      {/* Trainers Grid - Fixed overflow and responsive improvements */}
-      <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-6 mb-6 sm:mb-8 w-full overflow-visible">
+      {/* Trainers Grid - Improved container to prevent card clipping */}
+      <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-6 mb-6 sm:mb-8 w-full">
         {filteredTrainers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 overflow-visible">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 pb-2">
             {filteredTrainers.map((trainer) => (
               <div
                 key={trainer._id}
-                className="bg-[#1A1A2F] rounded-lg p-3 sm:p-4 flex flex-col items-center"
+                className="bg-[#1A1A2F] border border-gray-800 rounded-xl overflow-hidden transition-all hover:shadow-lg hover:border-[#f67a45]/30 hover:translate-y-[-2px] duration-300 min-h-[360px] flex flex-col"
+                style={{ margin: '1px', transform: 'translate3d(0,0,0)' }}
               >
-                <div
-                  className="w-full h-32 sm:h-40 mb-3 rounded-lg overflow-hidden cursor-pointer"
-                  onClick={() => handleViewTrainerProfile(trainer._id)}
-                >
-                  <img
-                    src={trainer.profilePhoto}
-                    alt={trainer.name}
-                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/src/assets/default-avatar.png";
-                    }}
-                  />
-                </div>
-
-                <h3
-                  className="text-white text-base sm:text-lg font-medium mb-0.5 sm:mb-1 hover:text-[#f67a45] cursor-pointer"
-                  onClick={() => handleViewTrainerProfile(trainer._id)}
-                >
-                  {trainer.name}
-                </h3>
-
-                <p className="text-gray-400 text-xs sm:text-sm mb-1">
-                  {trainer.specialty}
-                </p>
-
-                <div className="flex items-center text-[#f67a45] mb-3 text-sm">
-                  <span className="mr-1">★</span>
-                  <span>{trainer.rating}</span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row w-full gap-2">
-                  <button
+                {/* Card Header - Fixed height for consistent look */}
+                <div className="w-full pt-6 pb-2 flex flex-col items-center justify-center relative">
+                  {/* Profile Image - Fixed circular size */}
+                  <div
+                    className="w-24 h-24 rounded-full border-4 border-[#f67a45]/20 overflow-hidden mb-4 cursor-pointer"
                     onClick={() => handleViewTrainerProfile(trainer._id)}
-                    className="bg-transparent border border-[#f67a45]/50 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full hover:bg-[#f67a45]/10 transition-colors text-sm sm:text-base flex-1"
                   >
-                    Profile
-                  </button>
+                    <img
+                      src={trainer.profilePhoto}
+                      alt={trainer.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/src/assets/default-avatar.png";
+                      }}
+                    />
+                  </div>
 
-                  {isTrainerAdded(trainer._id) ? (
-                    <button
-                      onClick={() => handleRemoveTrainer(trainer._id)}
-                      className="bg-red-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full hover:bg-red-700 transition-colors text-sm sm:text-base flex-1 flex items-center justify-center gap-1"
+                  {/* Name and Basic Info - Centered */}
+                  <div className="text-center px-4">
+                    <h3
+                      className="text-white text-lg font-medium mb-1 hover:text-[#f67a45] cursor-pointer truncate max-w-[200px]"
+                      onClick={() => handleViewTrainerProfile(trainer._id)}
                     >
-                      Remove
-                    </button>
-                  ) : (
+                      {trainer.name}
+                    </h3>
+
+                    <p className="text-gray-400 text-sm mb-1 truncate max-w-[200px]">
+                      {trainer.specialty ||
+                        (trainer.specialties && trainer.specialties[0])}
+                    </p>
+
+                    <div className="flex items-center justify-center text-[#f67a45] mb-2">
+                      <span className="mr-1">★</span>
+                      <span>{trainer.rating || "4.8"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Content - Details with flex-grow to push footer to bottom */}
+                <div className="px-4 py-3 flex-grow flex flex-col">
+                  {/* Specialties */}
+                  <div className="mb-4">
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {Array.isArray(trainer.specialties) &&
+                        trainer.specialties
+                          .slice(0, 3)
+                          .map((specialty, index) => (
+                            <span
+                              key={index}
+                              className="text-xs bg-[#f67a45]/10 text-[#f67a45] px-2 py-1 rounded-full"
+                            >
+                              {specialty}
+                            </span>
+                          ))}
+                    </div>
+                  </div>
+
+                  {/* Bio - Truncated */}
+                  <p className="text-white/70 text-sm line-clamp-3 text-center mb-4">
+                    {trainer.bio ||
+                      "Professional trainer specializing in personalized fitness programs tailored to achieve your specific goals."}
+                  </p>
+
+                  {/* Spacer to push footer to bottom when content is short */}
+                  <div className="flex-grow"></div>
+                </div>
+
+                {/* Card Footer - Action Buttons */}
+                <div className="p-4 bg-[#121225]/50">
+                  <div className="flex gap-2">
                     <button
-                      onClick={() => handleAddTrainer(trainer._id)}
-                      className="bg-[#f67a45] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-full hover:bg-[#e56d3d] transition-colors text-sm sm:text-base flex-1 flex items-center justify-center gap-1"
+                      onClick={() => handleViewTrainerProfile(trainer._id)}
+                      className="bg-transparent border border-[#f67a45]/50 text-white px-4 py-2 rounded-full hover:bg-[#f67a45]/10 transition-colors text-sm flex-1"
                     >
-                      <FaPlus size={12} />
-                      Add
+                      Profile
                     </button>
-                  )}
+
+                    {isTrainerAdded(trainer._id) ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveTrainer(trainer._id);
+                        }}
+                        className="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition-colors text-sm flex-1 flex items-center justify-center gap-1"
+                      >
+                        Remove
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddTrainer(trainer._id);
+                        }}
+                        className="bg-[#f67a45] text-white px-4 py-2 rounded-full hover:bg-[#e56d3d] transition-colors text-sm flex-1 flex items-center justify-center gap-1"
+                      >
+                        <FaPlus size={12} />
+                        Add
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
