@@ -8,8 +8,12 @@ const PublicRoute = () => {
 
   const isAuthPage = ["/login", "/signup", "/oauth-success"].includes(location.pathname);
 
-  if (user && user.isAccountVerified && isAuthPage) {
+  if (user && user.isAccountVerified && isAuthPage && (user.role != "admin")) {
     return <Navigate to="/calculators" replace />;
+  }
+
+  if (user && user.isAccountVerified && isAuthPage && (user.role == "admin")) {
+    return <Navigate to="/admin" replace />;
   }
 
   return <Outlet />;

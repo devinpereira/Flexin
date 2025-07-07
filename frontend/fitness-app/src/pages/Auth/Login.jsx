@@ -60,12 +60,15 @@ const Login = () => {
         localStorage.setItem("token", token);
         localStorage.setItem("userId", user._id);
         window.dispatchEvent(new Event("login"));
-        updateUser(user);;
-        
+        updateUser(user);
+
+        const role = user.role?.trim().toLowerCase();
+
         if (user.isAccountVerified){
-          if(user.role === "admin") {
+          console.log(role);
+          if(role == "admin") {
             navigate("/admin");
-          } else if (user.role === "user") {
+          } else if (role == "user") {
             navigate("/calculators");
           }
         }
