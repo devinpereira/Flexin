@@ -1,17 +1,34 @@
 import Category from "../models/Catergory.js";
 import Subcategory from "../models/Subcategory.js";
 import Product from "../models/Product.js";
+// Admin store models for integration
+import StoreCategory from "../models/adminstore/StoreCategory.js";
+import StoreProduct from "../models/adminstore/StoreProduct.js";
 
 // Get All Categories
 export const getCategories = async (req, res) => {
     try {
         const { isActive = true } = req.query;
 
-        const categories = await Category.find({ isActive }).sort({ name: 1 });
+        
+        const filter = isActive === 'true' ? { isActive: true } : {};
+        const categories = await StoreCategory.find(filter).sort({ name: 1 });
+
+       
+        const transformedCategories = categories.map(category => ({
+            _id: category._id,
+            name: category.name,
+            description: category.description,
+            image: category.image,
+            isActive: category.isActive,
+            isFeatured: category.isFeatured,
+            createdAt: category.createdAt,
+            updatedAt: category.updatedAt
+        }));
 
         res.status(200).json({
             success: true,
-            categories
+            categories: transformedCategories
         });
     } catch (error) {
         res.status(500).json({
@@ -34,7 +51,8 @@ export const getCategory = async (req, res) => {
             });
         }
 
-        const category = await Category.findById(id);
+        
+        const category = await StoreCategory.findById(id);
         if (!category) {
             return res.status(404).json({
                 success: false,
@@ -42,13 +60,50 @@ export const getCategory = async (req, res) => {
             });
         }
 
-        // Get subcategories for this category
-        const subcategories = await Subcategory.find({ categoryId: id, isActive: true });
+        // Get products for this category from admin store
+        const products = await StoreProduct.find({
+            categoryId: id,
+            status: 'active'
+        }).limit(20);
+
+        // Transform admin store category format to match expected user store format
+        const transformedCategory = {
+            _id: category._id,
+            name: category.name,
+            description: category.description,
+            image: category.image,
+            isActive: category.isActive,
+            isFeatured: category.isFeatured,
+            createdAt: category.createdAt,
+            updatedAt: category.updatedAt
+        };
+
+        // Transform products to match expected format
+        const transformedProducts = products.map(product => ({
+            _id: product._id,
+            productName: product.productName,
+            name: product.productName,
+            description: product.description,
+            price: product.price,
+            originalPrice: product.originalPrice,
+            // Transform images from {url, alt, isPrimary} to simple URL strings
+            images: product.images && Array.isArray(product.images) ? product.images.map(img => {
+                if (typeof img === 'string') return img; 
+                if (img && img.url) return img.url;
+                return null; 
+            }).filter(Boolean) : [], 
+            stock: product.quantity || 0,
+            quantity: product.quantity || 0,
+            isActive: product.status === 'active',
+            isFeatured: product.isFeatured,
+            averageRating: product.averageRating || 0,
+            reviewCount: product.reviewCount || 0
+        }));
 
         res.status(200).json({
             success: true,
-            category,
-            subcategories
+            category: transformedCategory,
+            products: transformedProducts
         });
     } catch (error) {
         res.status(500).json({
