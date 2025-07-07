@@ -7,19 +7,22 @@ export const getSubscriptionDetails = async (req, res) => {
     const userId = req.user._id;
     const trainerId = req.params.id;
 
-    // 1. Get user's subscription
-    const subscription = await Subscription.findOne({ userId, trainerId });
+    // Get the most recent active subscription
+    const subscription = await Subscription.findOne({
+      userId,
+      trainerId,
+      $or: [{ endDate: { $exists: false } }, { endDate: null }]
+    }).sort({ startDate: -1 });
 
-    // 2. Get trainer's packages
+    // Get trainer's packages
     const trainer = await Trainer.findById(trainerId);
     if (!trainer) {
       return res.status(404).json({ success: false, error: "Trainer not found" });
     }
 
-    // 3. Find the package details (if subscribed)
+    // Find the package details (if subscribed)
     let packageDetails = null;
     if (subscription && subscription.package) {
-      // Find the package object by name (case-insensitive)
       packageDetails = Array.isArray(trainer.packages)
         ? trainer.packages.find(
             (pkg) =>
@@ -40,7 +43,7 @@ export const getSubscriptionDetails = async (req, res) => {
   }
 };
 
-// Subscribe to a package
+// Subscribe to a package (start new subscription, end any active one)
 export const subscribeToPackage = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -51,8 +54,11 @@ export const subscribeToPackage = async (req, res) => {
       return res.status(400).json({ success: false, error: "Invalid or missing package name" });
     }
 
-    // Remove any existing subscription
-    await Subscription.deleteMany({ userId, trainerId });
+    // End any current active subscription
+    await Subscription.updateMany(
+      { userId, trainerId, $or: [{ endDate: { $exists: false } }, { endDate: null }] },
+      { $set: { endDate: new Date() } }
+    );
 
     // Create new subscription
     const subscription = new Subscription({
@@ -60,6 +66,7 @@ export const subscribeToPackage = async (req, res) => {
       trainerId,
       package: packageName,
       startDate: new Date(),
+      // endDate: left undefined/null for active
     });
     await subscription.save();
 
@@ -69,17 +76,61 @@ export const subscribeToPackage = async (req, res) => {
   }
 };
 
-// Cancel subscription
+// Cancel subscription (end current active subscription)
 export const cancelSubscription = async (req, res) => {
   try {
     const userId = req.user._id;
     const trainerId = req.params.id;
-    const result = await Subscription.deleteMany({ userId, trainerId });
-    if (result.deletedCount === 0) {
+    // End any current active subscription
+    const result = await Subscription.updateMany(
+      { userId, trainerId, $or: [{ endDate: { $exists: false } }, { endDate: null }] },
+      { $set: { endDate: new Date() } }
+    );
+    if (result.modifiedCount === 0) {
       return res.status(404).json({ success: false, error: "No active subscription found to cancel" });
     }
     res.status(200).json({ success: true, message: "Subscription cancelled" });
   } catch (err) {
     res.status(500).json({ success: false, error: "Failed to cancel subscription", details: err.message });
   }
+};
+
+// Change subscription package (end current, start new)
+export const changeSubscription = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const trainerId = req.params.id;
+    const { newPackage } = req.body;
+
+    if (!newPackage || !['silver', 'gold', 'ultimate'].includes(newPackage)) {
+      return res.status(400).json({ success: false, error: "Invalid or missing package name" });
+    }
+
+    // End current active subscription
+    await Subscription.updateMany(
+      { userId, trainerId, $or: [{ endDate: { $exists: false } }, { endDate: null }] },
+      { $set: { endDate: new Date() } }
+    );
+
+    // Create new subscription
+    const newSub = await Subscription.create({
+      userId,
+      trainerId,
+      package: newPackage,
+      startDate: new Date()
+      // endDate: left undefined/null for active
+    });
+
+    res.json({ success: true, subscription: newSub });
+  } catch (err) {
+    res.status(500).json({ success: false, error: "Failed to change subscription", details: err.message });
+  }
+};
+
+// GET /api/v1/subscription/:trainerId/history
+export const getSubscriptionHistory = async (req, res) => {
+  const userId = req.user._id;
+  const trainerId = req.params.id;
+  const history = await Subscription.find({ userId, trainerId }).sort({ startDate: -1 });
+  res.json({ success: true, history });
 };

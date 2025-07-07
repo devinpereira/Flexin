@@ -4,6 +4,8 @@ import {
   getSubscriptionDetails,
   subscribeToPackage,
   cancelSubscription,
+  changeSubscription,
+  getSubscriptionHistory
 } from '../controllers/trainer.subscription.controller.js';
 
 const router = express.Router();
@@ -16,6 +18,12 @@ router.post('/:id', protect, subscribeToPackage);
 
 // Cancel subscription
 router.delete('/:id', protect, cancelSubscription);
+
+// Change subscription package
+router.put('/:id', protect, changeSubscription);
+
+// Get subscription history
+router.get('/:id/history', protect, getSubscriptionHistory);
 
 export default router;
 
