@@ -66,6 +66,12 @@ export const API_PATHS = {
     GENERATE_WORKOUT: "/api/v1/workout/generate", // Done
     UPDATE_WORKOUT: `/api/v1/workouts`, // Done
   },
+  EXERCISE: {
+    GET_EXERCISES: "/api/v1/exercises", // Done
+    UPDATE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
+    ADD_EXERCISE: "/api/v1/exercises",
+    DELETE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
+  },
 
   //  Store: Products
   STORE_PRODUCTS: {

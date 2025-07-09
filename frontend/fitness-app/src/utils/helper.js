@@ -11,9 +11,7 @@ export const getProfileImageUrl = (profileImageUrl) => {
     return "src/assets/profile1.png";
   }
 
-  return isAbsoluteUrl(profileImageUrl)
-    ? profileImageUrl
-    : `${BASE_URL}/${profileImageUrl}`;
+  return isAbsoluteUrl(profileImageUrl);
 };
 
 export const logout = () => {
