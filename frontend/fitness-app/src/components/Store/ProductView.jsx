@@ -1,22 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Navigation from '../Navigation';
-import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiFillStar, AiOutlineCheckCircle, AiOutlineClose } from 'react-icons/ai';
-import { FiShoppingCart } from 'react-icons/fi';
+import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiFillStar, AiOutlineCheckCircle, AiOutlineClose, AiOutlineZoomIn } from 'react-icons/ai';
+import { FiShoppingCart, FiExternalLink, FiShare2 } from 'react-icons/fi';
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 import { productsApi, cartApi } from '../../api/storeApi';
 
 const ProductView = () => {
   const { productId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
 
   console.log('ProductView loaded with productId:', productId);
   console.log('Location state:', location.state);
-  const navigate = useNavigate();
+
   const [product, setProduct] = useState(location.state?.product || null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(!location.state?.product);
   const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 0, comment: '' });
   const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -27,10 +31,46 @@ const ProductView = () => {
   const [reviewsError, setReviewsError] = useState(null);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+  // New state for enhanced features
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('description'); // description, specifications, reviews
+
+  // Helper function to get product images
+  const getProductImages = (product) => {
+    if (!product) return ['/public/default.jpg'];
+
+    // If product has images array, use it
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      return product.images;
+    }
+
+    // If product has a single image property (from formatted data), convert to array
+    if (product.image) {
+      return [product.image];
+    }
+
+    // Fallback to default image
+    return ['/public/default.jpg'];
+  };
+
+  // Helper function to get current product image
+  const getCurrentImage = (product, index = 0) => {
+    const images = getProductImages(product);
+    return images[index] || images[0] || '/public/default.jpg';
+  };
+
   // Fetch product data if not available from location state
   useEffect(() => {
     const fetchProduct = async () => {
       console.log('ProductView useEffect - productId:', productId, 'product:', product);
+
+      // If we have a product from location state, log its structure
+      if (product) {
+        console.log('Product from location state:', product);
+        console.log('Product images:', product.images);
+        console.log('Product image (singular):', product.image);
+        return; // No need to fetch if we already have the product
+      }
 
       if (!product && productId) {
         try {
@@ -39,8 +79,12 @@ const ProductView = () => {
 
           console.log('Fetching product with ID:', productId);
           const response = await productsApi.getProduct(productId);
+          console.log('API response:', response);
 
           if (response.success && response.product) {
+            console.log('Product from API:', response.product);
+            console.log('Product images from API:', response.product.images);
+
             const formattedProduct = {
               id: response.product._id || response.product.id,
               name: response.product.productName || response.product.name,
@@ -54,11 +98,21 @@ const ProductView = () => {
               reviewCount: response.product.reviewCount || 0,
               brand: response.product.brand,
               category: response.product.categoryId?.name,
-              specifications: response.product.specifications || {},
+              subcategory: response.product.subcategoryId?.name,
+              specifications: response.product.specifications || [],
               quantity: response.product.quantity || 0,
+              tags: response.product.tags || [],
               features: response.product.features || []
             };
+
+            console.log('Formatted product:', formattedProduct);
+            console.log('Formatted product images:', formattedProduct.images);
             setProduct(formattedProduct);
+
+            // Set related products
+            if (response.relatedProducts) {
+              setRelatedProducts(response.relatedProducts);
+            }
           } else {
             setError('Product not found');
           }
@@ -240,6 +294,46 @@ const ProductView = () => {
     }
   };
 
+  // Handle image modal
+  const handleImageModal = (index) => {
+    setCurrentImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  // Handle share functionality
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  };
+
+  // Handle product navigation
+  const handleProductClick = (relatedProduct) => {
+    navigate(`/product/${relatedProduct._id}`, {
+      state: { product: relatedProduct }
+    });
+  };
+
+  // Handle category navigation
+  const handleCategoryNavigation = (categoryId) => {
+    navigate(`/store?category=${categoryId}`);
+  };
+
+  const handleSubcategoryNavigation = (subcategoryId) => {
+    navigate(`/store?subcategory=${subcategoryId}`);
+  };
+
+  // Stock status helper
+  const getStockStatus = () => {
+    if (product.quantity <= 0) return { status: 'out-of-stock', text: 'Out of Stock', color: 'text-red-500' };
+    if (product.quantity <= 5) return { status: 'low-stock', text: `Only ${product.quantity} left`, color: 'text-yellow-500' };
+    return { status: 'in-stock', text: 'In Stock', color: 'text-green-500' };
+  };
+
   // If product data is still loading
   if (isLoading) {
     return (
@@ -308,25 +402,48 @@ const ProductView = () => {
           <div className="lg:w-1/2 min-w-0">
             <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
               {/* Main product image */}
-              <div className="bg-gray-700/30 rounded-lg mb-4 overflow-hidden h-80 flex items-center justify-center max-w-full">
+              <div className="bg-gray-700/30 rounded-lg mb-4 overflow-hidden h-80 flex items-center justify-center max-w-full relative group hover:shadow-lg hover:shadow-[#f67a45]/20 transition-all duration-300">
                 <img
-                  src={product.images?.[currentImageIndex] || '/public/default.jpg'}
+                  src={getCurrentImage(product, currentImageIndex)}
                   alt={product.name}
-                  className="max-h-full max-w-full object-contain"
+                  className="max-h-full max-w-full object-contain cursor-pointer transform transition-transform duration-300 hover:scale-105"
+                  onClick={() => handleImageModal(currentImageIndex)}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = '/public/default.jpg';
                   }}
                 />
+                {/* Zoom icon overlay */}
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <AiOutlineZoomIn className="text-white text-3xl" />
+                </div>
+
+                {/* Image navigation arrows */}
+                {getProductImages(product).length > 1 && (
+                  <>
+                    <button
+                      onClick={() => handleImageChange(currentImageIndex > 0 ? currentImageIndex - 1 : getProductImages(product).length - 1)}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 backdrop-blur-sm"
+                    >
+                      <HiOutlineChevronLeft className="text-xl" />
+                    </button>
+                    <button
+                      onClick={() => handleImageChange(currentImageIndex < getProductImages(product).length - 1 ? currentImageIndex + 1 : 0)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 backdrop-blur-sm"
+                    >
+                      <HiOutlineChevronRight className="text-xl" />
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Thumbnail images */}
-              {product.images && product.images.length > 1 && (
+              {getProductImages(product).length > 1 && (
                 <div className="flex space-x-2 overflow-x-auto pb-2">
-                  {product.images.map((image, index) => (
+                  {getProductImages(product).map((image, index) => (
                     <div
                       key={index}
-                      className={`w-16 h-16 flex-shrink-0 rounded-md overflow-hidden cursor-pointer ${currentImageIndex === index ? 'ring-2 ring-[#f67a45]' : ''}`}
+                      className={`w-16 h-16 flex-shrink-0 rounded-md overflow-hidden cursor-pointer transition-all duration-300 hover:scale-110 hover:shadow-lg ${currentImageIndex === index ? 'ring-2 ring-[#f67a45] shadow-lg shadow-[#f67a45]/30' : 'hover:ring-2 hover:ring-[#f67a45]/50'}`}
                       onClick={() => handleImageChange(index)}
                     >
                       <img
@@ -348,6 +465,39 @@ const ProductView = () => {
           {/* Product Info */}
           <div className="lg:w-1/2 min-w-0">
             <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
+              {/* Brand and Category Navigation */}
+              <div className="flex items-center gap-2 mb-2 text-sm">
+                {product.brand && (
+                  <>
+                    <span className="text-[#f67a45] font-medium">{product.brand}</span>
+                    <span className="text-gray-400">•</span>
+                  </>
+                )}
+                {product.category && (
+                  <>
+                    <button
+                      className="text-gray-400 hover:text-[#f67a45] transition-colors"
+                      onClick={() => handleCategoryNavigation(product.categoryId?._id)}
+                    >
+                      {product.category.name || product.category}
+                    </button>
+                    {product.subcategory && (
+                      <>
+                        <span className="text-gray-400">
+                          <HiOutlineChevronRight className="inline w-3 h-3" />
+                        </span>
+                        <button
+                          className="text-gray-400 hover:text-[#f67a45] transition-colors"
+                          onClick={() => handleSubcategoryNavigation(product.subcategoryId?._id)}
+                        >
+                          {product.subcategory.name || product.subcategory}
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+
               <h1 className="text-white text-2xl font-bold mb-2">{product.name}</h1>
 
               {/* Rating */}
@@ -365,7 +515,7 @@ const ProductView = () => {
                     </span>
                   ))}
                 </div>
-                <span className="text-white ml-2">{product.rating}</span>
+                <span className="text-white ml-2">{product.rating.toFixed(1)}</span>
                 <span className="text-gray-400 ml-1">({product.reviewCount} reviews)</span>
               </div>
 
@@ -389,26 +539,11 @@ const ProductView = () => {
               {/* Description */}
               <p className="text-white mb-6">{product.description}</p>
 
-              {/* Features */}
-              {product.features && product.features.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-white font-semibold mb-2">Key Features:</h3>
-                  <ul className="text-white space-y-1">
-                    {product.features.map((feature, index) => (
-                      <li key={index} className="flex items-start">
-                        <AiOutlineCheckCircle className="text-[#f67a45] mt-1 mr-2" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Stock */}
+              {/* Stock Status */}
               <div className="mb-6">
                 <span className="text-white">Availability: </span>
-                <span className={product.quantity > 0 ? "text-green-500" : "text-red-500"}>
-                  {product.quantity > 0 ? `In Stock (${product.quantity} left)` : "Out of Stock"}
+                <span className={getStockStatus().color}>
+                  {getStockStatus().text}
                 </span>
               </div>
 
@@ -452,159 +587,398 @@ const ProductView = () => {
                     </>
                   )}
                 </button>
+              </div>
 
+              {/* Action buttons */}
+              <div className="flex gap-4 mb-6">
                 <button
-                  className="bg-transparent border border-[#f67a45]/50 text-white p-2 rounded-lg hover:bg-[#f67a45]/10 transition-colors"
+                  className="bg-transparent border border-[#f67a45]/50 text-white p-2 rounded-lg hover:bg-[#f67a45]/10 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:border-[#f67a45] group"
                   onClick={handleToggleFavorite}
                 >
                   {isFavorite ? (
-                    <AiFillHeart className="text-[#f67a45]" size={24} />
+                    <AiFillHeart className="text-[#f67a45] transition-transform duration-300 group-hover:scale-110" size={24} />
                   ) : (
-                    <AiOutlineHeart size={24} />
+                    <AiOutlineHeart className="transition-transform duration-300 group-hover:scale-110" size={24} />
                   )}
+                </button>
+
+                <button
+                  className="bg-transparent border border-[#f67a45]/50 text-white p-2 rounded-lg hover:bg-[#f67a45]/10 transition-all duration-300 hover:scale-110 hover:shadow-lg hover:border-[#f67a45] group"
+                  onClick={handleShare}
+                >
+                  <FiShare2 className="transition-transform duration-300 group-hover:scale-110" size={24} />
                 </button>
               </div>
 
-              {/* Specifications */}
-              {product.specifications && Object.keys(product.specifications).length > 0 && (
-                <div>
-                  <h3 className="text-white font-semibold mb-2">Specifications:</h3>
-                  <div className="bg-[#1a1a2f] rounded-lg overflow-hidden">
-                    {Object.entries(product.specifications).map(([key, value], index) => (
-                      <div
-                        key={key}
-                        className={`flex py-2 px-4 ${index % 2 === 0 ? 'bg-[#1e1e35]' : ''}`}
-                      >
-                        <span className="text-gray-400 w-1/3">{key}</span>
-                        <span className="text-white w-2/3">{value}</span>
-                      </div>
+              {/* Tags */}
+              {product.tags && product.tags.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-white font-semibold mb-2">Tags:</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((tag, index) => (
+                      <span key={index} className="bg-[#1e1e35] text-white px-3 py-1 rounded-full text-sm">
+                        {tag}
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
             </div>
           </div>
-        </div>
-
-        {/* Reviews Section */}
+        </div>      {/* Tabbed Content Section */}
         <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 mb-12">
-          <h2 className="text-white text-xl font-bold mb-6">Customer Reviews</h2>
+          {/* Tab Navigation */}
+          <div className="flex border-b border-gray-700 mb-6">
+            <button
+              className={`py-2 px-4 font-medium transition-colors ${activeTab === 'description'
+                  ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
+                  : 'text-white hover:text-[#f67a45]'
+                }`}
+              onClick={() => setActiveTab('description')}
+            >
+              Description
+            </button>
+            <button
+              className={`py-2 px-4 font-medium transition-colors ${activeTab === 'specifications'
+                  ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
+                  : 'text-white hover:text-[#f67a45]'
+                }`}
+              onClick={() => setActiveTab('specifications')}
+            >
+              Specifications
+            </button>
+            <button
+              className={`py-2 px-4 font-medium transition-colors ${activeTab === 'reviews'
+                  ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
+                  : 'text-white hover:text-[#f67a45]'
+                }`}
+              onClick={() => setActiveTab('reviews')}
+            >
+              Reviews ({product.reviewCount})
+            </button>
+          </div>
 
-          {/* Reviews list */}
-          {reviewsLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <div className="w-8 h-8 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : reviewsError ? (
-            <div className="text-center py-8">
-              <p className="text-red-400 mb-4">{reviewsError}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="bg-[#f67a45] text-white px-4 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors"
-              >
-                Retry
-              </button>
-            </div>
-          ) : reviews.length > 0 ? (
-            <div className="space-y-6 mb-8">
-              {(showAllReviews ? reviews : reviews.slice(0, 3)).map(review => (
-                <div key={review.id} className="border-b border-gray-700 pb-6 last:border-b-0">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="text-white font-medium">{review.name}</h4>
-                      <div className="flex text-[#f67a45]">
+          {/* Tab Content */}
+          <div className="min-h-[300px]">
+            {activeTab === 'description' && (
+              <div className="space-y-4">
+                <h3 className="text-white text-lg font-semibold">Product Description</h3>
+                <div className="text-white/90 leading-relaxed">
+                  {product.description ? (
+                    <div className="space-y-3">
+                      {product.description.split('\n').map((paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No detailed description available for this product.</p>
+                  )}
+                </div>
+                {product.shortDescription && (
+                  <div className="mt-4 p-4 bg-[#1a1a2f] rounded-lg">
+                    <h4 className="text-white font-medium mb-2">Key Features:</h4>
+                    <p className="text-white/80">{product.shortDescription}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'specifications' && (
+              <div className="space-y-4">
+                <h3 className="text-white text-lg font-semibold">Product Specifications</h3>
+                {product.specifications && product.specifications.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {product.specifications.map((spec, index) => (
+                      <div key={index} className="bg-[#1a1a2f] rounded-lg p-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-white/70 font-medium">{spec.name || spec.key}:</span>
+                          <span className="text-white">{spec.value}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-white/70">No specifications available for this product.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <div className="space-y-6">
+                <h3 className="text-white text-lg font-semibold">Customer Reviews</h3>
+
+                {/* Reviews list */}
+                {reviewsLoading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <div className="w-8 h-8 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                ) : reviewsError ? (
+                  <div className="text-center py-8">
+                    <p className="text-red-400 mb-4">{reviewsError}</p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="bg-[#f67a45] text-white px-4 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <div className="space-y-6 mb-8">
+                    {(showAllReviews ? reviews : reviews.slice(0, 3)).map(review => (
+                      <div key={review.id} className="border-b border-gray-700 pb-6 last:border-b-0">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="text-white font-medium">{review.name}</h4>
+                            <div className="flex text-[#f67a45]">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <span key={star}>
+                                  {star <= review.rating ? <AiFillStar /> : <AiOutlineStar />}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <span className="text-gray-400 text-sm">{review.date}</span>
+                        </div>
+                        <p className="text-white">{review.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-white/70">No reviews yet. Be the first to review this product!</p>
+                  </div>
+                )}
+
+                {/* Show more/less reviews button */}
+                {reviews.length > 3 && (
+                  <div className="text-center mb-8">
+                    <button
+                      className="text-[#f67a45] hover:underline"
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                    >
+                      {showAllReviews ? 'Show Less Reviews' : 'Show All Reviews'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Add a review form */}
+                <div className="mt-8 pt-8 border-t border-gray-700">
+                  <h4 className="text-white font-bold mb-4">Write a Review</h4>
+                  <form onSubmit={handleSubmitReview}>
+                    <div className="mb-4">
+                      <label className="block text-white mb-2">Rating *</label>
+                      <div className="flex text-2xl">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <span key={star}>
-                            {star <= review.rating ? <AiFillStar /> : <AiOutlineStar />}
-                          </span>
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => handleSetRating(star)}
+                            className="text-gray-400 hover:text-[#f67a45] focus:outline-none"
+                            disabled={isSubmittingReview}
+                          >
+                            {star <= newReview.rating ? (
+                              <AiFillStar className="text-[#f67a45]" />
+                            ) : (
+                              <AiOutlineStar />
+                            )}
+                          </button>
                         ))}
                       </div>
+                      {newReview.rating > 0 && (
+                        <p className="text-sm text-gray-400 mt-1">
+                          {newReview.rating} star{newReview.rating !== 1 ? 's' : ''}
+                        </p>
+                      )}
                     </div>
-                    <span className="text-gray-400 text-sm">{review.date}</span>
+
+                    <div className="mb-4">
+                      <label className="block text-white mb-2">Your Review *</label>
+                      <textarea
+                        name="comment"
+                        value={newReview.comment}
+                        onChange={handleReviewInputChange}
+                        className="w-full bg-[#1a1a2f] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45] min-h-[100px]"
+                        placeholder="Share your experience with this product..."
+                        required
+                        disabled={isSubmittingReview}
+                      ></textarea>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="bg-[#f67a45] text-white py-2 px-6 rounded-lg hover:bg-[#e56d3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      disabled={isSubmittingReview || !newReview.rating || !newReview.comment.trim()}
+                    >
+                      {isSubmittingReview ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Submitting...</span>
+                        </>
+                      ) : (
+                        <span>Submit Review</span>
+                      )}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Related Products Section */}
+        {relatedProducts && relatedProducts.length > 0 && (
+          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 mb-12">
+            <h2 className="text-white text-xl font-bold mb-6">Related Products</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <div
+                  key={relatedProduct._id}
+                  className="bg-[#1a1a2f] rounded-lg p-4 hover:bg-[#1e1e35] transition-colors cursor-pointer"
+                  onClick={() => handleProductClick(relatedProduct)}
+                >
+                  <div className="aspect-square bg-gray-700/30 rounded-lg mb-3 overflow-hidden">
+                    <img
+                      src={relatedProduct.images?.[0] || relatedProduct.image || '/public/default.jpg'}
+                      alt={relatedProduct.name || relatedProduct.productName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = '/public/default.jpg';
+                      }}
+                    />
                   </div>
-                  <p className="text-white">{review.comment}</p>
+                  <h3 className="text-white font-medium mb-2 line-clamp-2">
+                    {relatedProduct.name || relatedProduct.productName}
+                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[#f67a45] font-bold">${relatedProduct.price}</span>
+                    {relatedProduct.originalPrice && relatedProduct.originalPrice > relatedProduct.price && (
+                      <span className="text-white/50 text-sm line-through">${relatedProduct.originalPrice}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex text-[#f67a45] text-sm">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span key={star}>
+                          {star <= Math.floor(relatedProduct.averageRating || 0) ? (
+                            <AiFillStar />
+                          ) : (
+                            <AiOutlineStar />
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-white/70 text-sm">({relatedProduct.reviewCount || 0})</span>
+                  </div>
+                  <div className="mt-2">
+                    <span className={`text-sm ${relatedProduct.quantity > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {relatedProduct.quantity > 0 ? 'In Stock' : 'Out of Stock'}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-white/70">No reviews yet. Be the first to review this product!</p>
+          </div>
+        )}
+
+      </div>
+
+      {/* Image Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-[90vh] w-full">
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 text-white hover:text-[#f67a45] text-2xl z-10"
+            >
+              <AiOutlineClose />
+            </button>
+            <img
+              src={getCurrentImage(product, currentImageIndex)}
+              alt={product.name}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/public/default.jpg';
+              }}
+            />
+            {getProductImages(product).length > 1 && (
+              <>
+                <button
+                  onClick={() => setCurrentImageIndex(currentImageIndex > 0 ? currentImageIndex - 1 : getProductImages(product).length - 1)}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full"
+                >
+                  <HiOutlineChevronLeft className="text-xl" />
+                </button>
+                <button
+                  onClick={() => setCurrentImageIndex(currentImageIndex < getProductImages(product).length - 1 ? currentImageIndex + 1 : 0)}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full"
+                >
+                  <HiOutlineChevronRight className="text-xl" />
+                </button>
+              </>
+            )}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-sm">
+              {currentImageIndex + 1} / {getProductImages(product).length}
             </div>
-          )}
-
-          {/* Show more/less reviews button */}
-          {reviews.length > 3 && (
-            <div className="text-center mb-8">
-              <button
-                className="text-[#f67a45] hover:underline"
-                onClick={() => setShowAllReviews(!showAllReviews)}
-              >
-                {showAllReviews ? 'Show Less Reviews' : 'Show All Reviews'}
-              </button>
-            </div>
-          )}
-
-          {/* Add a review form */}
-          <div>
-            <h3 className="text-white font-bold mb-4">Write a Review</h3>
-            <form onSubmit={handleSubmitReview}>
-              <div className="mb-4">
-                <label className="block text-white mb-2">Rating *</label>
-                <div className="flex text-2xl">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => handleSetRating(star)}
-                      className="text-gray-400 hover:text-[#f67a45] focus:outline-none"
-                      disabled={isSubmittingReview}
-                    >
-                      {star <= newReview.rating ? (
-                        <AiFillStar className="text-[#f67a45]" />
-                      ) : (
-                        <AiOutlineStar />
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {newReview.rating > 0 && (
-                  <p className="text-sm text-gray-400 mt-1">
-                    {newReview.rating} star{newReview.rating !== 1 ? 's' : ''}
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-white mb-2">Your Review *</label>
-                <textarea
-                  name="comment"
-                  value={newReview.comment}
-                  onChange={handleReviewInputChange}
-                  className="w-full bg-[#1a1a2f] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#f67a45] min-h-[100px]"
-                  placeholder="Share your experience with this product..."
-                  required
-                  disabled={isSubmittingReview}
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                className="bg-[#f67a45] text-white py-2 px-6 rounded-lg hover:bg-[#e56d3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                disabled={isSubmittingReview || !newReview.rating || !newReview.comment.trim()}
-              >
-                {isSubmittingReview ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Submitting...</span>
-                  </>
-                ) : (
-                  <span>Submit Review</span>
-                )}
-              </button>
-            </form>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white text-lg font-bold">Share Product</h3>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-white hover:text-[#f67a45]"
+              >
+                <AiOutlineClose />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={window.location.href}
+                  readOnly
+                  className="flex-1 bg-[#1a1a2f] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
+                />
+                <button
+                  onClick={() => copyToClipboard(window.location.href)}
+                  className="bg-[#f67a45] text-white px-4 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors text-sm"
+                >
+                  Copy
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`)}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Facebook
+                </button>
+                <button
+                  onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(product.name)}`)}
+                  className="flex-1 bg-sky-500 text-white py-2 px-4 rounded-lg hover:bg-sky-600 transition-colors text-sm"
+                >
+                  Twitter
+                </button>
+                <button
+                  onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(product.name + ' - ' + window.location.href)}`)}
+                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                >
+                  WhatsApp
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notification */}
       {showNotification && (

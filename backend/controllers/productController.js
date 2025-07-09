@@ -12,6 +12,48 @@ import User from "../models/User.js";
 import StoreProduct from "../models/adminstore/StoreProduct.js";
 import StoreCategory from "../models/adminstore/StoreCategory.js";
 import StoreProductReview from "../models/adminstore/StoreProductReview.js";
+import { cloudinary } from "../config/cloudinary.js";
+
+// Helper function to process Cloudinary images
+const processCloudinaryImage = (imageUrl) => {
+  if (!imageUrl) return null;
+
+  // If it's already a full URL, return as is
+  if (imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+
+  // If it's a Cloudinary public_id, construct the URL
+  if (typeof imageUrl === 'string' && !imageUrl.startsWith('http')) {
+    return cloudinary.url(imageUrl, {
+      secure: true,
+      quality: 'auto:good',
+      fetch_format: 'auto',
+      crop: 'scale'
+    });
+  }
+
+  return imageUrl;
+};
+
+// Helper function to transform product images
+const transformProductImages = (images) => {
+  if (!images || !Array.isArray(images)) {
+    return ['/public/default.jpg'];
+  }
+
+  return images.map(img => {
+    if (typeof img === 'string') {
+      return processCloudinaryImage(img);
+    }
+
+    if (img && typeof img === 'object' && img.url) {
+      return processCloudinaryImage(img.url);
+    }
+
+    return '/public/default.jpg';
+  }).filter(Boolean);
+};
 
 // Get All Products
 export const getProducts = async (req, res) => {
@@ -31,7 +73,7 @@ export const getProducts = async (req, res) => {
     } = req.query;
 
     // Build filter object - using admin store model structure
-    const filter = { isActive: true }; // Use isActive for now, will check both status and isActive
+    const filter = { isActive: true, status: 'active' }; // Ensure both conditions
 
     if (category) filter.categoryId = category;
     if (subcategory) filter.subcategoryId = subcategory;
@@ -47,7 +89,7 @@ export const getProducts = async (req, res) => {
     // Search filter
     if (search) {
       filter.$or = [
-        { productName: { $regex: search, $options: 'i' } }, // StoreProduct uses 'productName'
+        { productName: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } },
         { brand: { $regex: search, $options: 'i' } }
       ];
@@ -60,7 +102,7 @@ export const getProducts = async (req, res) => {
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Fetch from admin store products instead of regular products
+    // Fetch from admin store products
     const products = await StoreProduct.find(filter)
       .populate('categoryId', 'name description')
       .populate('subcategoryId', 'name description')
@@ -74,31 +116,27 @@ export const getProducts = async (req, res) => {
     // Transform admin store product format to match expected user store format
     const transformedProducts = products.map(product => ({
       _id: product._id,
-      productName: product.productName, 
+      productName: product.productName,
       name: product.productName,
       description: product.description,
       shortDescription: product.shortDescription,
       price: product.price,
-      originalPrice: product.originalPrice,
-      discountPercentage: product.discountPercentage,
+      originalPrice: product.originalPrice || product.price,
+      discountPercentage: product.discountPercentage || 0,
       brand: product.brand,
-      // Transform images from {url, alt, isPrimary} to simple URL strings
-      images: product.images && Array.isArray(product.images) ? product.images.map(img => {
-        if (typeof img === 'string') return img; 
-        if (img && img.url) return img.url; 
-        return null; // Invalid image entry
-      }).filter(Boolean) : [], // Filter out null values
+      // Transform images using Cloudinary processing
+      images: transformProductImages(product.images),
       categoryId: product.categoryId,
       subcategoryId: product.subcategoryId,
       category: product.categoryId,
       subcategory: product.subcategoryId,
       stock: product.quantity || 0,
       quantity: product.quantity || 0,
-      isActive: product.status === 'active' || product.isActive,
+      isActive: product.status === 'active' && product.isActive,
       isFeatured: product.isFeatured,
       averageRating: product.averageRating || 0,
       reviewCount: product.reviewCount || 0,
-      tags: product.tags,
+      tags: product.tags || [],
       specifications: product.specifications || [],
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
@@ -113,12 +151,6 @@ export const getProducts = async (req, res) => {
         totalProducts,
         hasNextPage: parseInt(page) < totalPages,
         hasPrevPage: parseInt(page) > 1
-      },
-      // Debug info
-      debug: {
-        filter,
-        productsFound: products.length,
-        totalInDB: totalProducts
       }
     });
   } catch (error) {
@@ -143,8 +175,12 @@ export const getProduct = async (req, res) => {
       });
     }
 
-    // Fetch from admin store product instead of regular product
-    const product = await StoreProduct.findOne({ _id: id, isActive: true })
+    // Fetch from admin store product
+    const product = await StoreProduct.findOne({
+      _id: id,
+      isActive: true,
+      status: 'active'
+    })
       .populate('categoryId', 'name description')
       .populate('subcategoryId', 'name description');
 
@@ -161,45 +197,72 @@ export const getProduct = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
+    // Get related products based on category or tags
+    const relatedProducts = await StoreProduct.find({
+      _id: { $ne: id },
+      $or: [
+        { categoryId: product.categoryId },
+        { tags: { $in: product.tags || [] } }
+      ],
+      isActive: true,
+      status: 'active'
+    })
+      .populate('categoryId', 'name description')
+      .limit(4);
+
     // Transform admin store product format to match expected user store format
     const transformedProduct = {
       _id: product._id,
-      productName: product.productName, 
+      productName: product.productName,
       name: product.productName,
       description: product.description,
       shortDescription: product.shortDescription,
       price: product.price,
-      originalPrice: product.originalPrice,
+      originalPrice: product.originalPrice || product.price,
       discountPercentage: product.discountPercentage || 0,
       brand: product.brand,
-      // Transform images from {url, alt, isPrimary} to simple URL strings
-      images: product.images && Array.isArray(product.images) ? product.images.map(img => {
-        if (typeof img === 'string') return img; 
-        if (img && img.url) return img.url; 
-        return null; // Invalid image entry
-      }).filter(Boolean) : [], // Filter out null values
+      // Transform images using Cloudinary processing
+      images: transformProductImages(product.images),
       categoryId: product.categoryId,
       subcategoryId: product.subcategoryId,
       category: product.categoryId,
       subcategory: product.subcategoryId,
       stock: product.quantity || 0,
       quantity: product.quantity || 0,
-      isActive: product.status === 'active' || product.isActive,
+      isActive: product.status === 'active' && product.isActive,
       isFeatured: product.isFeatured,
       averageRating: product.averageRating || 0,
       reviewCount: product.reviewCount || 0,
-      tags: product.tags,
+      tags: product.tags || [],
       specifications: product.specifications || [],
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     };
 
+    // Transform related products
+    const transformedRelatedProducts = relatedProducts.map(relatedProduct => ({
+      _id: relatedProduct._id,
+      productName: relatedProduct.productName,
+      name: relatedProduct.productName,
+      price: relatedProduct.price,
+      originalPrice: relatedProduct.originalPrice || relatedProduct.price,
+      discountPercentage: relatedProduct.discountPercentage || 0,
+      brand: relatedProduct.brand,
+      images: transformProductImages(relatedProduct.images),
+      categoryId: relatedProduct.categoryId,
+      averageRating: relatedProduct.averageRating || 0,
+      reviewCount: relatedProduct.reviewCount || 0,
+      quantity: relatedProduct.quantity || 0
+    }));
+
     res.status(200).json({
       success: true,
       product: transformedProduct,
-      reviews
+      reviews,
+      relatedProducts: transformedRelatedProducts
     });
   } catch (error) {
+    console.error('Error fetching product:', error);
     res.status(500).json({
       success: false,
       message: "Error fetching product",
@@ -424,8 +487,8 @@ export const addProductReview = async (req, res) => {
       });
     }
 
-    // Check if product exists
-    const product = await Product.findById(productId);
+    // Check if product exists using admin store model
+    const product = await StoreProduct.findById(productId);
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -433,8 +496,8 @@ export const addProductReview = async (req, res) => {
       });
     }
 
-    // Check if user already reviewed this product
-    const existingReview = await ProductReview.findOne({ productId, userId });
+    // Check if user already reviewed this product using admin store model
+    const existingReview = await StoreProductReview.findOne({ productId, userId });
     if (existingReview) {
       return res.status(400).json({
         success: false,
@@ -442,8 +505,8 @@ export const addProductReview = async (req, res) => {
       });
     }
 
-    // Create new review
-    const review = new ProductReview({
+    // Create new review using admin store model
+    const review = new StoreProductReview({
       productId,
       userId,
       rating: parseInt(rating),
@@ -453,12 +516,12 @@ export const addProductReview = async (req, res) => {
     await review.save();
     await review.populate('userId', 'fullName profileImageUrl');
 
-    // Update product average rating and review count
-    const reviews = await ProductReview.find({ productId });
+    // Update product average rating and review count using admin store model
+    const reviews = await StoreProductReview.find({ productId });
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = totalRating / reviews.length;
 
-    await Product.findByIdAndUpdate(productId, {
+    await StoreProduct.findByIdAndUpdate(productId, {
       averageRating: parseFloat(averageRating.toFixed(1)),
       reviewCount: reviews.length
     });
