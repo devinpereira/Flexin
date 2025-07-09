@@ -15,7 +15,6 @@ const Calculators = () => {
   const { profile, updateProfile, calculateBMI, calculateBMR } = useContext(FitnessProfileContext);
   // Add state for the wizard visibility
   const [showWizard, setShowWizard] = useState(false);
-  const [fitnessProfile, setFitnessProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [profileCreated, setProfileCreated] = useState(false);
   const [trainingSchedule, setTrainingSchedule] = useState({
@@ -48,7 +47,6 @@ const Calculators = () => {
         const savedProfile = await axiosInstance.get(API_PATHS.FITNESS.GET_FITNESS_PROFILE);
 
         if (savedProfile.data.exists) {
-          setFitnessProfile(savedProfile.data.profile);
           updateProfile(savedProfile.data.profile);
           setShowWizard(false);
         } else {
@@ -84,12 +82,11 @@ const Calculators = () => {
 
   // Handle wizard completion
   const handleWizardComplete = (userData) => {
-    setFitnessProfile(userData);
+    updateProfile(userData);
     setShowWizard(false);
     setProfileCreated(true);
 
     showAlert('Fitness profile successfully created!', 'success');
-    console.log("Profile data to be sent to backend:", userData);
   };
 
   // Function to show custom alert
@@ -104,40 +101,6 @@ const Calculators = () => {
     }, 3000);
   };
 
-  // Mock training schedule data
-  const trainingSchedule1 = {
-    Monday: [
-      { id: 1, name: 'Push-ups', reps: '3 x 15', image: '/src/assets/exercise1.png', modalImage: '/src/assets/exercise2.png', description: 'Start in a plank position with your hands slightly wider than your shoulders. Lower your body until your chest nearly touches the floor, then push yourself back up.' },
-      { id: 2, name: 'Squats', reps: '3 x 20', image: '/src/assets/exercise1.png', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Stand with feet shoulder-width apart. Lower your body as if sitting in a chair, keeping knees behind toes. Return to standing position.' },
-      { id: 3, name: 'Plank', reps: '3 x 1 min', image: '/src/assets/exercise1.png', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Get into a push-up position, but rest on your forearms. Keep your body in a straight line from head to heels.' }
-    ],
-    Tuesday: [
-      { id: 4, name: 'Pull-ups', reps: '3 x 8', image: '/src/assets/exercises/pullups.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Hang from a bar with palms facing away from you. Pull your body up until your chin is over the bar.' },
-      { id: 5, name: 'Lunges', reps: '3 x 12 each leg', image: '/src/assets/exercises/lunges.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Step forward with one leg and lower your body until both knees form 90-degree angles. Return to standing and repeat with the other leg.' },
-      { id: 6, name: 'Russian Twists', reps: '3 x 20', image: '/src/assets/exercises/russian_twists.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Sit on the floor, knees bent and feet lifted. Twist your torso to touch the ground on each side.' }
-    ],
-    Wednesday: [
-      { id: 7, name: 'Rest Day', reps: 'Active Recovery', image: '/src/assets/exercises/rest.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Take a day off from intense training. Focus on light stretching, walking, or other low-intensity activities to promote recovery.' }
-    ],
-    Thursday: [
-      { id: 8, name: 'Bench Press', reps: '4 x 10', image: '/src/assets/exercises/bench_press.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Lie on a bench, lower the barbell to your chest, then push it back up to the starting position.' },
-      { id: 9, name: 'Deadlifts', reps: '4 x 8', image: '/src/assets/exercises/deadlifts.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Stand with feet hip-width apart, bend at hips and knees to lower your hands to the bar, then stand up straight while lifting the bar.' },
-      { id: 10, name: 'Shoulder Press', reps: '3 x 12', image: '/src/assets/exercises/shoulder_press.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Sit or stand with dumbbells at shoulder height, palms facing forward. Press the weights up overhead, then lower them back down.' }
-    ],
-    Friday: [
-      { id: 11, name: 'Burpees', reps: '3 x 15', image: '/src/assets/exercises/burpees.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Start standing, drop into a squat position, kick feet back into a plank, return to squat, then jump up reaching overhead.' },
-      { id: 12, name: 'Mountain Climbers', reps: '3 x 30 sec', image: '/src/assets/exercises/mountain_climbers.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Start in a plank position, then alternate bringing knees toward chest in a running motion.' },
-      { id: 13, name: 'Jumping Jacks', reps: '3 x 50', image: '/src/assets/exercises/jumping_jacks.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Start with feet together and arms at sides, then jump while spreading legs and raising arms overhead.' }
-    ],
-    Saturday: [
-      { id: 14, name: 'Yoga Flow', reps: '45 min', image: '/src/assets/exercises/yoga.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'A series of poses that flow from one to another, focusing on breathing, flexibility, and mindfulness.' },
-      { id: 15, name: 'Foam Rolling', reps: '15 min', image: '/src/assets/exercises/foam_rolling.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Use a foam roller to release tension in muscles, focusing on areas of tightness or soreness.' }
-    ],
-    Sunday: [
-      { id: 16, name: 'Rest Day', reps: 'Complete Rest', image: '/src/assets/exercises/rest.jpg', modalImage: '/src/assets/exercises/modal_pushups.jpg', description: 'Take a full day off to allow your body to recover and prepare for the next week.' }
-    ]
-  };
-
   // Days of the week
   const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -148,8 +111,32 @@ const Calculators = () => {
     weight: profile ? profile.weight : 75,
     height: profile ? profile.height : 178,
     age: profile ? profile.age : 28,
-    gender: profile ? profile.gender : 'Male'
+    gender: profile ? profile.gender : 'Male',
+    activityLevel: profile ? profile.activityLevel : 'Moderately Active'
   };
+
+  useEffect(() => {
+    if (profile) {
+      userStats.bmi = calculateBMI(),
+      userStats.bmrCalories = calculateBMR();
+      userStats.weight = profile.weight;
+      userStats.height = profile.height;
+      userStats.age = profile.age;
+      userStats.gender = profile.gender;
+      userStats.activityLevel = profile.activityLevel;
+    };
+  }, [profile]);
+
+  const activityMultipliers = {
+    sedentary: 1.2,
+    lightly_active: 1.375,
+    moderately_active: 1.55,
+    active: 1.725,
+    very_active: 1.9
+  };
+
+  // Normalize profile.activityLevel before lookup
+  const normalizedActivity = userStats.activityLevel.toLowerCase().replace(/\s+/g, '_'); // Replace spaces with _
 
   // Handler to view exercise details
   const handleViewExercise = (exercise) => {
@@ -252,20 +239,22 @@ const Calculators = () => {
                       <p className="text-[#f67a45] text-xs sm:text-sm">{exercise.reps}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-2 sm:mt-0 ml-auto sm:ml-0">
-                    <button
-                      onClick={() => handleViewExercise(exercise)}
-                      className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20"
-                    >
-                      <FaEye size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleEditExercise(exercise)}
-                      className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20"
-                    >
-                      <FaEdit size={16} />
-                    </button>
-                  </div>
+                  {exercise.name !== "Rest Day" && (
+                    <div className="flex gap-2 mt-2 sm:mt-0 ml-auto sm:ml-0">
+                      <button
+                        onClick={() => handleViewExercise(exercise)}
+                        className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20"
+                      >
+                        <FaEye size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleEditExercise(exercise)}
+                        className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20"
+                      >
+                        <FaEdit size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -311,23 +300,23 @@ const Calculators = () => {
             <div className="space-y-2 sm:space-y-3 text-sm sm:text-base">
               <div className="flex justify-between">
                 <span className="text-white/70">Sedentary</span>
-                <span className="text-white">{Math.round(userStats.bmrCalories * 1.2)} cal</span>
+                <span className="text-white">{Math.round(userStats.bmrCalories * 1.2 / activityMultipliers[normalizedActivity])} cal</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white/70">Light Exercise</span>
-                <span className="text-white">{Math.round(userStats.bmrCalories * 1.375)} cal</span>
+                <span className="text-white">{Math.round(userStats.bmrCalories * 1.375 / activityMultipliers[normalizedActivity])} cal</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white/70">Moderate Exercise</span>
-                <span className="text-white">{Math.round(userStats.bmrCalories * 1.55)} cal</span>
+                <span className="text-white">{Math.round(userStats.bmrCalories * 1.55 / activityMultipliers[normalizedActivity])} cal</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white/70">Heavy Exercise</span>
-                <span className="text-white">{Math.round(userStats.bmrCalories * 1.725)} cal</span>
+                <span className="text-white">{Math.round(userStats.bmrCalories * 1.725 / activityMultipliers[normalizedActivity])} cal</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-white/70">Athlete</span>
-                <span className="text-white">{Math.round(userStats.bmrCalories * 1.9)} cal</span>
+                <span className="text-white">{Math.round(userStats.bmrCalories * 1.9 / activityMultipliers[normalizedActivity])} cal</span>
               </div>
             </div>
             <button className="w-full bg-[#f67a45]/20 text-[#f67a45] py-2 rounded-lg hover:bg-[#f67a45]/30 transition-colors mt-4 text-sm sm:text-base" onClick={() => showAlert('BMR recalculated successfully', 'info')}>
@@ -484,7 +473,7 @@ const Calculators = () => {
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = '/src/assets/exercises/default.jpg';
+                    e.target.src = '/exercise-default2.png';
                   }}
                 />
               </div>
@@ -589,18 +578,28 @@ const Calculators = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  // In a real app, this would update the exercise in the database
-                  const updatedSchedule = { ...trainingSchedule };
-                  const dayExercises = [...updatedSchedule[selectedDay]];
-                  const exerciseIndex = dayExercises.findIndex(ex => ex.id === selectedExercise.id);
+                onClick={ async () => {
+                  const updatedDayExercises = [...trainingSchedule[selectedDay]];
+                  const index = updatedDayExercises.findIndex(ex => ex.id === selectedExercise.id);
 
-                  if (exerciseIndex !== -1) {
-                    dayExercises[exerciseIndex] = { ...selectedExercise };
-                    updatedSchedule[selectedDay] = dayExercises;
-                    // You would update state here in a real application
-                    console.log("Updated exercise:", selectedExercise);
-                    showAlert(`Exercise updated: ${selectedExercise.name} - ${selectedExercise.reps}`, 'success');
+                  if (index !== -1) {
+                    updatedDayExercises[index] = { ...selectedExercise };
+
+                    const updatedSchedule = {
+                      ...trainingSchedule,
+                      [selectedDay]: updatedDayExercises
+                    };
+
+                    setTrainingSchedule(updatedSchedule);
+                    
+                    try {
+                      await axiosInstance.put(API_PATHS.WORKOUT.UPDATE_WORKOUT, { schedule: updatedSchedule, });
+                      showAlert(`Exercise updated: ${selectedExercise.name} - ${selectedExercise.reps}`, 'success');
+
+                    } catch(err) {
+                      console.error("Failed to update workout plan:", err);
+                      showAlert('Failed to update workout plan. Try again.', 'error');
+                    };
                   }
 
                   setEditModalOpen(false);

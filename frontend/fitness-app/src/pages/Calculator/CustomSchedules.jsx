@@ -60,7 +60,7 @@ const CustomSchedules = () => {
         ) : (
           <div className="flex flex-col items-center">
             {/* Tutorial Images Section with close button - Responsive */}
-            {showTutorialImages && (
+            {/* {showTutorialImages && (
               <div className="mb-6 sm:mb-8 relative w-full max-w-2xl">
                 <button
                   onClick={() => setShowTutorialImages(false)}
@@ -97,7 +97,7 @@ const CustomSchedules = () => {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Empty State Add Schedule Button - Responsive sizing and padding */}
             <div

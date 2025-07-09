@@ -57,8 +57,8 @@ const FitnessProfileProvider = ({ children }) => {
     // Apply activity level multiplier
     const activityMultipliers = {
       sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
+      lightly_active: 1.375,
+      moderately_active: 1.55,
       active: 1.725,
       very_active: 1.9
     };
