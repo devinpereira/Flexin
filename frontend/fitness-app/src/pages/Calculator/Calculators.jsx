@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import {
   FaEye,
   FaEdit,
-  FaPlay
+  FaPlay,
 } from 'react-icons/fa';
 import CalculatorLayout from '../../components/Calculator/CalculatorLayout';
 import FitnessProfileWizard from '../../components/Wizard/FitnessProfileWizard';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPaths';
 import { FitnessProfileContext } from '../../context/FitnessProfileContext';
+import WorkoutModal from '../../components/Calculator/WorkoutModal';
 
 const Calculators = () => {
   const { profile, updateProfile, calculateBMI, calculateBMR } = useContext(FitnessProfileContext);
@@ -18,8 +19,8 @@ const Calculators = () => {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [profileCreated, setProfileCreated] = useState(false);
   const [trainingSchedule, setTrainingSchedule] = useState({
-  Monday: [], Tuesday: [], Wednesday: [],
-  Thursday: [], Friday: [], Saturday: [], Sunday: []
+    Monday: [], Tuesday: [], Wednesday: [],
+    Thursday: [], Friday: [], Saturday: [], Sunday: []
   });
 
   // Existing state and variables
@@ -30,6 +31,15 @@ const Calculators = () => {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
+
+  // Add new state variables for workout modal
+  const [workoutActive, setWorkoutActive] = useState(false);
+  const [workoutExercises, setWorkoutExercises] = useState([]);
+  const [initialCountdown, setInitialCountdown] = useState(false);
+
+  // Audio refs for sound effects
+  const beepSoundRef = useRef(null);
+  const countdownSoundRef = useRef(null);
 
   // Check if user has completed fitness profile setup
   useEffect(() => {
@@ -153,10 +163,19 @@ const Calculators = () => {
     setEditModalOpen(true);
   };
 
-  // Handler to start workout
+  // Handle starting a workout
   const handleStartWorkout = (day) => {
+    const dayExercises = trainingSchedule[day] || [];
+
+    if (dayExercises.length === 0) {
+      showAlert(`No exercises found for ${day}`, 'warning');
+      return;
+    }
+
+    setWorkoutExercises(dayExercises);
+    setInitialCountdown(true);
+    setWorkoutActive(true);
     console.log(`Starting workout for ${day}`);
-    showAlert(`Starting workout for ${day}`, 'success');
   };
 
   // Display loading state while checking profile
@@ -175,7 +194,7 @@ const Calculators = () => {
       {/* Show wizard if needed */}
       {showWizard && (
         <FitnessProfileWizard
-         onComplete={handleWizardComplete}
+          onComplete={handleWizardComplete}
         />
       )}
 
@@ -594,6 +613,25 @@ const Calculators = () => {
           </div>
         </div>
       )}
+
+      {/* Workout Modal */}
+      {workoutActive && (
+        <WorkoutModal
+          exercises={workoutExercises}
+          initialCountdown={initialCountdown}
+          setInitialCountdown={setInitialCountdown}
+          onClose={() => {
+            setWorkoutActive(false);
+            setInitialCountdown(false);
+          }}
+          beepSoundRef={beepSoundRef}
+          countdownSoundRef={countdownSoundRef}
+        />
+      )}
+
+      {/* Audio elements for sound effects */}
+      <audio ref={beepSoundRef} src="/src/assets/sounds/beep.mp3" preload="auto"></audio>
+      <audio ref={countdownSoundRef} src="/src/assets/sounds/countdown.mp3" preload="auto"></audio>
 
       {/* Extra padding at the bottom for mobile to account for the floating button */}
       <div className="h-24 md:h-0"></div>

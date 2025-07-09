@@ -14,6 +14,7 @@ import {
   Subscription,
   TrainerProfile
 } from "./pages/Trainers";
+import ApplyAsTrainer from "./pages/Trainers/ApplyAsTrainer";
 import {
   Dashboard as TrainerDashboard,
   Subscribers as TrainerSubscribers,
@@ -44,6 +45,8 @@ import CommunitySearch from "./pages/Community/Search";
 import CommunityNotifications from "./pages/Community/Notifications";
 import CommunityFriends from "./pages/Community/Friends";
 import CommunityProfile from "./pages/Community/Profile";
+import Help from "./pages/Help/Help";
+import Settings from "./pages/Settings/Settings";
 
 // Import Admin pages
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -98,6 +101,7 @@ function App() {
                     <Route path="/chat/:trainerId" element={<Chat />} />
                     <Route path="/subscription/:trainerId" element={<Subscription />} />
                     <Route path="/trainers/:trainerId" element={<TrainerProfile />} />
+                    <Route path="/apply-as-trainer" element={<ApplyAsTrainer />} />
                     <Route path="/calculators" element={<Calculators />} />
                     <Route path="/custom-schedules" element={<CustomSchedules />} />
                     <Route path="/add-schedule" element={<AddSchedule />} />
@@ -114,6 +118,8 @@ function App() {
                     <Route path="/community/profile" element={<CommunityProfile />} />
                     <Route path="/community/profile/:userId" element={<CommunityProfile />} />
                     <Route path="/community/create" element={<CommunityHome />} />
+                    <Route path="/help" element={<Help />} />
+                    <Route path="/settings" element={<Settings />} />
                   </Route>
                   {/* Trainer Admin Routes */}
                   <Route element={<PrivateRoute allowedRoles={["trainer"]} />}>

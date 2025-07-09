@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import TrainerLayout from "../../components/Trainers/TrainerLayout";
 import {
   FaStar,
@@ -8,18 +8,25 @@ import {
   FaInstagram,
   FaTiktok,
   FaTwitter,
+  FaPlus,
 } from "react-icons/fa";
 import { MdArrowBack } from "react-icons/md";
 import { BsCalendarWeek, BsStarHalf } from "react-icons/bs";
 import { GiMeal } from "react-icons/gi";
 import { BiChat } from "react-icons/bi";
 import { RiVipDiamondLine } from "react-icons/ri";
-import { getTrainerById, addTrainerFeedback } from "../../api/trainer";
+import {
+  getTrainerById,
+  addTrainerFeedback,
+  addTrainerFollower,
+  getMyTrainers,
+} from "../../api/trainer";
 import { motion } from "framer-motion";
 
 const TrainerProfile = () => {
   const { trainerId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [trainer, setTrainer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,6 +36,9 @@ const TrainerProfile = () => {
   const [feedbackRating, setFeedbackRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [isTrainerAdded, setIsTrainerAdded] = useState(false);
+
+  const fromExplore = location.state?.fromExplore;
 
   useEffect(() => {
     const handleResize = () => {
@@ -46,6 +56,10 @@ const TrainerProfile = () => {
         setLoading(true);
         const data = await getTrainerById(trainerId);
         setTrainer(data);
+
+        const myTrainers = await getMyTrainers();
+        const isAdded = myTrainers.some((t) => t._id === trainerId);
+        setIsTrainerAdded(isAdded);
       } catch (err) {
         setError("Failed to load trainer");
       } finally {
@@ -93,6 +107,15 @@ const TrainerProfile = () => {
     }
   };
 
+  const handleAddTrainer = async () => {
+    try {
+      await addTrainerFollower(trainerId);
+      setIsTrainerAdded(true);
+    } catch (err) {
+      console.error("Failed to add trainer:", err);
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
   if (!trainer) return <div>No trainer found.</div>;
@@ -115,7 +138,7 @@ const TrainerProfile = () => {
     <TrainerLayout pageTitle={`Trainer: ${trainer.name}`}>
       {/* Back Button */}
       <button
-        onClick={() => navigate("/trainers/my-trainers")}
+        onClick={() => navigate("/explore")} 
         className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
       >
         <MdArrowBack size={20} />
@@ -222,34 +245,48 @@ const TrainerProfile = () => {
               <div className="text-white text-xl font-bold mb-4">{price}</div>
 
               <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 sm:space-y-3">
-                <button
-                  onClick={() => navigate(`/schedule/${trainerId}`)}
-                  className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <BsCalendarWeek size={14} />
-                  <span>Schedule</span>
-                </button>
-                <button
-                  onClick={() => navigate(`/meal-plan/${trainerId}`)}
-                  className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <GiMeal size={14} />
-                  <span>Meal Plan</span>
-                </button>
-                <button
-                  onClick={() => navigate(`/chat/${trainerId}`)}
-                  className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <BiChat size={14} />
-                  <span>Chat</span>
-                </button>
-                <button
-                  onClick={() => navigate(`/subscription/${trainerId}`)}
-                  className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                >
-                  <RiVipDiamondLine size={14} />
-                  <span>Subscription</span>
-                </button>
+                {!isTrainerAdded ? (
+                  // Show only Add Trainer button if not added and coming from explore
+                  <button
+                    onClick={handleAddTrainer}
+                    className="w-full bg-[#f67a45] text-white py-2 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center justify-center gap-2 text-sm"
+                  >
+                    <FaPlus size={14} />
+                    <span>Add Trainer</span>
+                  </button>
+                ) : (
+                  // Show all navigation options if trainer is added
+                  <>
+                    <button
+                      onClick={() => navigate(`/schedule/${trainerId}`)}
+                      className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <BsCalendarWeek size={14} />
+                      <span>Schedule</span>
+                    </button>
+                    <button
+                      onClick={() => navigate(`/meal-plan/${trainerId}`)}
+                      className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <GiMeal size={14} />
+                      <span>Meal Plan</span>
+                    </button>
+                    <button
+                      onClick={() => navigate(`/chat/${trainerId}`)}
+                      className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <BiChat size={14} />
+                      <span>Chat</span>
+                    </button>
+                    <button
+                      onClick={() => navigate(`/subscription/${trainerId}`)}
+                      className="bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <RiVipDiamondLine size={14} />
+                      <span>Subscription</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -356,11 +393,10 @@ const TrainerProfile = () => {
             trainer.packages.map((pkg, idx) => (
               <div
                 key={idx}
-                className={`border ${
-                  idx === 1
+                className={`border ${idx === 1
                     ? "border-2 border-[#f67a45] bg-[#1A1A2F]"
                     : "border-gray-700 bg-[#121225]"
-                } rounded-lg p-4 sm:p-6 hover:border-[#f67a45]/50 transition-all relative`}
+                  } rounded-lg p-4 sm:p-6 hover:border-[#f67a45]/50 transition-all relative`}
               >
                 {idx === 1 && (
                   <div className="absolute top-0 right-4 sm:right-6 translate-y-[-50%] bg-[#f67a45] text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium">
@@ -375,8 +411,8 @@ const TrainerProfile = () => {
                     {idx === 0
                       ? "Basic"
                       : idx === 1
-                      ? "Recommended"
-                      : "Premium"}
+                        ? "Recommended"
+                        : "Premium"}
                   </span>
                 </div>
                 <div className="text-[#f67a45] text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
@@ -545,11 +581,10 @@ const TrainerProfile = () => {
                       key={star}
                       type="button"
                       onClick={() => setFeedbackRating(star)}
-                      className={`${
-                        feedbackRating >= star
+                      className={`${feedbackRating >= star
                           ? "text-[#f67a45]"
                           : "text-gray-400 dark:text-white/50"
-                      } transition-colors flex items-center`}
+                        } transition-colors flex items-center`}
                     >
                       <FaStar className="w-5 h-5" />
                     </button>
