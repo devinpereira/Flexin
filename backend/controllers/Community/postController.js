@@ -276,12 +276,27 @@ export const likePost = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
     
-    const imageUrl = post.content[0] ? post.content[0] : "/src/assets/profile1.png";
+    const imageUrl = post.content[0] ? post.content[0] : "/post-default.jpg";
 
     if (existingLike) {
       // Unlike the post
       await Like.deleteOne({ postId, userId });
-      await Post.findByIdAndUpdate(postId, { $inc: { likes: -1 } });
+      await Post.updateOne(
+        { _id: postId },
+        [
+          {
+            $set: {
+              likes: {
+                $cond: {
+                  if: { $gt: ["$likes", 0] },
+                  then: { $subtract: ["$likes", 1] },
+                  else: 0
+                }
+              }
+            }
+          }
+        ]
+      );
 
       // Delete like notification
       deleteNotification({
