@@ -5,6 +5,7 @@ import { FiShoppingCart, FiDroplet, FiTag } from 'react-icons/fi';
 import { MdFitnessCenter, MdLocalDining } from 'react-icons/md';
 import { GiClothes, GiBackpack } from 'react-icons/gi';
 import { productsApi, categoriesApi, cartApi } from '../../api/storeApi';
+import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
 const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
   const navigate = useNavigate();
@@ -85,11 +86,17 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
       rating: product.averageRating || 0,
       reviewCount: product.reviewCount || 0,
       image: product.images?.[0] || '/public/default.jpg',
+      images: product.images || ['/public/default.jpg'], // Keep full images array for ProductView
       description: product.description,
       shortDescription: product.shortDescription,
       brand: product.brand,
       isFeatured: product.isFeatured,
-      quantity: product.quantity
+      quantity: product.quantity,
+      categoryId: product.categoryId,
+      subcategoryId: product.subcategoryId,
+      specifications: product.specifications || [],
+      tags: product.tags || [],
+      averageRating: product.averageRating || 0
     };
   };
 
@@ -112,6 +119,9 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
         alert('Error: Product ID is missing. Cannot navigate to product page.');
         return;
       }
+
+      // Add to recently viewed before navigating
+      recentlyViewedUtils.addToRecentlyViewed(formattedProduct);
 
       console.log('Navigating to:', `/product/${formattedProduct.id}`);
       navigate(`/product/${formattedProduct.id}`, { state: { product: formattedProduct } });
@@ -209,8 +219,18 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
   const renderFeaturedProducts = () => {
     if (isLoading) {
       return (
-        <div className="flex justify-center items-center h-64">
-          <div className="loader"></div>
+        <div className="featured-products mb-8">
+          <h3 className="text-white text-xl font-bold mb-4">Featured Products</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, index) => (
+              <div key={index} className="bg-black/30 backdrop-blur-sm rounded-lg p-4 animate-pulse">
+                <div className="w-full h-40 bg-gray-700/50 rounded-lg mb-4"></div>
+                <div className="h-4 bg-gray-700/50 rounded mb-2"></div>
+                <div className="h-3 bg-gray-700/50 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-700/50 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
@@ -247,15 +267,15 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
             return (
               <div
                 key={formattedProduct.id}
-                className="bg-black/30 backdrop-blur-sm rounded-lg p-4 cursor-pointer"
+                className="bg-black/30 backdrop-blur-sm rounded-lg p-4 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#f67a45]/20 hover:bg-black/40 group"
                 onClick={() => handleProductClick(product)}
               >
                 <div className="relative">
-                  <div className="w-full h-40 bg-gray-700/30 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                  <div className="w-full h-40 bg-gray-700/30 rounded-lg mb-4 flex items-center justify-center overflow-hidden relative group-hover:ring-2 group-hover:ring-[#f67a45]/50 transition-all duration-300">
                     <img
                       src={formattedProduct.image}
                       alt={formattedProduct.name}
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover rounded-lg transform transition-transform duration-300 group-hover:scale-110"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = '/public/default.jpg';
@@ -313,8 +333,18 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
   const renderProductGrid = () => {
     if (isLoading) {
       return (
-        <div className="flex justify-center items-center h-64">
-          <div className="loader"></div>
+        <div className="product-grid">
+          <h3 className="text-white text-xl font-bold mb-4">All Products</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+            {[...Array(12)].map((_, index) => (
+              <div key={index} className="bg-black/30 backdrop-blur-sm rounded-lg p-2 sm:p-3 animate-pulse">
+                <div className="w-full aspect-square bg-gray-700/50 rounded-lg mb-2"></div>
+                <div className="h-3 bg-gray-700/50 rounded mb-1"></div>
+                <div className="h-2 bg-gray-700/50 rounded w-2/3 mb-1"></div>
+                <div className="h-2 bg-gray-700/50 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
@@ -351,27 +381,50 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
             return (
               <div
                 key={formattedProduct.id}
-                className="bg-black/30 backdrop-blur-sm rounded-lg p-2 sm:p-3 cursor-pointer relative"
+                className="bg-black/30 backdrop-blur-sm rounded-lg p-2 sm:p-3 cursor-pointer relative transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-[#f67a45]/20 hover:bg-black/40 group"
                 onClick={() => handleProductClick(product)}
               >
                 <div className="relative">
-                  <div className="w-full aspect-square bg-gray-700/30 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                  <div className="w-full aspect-square bg-gray-700/30 rounded-lg mb-2 flex items-center justify-center overflow-hidden relative group-hover:ring-2 group-hover:ring-[#f67a45]/50 transition-all duration-300">
                     <img
                       src={formattedProduct.image}
                       alt={formattedProduct.name}
-                      className="w-full h-full object-cover rounded-lg"
+                      className="w-full h-full object-cover rounded-lg transform transition-transform duration-300 group-hover:scale-110"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = '/public/default.jpg';
                       }}
                     />
+                    {/* Discount Badge */}
+                    {formattedProduct.discountPercentage > 0 && (
+                      <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold z-10 animate-pulse">
+                        -{formattedProduct.discountPercentage}%
+                      </div>
+                    )}
+                    {/* Featured Badge */}
+                    {formattedProduct.isFeatured && (
+                      <div className="absolute bottom-2 left-2 bg-[#f67a45] text-white text-xs px-2 py-1 rounded-full font-bold z-10">
+                        Featured
+                      </div>
+                    )}
+                    {/* Stock Status Badge */}
+                    {formattedProduct.quantity <= 5 && formattedProduct.quantity > 0 && (
+                      <div className="absolute bottom-2 right-2 bg-yellow-500 text-black text-xs px-2 py-1 rounded-full font-bold z-10">
+                        Low Stock
+                      </div>
+                    )}
+                    {formattedProduct.quantity <= 0 && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                        <span className="text-white font-bold text-xs">Out of Stock</span>
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       onToggleFavorite(formattedProduct);
                     }}
-                    className="absolute top-1 left-1 bg-black/30 rounded-full p-1 sm:p-2 transition-colors hover:bg-black/50"
+                    className="absolute top-1 left-1 bg-black/30 rounded-full p-1 sm:p-2 transition-all duration-300 hover:bg-black/50 hover:scale-110 hover:shadow-lg backdrop-blur-sm"
                   >
                     {isFavorite(formattedProduct.id) ?
                       <AiFillHeart size={16} className="text-[#f67a45]" /> :
@@ -383,7 +436,7 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
                       e.stopPropagation();
                       handleAddToCart(formattedProduct);
                     }}
-                    className={`absolute top-1 right-1 rounded-full p-1 sm:p-2 transition-all duration-300 ${addedToCartItems.has(formattedProduct.id)
+                    className={`absolute top-1 right-1 rounded-full p-1 sm:p-2 transition-all duration-300 backdrop-blur-sm hover:scale-110 hover:shadow-lg ${addedToCartItems.has(formattedProduct.id)
                       ? 'bg-green-500 text-white shadow-lg transform scale-110'
                       : 'bg-black/30 text-white hover:bg-black/50'
                       }`}
@@ -422,21 +475,12 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
       <hr className="border-gray-600 mb-6" />
 
       {/* Hero Section */}
-      <div className="rounded-lg overflow-hidden mb-8 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
-        <img
-          src="/src/assets/store-banner.jpg"
-          alt="Store Banner"
-          className="w-full h-64 md:h-80 object-cover"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = 'https://via.placeholder.com/1200x400?text=Store+Banner';
-          }}
-        />
+      <div className="rounded-lg overflow-hidden mb-8 relative bg-gradient-to-r from-[#f67a45] to-[#ff8a65] h-64 md:h-80">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent z-10"></div>
         <div className="absolute inset-0 flex flex-col justify-center p-6 md:p-12 z-20">
           <h2 className="text-white text-2xl md:text-4xl font-bold mb-2 md:mb-4">Summer Sale</h2>
           <p className="text-white/90 text-base md:text-xl mb-4 max-w-md">Get up to 40% off on selected fitness products</p>
-          <button className="bg-[#f67a45] text-white py-2 px-6 rounded-full w-fit hover:bg-[#e56d3d] transition-colors">
+          <button className="bg-white text-[#f67a45] py-2 px-6 rounded-full w-fit hover:bg-gray-100 transition-colors font-semibold">
             Shop Now
           </button>
         </div>
