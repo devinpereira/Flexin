@@ -68,3 +68,12 @@ export const updateExercise = async (req, res) => {
         res.status(500).json({ message: "Error updating exercise", error: error.message });
     }
 }
+
+export const getExercises = async (req, res) => {
+    try {
+        const exercises = await Exercise.find();
+        res.status(200).json({ message: "Exercises retrieved successfully", exercises });
+    } catch (error) {
+        res.status(500).json({ message: "Error retrieving exercises", error: error.message });
+    }
+}
