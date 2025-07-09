@@ -55,15 +55,16 @@ export const API_PATHS = {
     DELETE_ALL_NOTIFICATIONS: "/api/v1/notifications/delete-all",
   },
   FITNESS: {
-    CREATE_FITNESS_PROFILE: "/api/v1/fitness/register",
-    GET_FITNESS_PROFILE: "/api/v1/fitness/profile",
+    CREATE_FITNESS_PROFILE: "/api/v1/fitness/register", // Done
+    GET_FITNESS_PROFILE: "/api/v1/fitness/profile", // Done
     UPDATE_FITNESS_PROFILE: "/api/v1/fitness/update-profile",
-    GET_FITNESS_PROFILES: "/api/v1/fitness/profiles",
-    GET_FITNESS_PROFILE_BY_USER: (userId) => `/api/v1/fitness/profile/user/${userId}`,
+    GET_FITNESS_PROFILES: "/api/v1/fitness/profiles", // Done
+    GET_FITNESS_PROFILE_BY_USER: (userId) => `/api/v1/fitness/profile/user/${userId}`, // Done
   },
   WORKOUT: {
     GET_WORKOUT_PLANS: "/api/v1/workouts", // Done
     GENERATE_WORKOUT: "/api/v1/workout/generate", // Done
+    UPDATE_WORKOUT: `/api/v1/workouts`, // Done
   },
 
   //  Store: Products
