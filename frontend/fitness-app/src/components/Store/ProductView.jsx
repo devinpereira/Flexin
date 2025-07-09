@@ -5,6 +5,7 @@ import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiFillStar, AiOutlineCheckC
 import { FiShoppingCart, FiExternalLink, FiShare2 } from 'react-icons/fi';
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 import { productsApi, cartApi } from '../../api/storeApi';
+import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
 const ProductView = () => {
   const { productId } = useParams();
@@ -64,11 +65,15 @@ const ProductView = () => {
     const fetchProduct = async () => {
       console.log('ProductView useEffect - productId:', productId, 'product:', product);
 
-      // If we have a product from location state, log its structure
+      // If we have a product from location state, add to recently viewed
       if (product) {
         console.log('Product from location state:', product);
         console.log('Product images:', product.images);
         console.log('Product image (singular):', product.image);
+
+        // Add to recently viewed
+        recentlyViewedUtils.addToRecentlyViewed(product);
+
         return; // No need to fetch if we already have the product
       }
 
@@ -108,6 +113,9 @@ const ProductView = () => {
             console.log('Formatted product:', formattedProduct);
             console.log('Formatted product images:', formattedProduct.images);
             setProduct(formattedProduct);
+
+            // Add to recently viewed
+            recentlyViewedUtils.addToRecentlyViewed(formattedProduct);
 
             // Set related products
             if (response.relatedProducts) {
@@ -631,8 +639,8 @@ const ProductView = () => {
           <div className="flex border-b border-gray-700 mb-6">
             <button
               className={`py-2 px-4 font-medium transition-colors ${activeTab === 'description'
-                  ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
-                  : 'text-white hover:text-[#f67a45]'
+                ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
+                : 'text-white hover:text-[#f67a45]'
                 }`}
               onClick={() => setActiveTab('description')}
             >
@@ -640,8 +648,8 @@ const ProductView = () => {
             </button>
             <button
               className={`py-2 px-4 font-medium transition-colors ${activeTab === 'specifications'
-                  ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
-                  : 'text-white hover:text-[#f67a45]'
+                ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
+                : 'text-white hover:text-[#f67a45]'
                 }`}
               onClick={() => setActiveTab('specifications')}
             >
@@ -649,8 +657,8 @@ const ProductView = () => {
             </button>
             <button
               className={`py-2 px-4 font-medium transition-colors ${activeTab === 'reviews'
-                  ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
-                  : 'text-white hover:text-[#f67a45]'
+                ? 'text-[#f67a45] border-b-2 border-[#f67a45]'
+                : 'text-white hover:text-[#f67a45]'
                 }`}
               onClick={() => setActiveTab('reviews')}
             >

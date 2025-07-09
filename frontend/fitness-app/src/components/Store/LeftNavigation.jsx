@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { FiShoppingCart, FiTag, FiX, FiDroplet, FiHeart, FiHome } from 'react-icons/fi';
+import { FiShoppingCart, FiTag, FiX, FiDroplet, FiHeart, FiHome, FiClock } from 'react-icons/fi';
 import { AiFillCaretDown, AiFillCaretUp } from 'react-icons/ai';
 import { MdKeyboardArrowRight, MdFitnessCenter, MdLocalDining } from 'react-icons/md';
 import { GiClothes, GiBackpack } from 'react-icons/gi';
 import { categoriesApi } from '../../api/storeApi';
+import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
-const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItemsCount, isMobileNavOpen, setIsMobileNavOpen }) => {
+const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItemsCount, isMobileNavOpen, setIsMobileNavOpen, onProductClick }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
 
   // Fetch categories from backend
   useEffect(() => {
@@ -33,6 +35,28 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
     };
 
     fetchCategories();
+  }, []);
+
+  // Load recently viewed products and listen for updates
+  useEffect(() => {
+    // Load initial recently viewed products
+    const loadRecentlyViewed = () => {
+      const recent = recentlyViewedUtils.getRecentlyViewed();
+      setRecentlyViewed(recent);
+    };
+
+    loadRecentlyViewed();
+
+    // Listen for updates to recently viewed products
+    const handleRecentlyViewedUpdate = (event) => {
+      setRecentlyViewed(event.detail.recentlyViewed);
+    };
+
+    window.addEventListener('recentlyViewedUpdated', handleRecentlyViewedUpdate);
+
+    return () => {
+      window.removeEventListener('recentlyViewedUpdated', handleRecentlyViewedUpdate);
+    };
   }, []);
 
   // Fallback categories if API fails
@@ -124,6 +148,19 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
   const handleViewChange = (view) => {
     setActiveView(view);
     setIsMobileNavOpen(false);
+  };
+
+  // Handle recently viewed product click
+  const handleRecentlyViewedClick = (product) => {
+    if (onProductClick) {
+      onProductClick(product);
+    }
+    setIsMobileNavOpen(false);
+  };
+
+  // Clear recently viewed products
+  const clearRecentlyViewed = () => {
+    recentlyViewedUtils.clearRecentlyViewed();
   };
 
   // Function to get category icon based on category name or id
@@ -267,35 +304,67 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
 
           {/* Recently Viewed (Only for desktop) */}
           <div className="hidden lg:block">
-            <h3 className="font-bold text-lg text-white mb-3">Recently Viewed</h3>
-            <div className="space-y-3">
-              <div className="flex items-center p-2 bg-[#1a1a2f] rounded-lg">
-                <div className="w-12 h-12 bg-gray-700/30 rounded-lg mr-3">
-                  <img
-                    src="/src/assets/products/product1.png"
-                    alt="Recent product"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </div>
-                <div>
-                  <p className="text-white text-sm">Premium Protein Powder</p>
-                  <p className="text-[#f67a45] text-xs">$49.99</p>
-                </div>
-              </div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-lg text-white flex items-center">
+                <FiClock className="mr-2" />
+                Recently Viewed
+              </h3>
+              {recentlyViewed.length > 0 && (
+                <button
+                  onClick={clearRecentlyViewed}
+                  className="text-xs text-gray-400 hover:text-[#f67a45] transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
 
-              <div className="flex items-center p-2 bg-[#1a1a2f] rounded-lg">
-                <div className="w-12 h-12 bg-gray-700/30 rounded-lg mr-3">
-                  <img
-                    src="/src/assets/products/product2.png"
-                    alt="Recent product"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
+            <div className="space-y-3">
+              {recentlyViewed.length === 0 ? (
+                <div className="text-center py-6">
+                  <FiClock className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">No recently viewed products</p>
                 </div>
-                <div>
-                  <p className="text-white text-sm">Fitness Tracker Watch</p>
-                  <p className="text-[#f67a45] text-xs">$89.99</p>
-                </div>
-              </div>
+              ) : (
+                recentlyViewed.map((product, index) => (
+                  <div
+                    key={`${product.id}-${index}`}
+                    className="flex items-center p-2 bg-[#1a1a2f] rounded-lg cursor-pointer hover:bg-[#1e1e35] transition-all duration-300 group"
+                    onClick={() => handleRecentlyViewedClick(product)}
+                  >
+                    <div className="w-12 h-12 bg-gray-700/30 rounded-lg mr-3 overflow-hidden relative">
+                      <img
+                        src={product.image || product.images?.[0] || '/public/default.jpg'}
+                        alt={product.name}
+                        className="w-full h-full object-cover rounded-lg transform transition-transform duration-300 group-hover:scale-110"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = '/public/default.jpg';
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm truncate group-hover:text-[#f67a45] transition-colors">
+                        {product.name}
+                      </p>
+                      <p className="text-[#f67a45] text-xs font-medium">
+                        ${product.price}
+                      </p>
+                      {product.rating && (
+                        <div className="flex items-center mt-1">
+                          <span className="text-yellow-400 text-xs">★</span>
+                          <span className="text-white/70 text-xs ml-1">
+                            {product.rating.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <MdKeyboardArrowRight className="text-gray-400" />
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

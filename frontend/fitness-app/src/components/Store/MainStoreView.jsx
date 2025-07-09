@@ -5,6 +5,7 @@ import { FiShoppingCart, FiDroplet, FiTag } from 'react-icons/fi';
 import { MdFitnessCenter, MdLocalDining } from 'react-icons/md';
 import { GiClothes, GiBackpack } from 'react-icons/gi';
 import { productsApi, categoriesApi, cartApi } from '../../api/storeApi';
+import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
 const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
   const navigate = useNavigate();
@@ -95,8 +96,7 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
       subcategoryId: product.subcategoryId,
       specifications: product.specifications || [],
       tags: product.tags || [],
-      averageRating: product.averageRating || 0,
-      reviewCount: product.reviewCount || 0
+      averageRating: product.averageRating || 0
     };
   };
 
@@ -119,6 +119,9 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
         alert('Error: Product ID is missing. Cannot navigate to product page.');
         return;
       }
+
+      // Add to recently viewed before navigating
+      recentlyViewedUtils.addToRecentlyViewed(formattedProduct);
 
       console.log('Navigating to:', `/product/${formattedProduct.id}`);
       navigate(`/product/${formattedProduct.id}`, { state: { product: formattedProduct } });
