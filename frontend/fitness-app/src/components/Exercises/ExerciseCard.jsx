@@ -6,13 +6,13 @@ const ExerciseCard = ({ exercise, onViewDetails }) => {
   const renderDifficultyStars = (difficulty) => {
     let stars = 0;
     switch(difficulty) {
-      case 'beginner':
+      case 'Beginner':
         stars = 1;
         break;
-      case 'intermediate':
+      case 'Intermediate':
         stars = 2;
         break;
-      case 'advanced':
+      case 'Advanced':
         stars = 3;
         break;
       default:

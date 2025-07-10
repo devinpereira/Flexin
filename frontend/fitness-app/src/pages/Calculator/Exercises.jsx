@@ -6,6 +6,8 @@ import {
   FaSearch,
   FaFilter
 } from 'react-icons/fa';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const Exercises = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,141 +21,36 @@ const Exercises = () => {
   // Body part categories
   const bodyParts = [
     'all',
-    'arms',
-    'back',
-    'chest',
-    'core',
+    'Arms',
+    'Back',
+    'Chest',
+    'Core',
     'full body',
-    'legs',
-    'shoulders',
-    'cardio',
-    'glutes',
-    'other'
+    'Legs',
+    'Shoulders',
+    'Cardio',
+    'Glutes',
+    'Other'
   ];
 
-  // Load exercises (would normally come from API)
+  // Load exercises
   useEffect(() => {
-    // Simulate API call with setTimeout
-    setLoading(true);
-    setTimeout(() => {
-      // This would be replaced with a real API call
-      const sampleExercises = [
-        {
-          id: 1,
-          name: 'Bicep Curl',
-          bodyPart: 'arms',
-          image: 'https://via.placeholder.com/300x200?text=Bicep+Curl',
-          instructions: 'Hold dumbbells with palms facing forward. Curl weights towards shoulders while keeping elbows at sides. Lower back down with control.',
-          difficulty: 'beginner',
-          equipment: 'dumbbells',
-          muscles: ['biceps', 'forearms'],
-          benefits: 'Builds bicep strength and improves arm definition'
-        },
-        {
-          id: 2,
-          name: 'Push-up',
-          bodyPart: 'chest',
-          image: 'https://via.placeholder.com/300x200?text=Push-up',
-          instructions: 'Start in plank position with hands slightly wider than shoulders. Lower body until chest nearly touches floor. Push back up to starting position.',
-          difficulty: 'beginner',
-          equipment: 'bodyweight',
-          muscles: ['chest', 'shoulders', 'triceps'],
-          benefits: 'Strengthens chest, shoulders, triceps, and core'
-        },
-        {
-          id: 3,
-          name: 'Squat',
-          bodyPart: 'legs',
-          image: 'https://via.placeholder.com/300x200?text=Squat',
-          instructions: 'Stand with feet shoulder-width apart. Bend knees and lower hips as if sitting in a chair. Keep chest up and back straight. Return to standing position.',
-          difficulty: 'beginner',
-          equipment: 'bodyweight',
-          muscles: ['quadriceps', 'hamstrings', 'glutes'],
-          benefits: 'Builds lower body strength and improves mobility'
-        },
-        {
-          id: 4,
-          name: 'Pull-up',
-          bodyPart: 'back',
-          image: 'https://via.placeholder.com/300x200?text=Pull-up',
-          instructions: 'Grip pull-up bar with palms facing away. Hang with arms extended. Pull body up until chin is over bar. Lower back down with control.',
-          difficulty: 'intermediate',
-          equipment: 'pull-up bar',
-          muscles: ['latissimus dorsi', 'biceps', 'rhomboids'],
-          benefits: 'Builds upper back and arm strength'
-        },
-        {
-          id: 5,
-          name: 'Plank',
-          bodyPart: 'core',
-          image: 'https://via.placeholder.com/300x200?text=Plank',
-          instructions: 'Start in push-up position but with weight on forearms. Keep body in straight line from head to heels. Hold position.',
-          difficulty: 'beginner',
-          equipment: 'bodyweight',
-          muscles: ['abdominals', 'lower back'],
-          benefits: 'Strengthens core and improves posture'
-        },
-        {
-          id: 6,
-          name: 'Burpee',
-          bodyPart: 'full body',
-          image: 'https://via.placeholder.com/300x200?text=Burpee',
-          instructions: 'Begin standing. Drop into squat position and place hands on floor. Kick feet back to plank position. Do a push-up. Jump feet back to squat position. Jump up with arms extended overhead.',
-          difficulty: 'advanced',
-          equipment: 'bodyweight',
-          muscles: ['quadriceps', 'chest', 'shoulders', 'triceps', 'abdominals'],
-          benefits: 'Full body strength and cardiovascular conditioning'
-        },
-        {
-          id: 7,
-          name: 'Russian Twist',
-          bodyPart: 'core',
-          image: 'https://via.placeholder.com/300x200?text=Russian+Twist',
-          instructions: 'Sit on floor with knees bent and feet lifted. Lean back slightly. Twist torso side to side, touching hands to floor beside hips.',
-          difficulty: 'intermediate',
-          equipment: 'bodyweight',
-          muscles: ['obliques', 'abdominals'],
-          benefits: 'Strengthens obliques and improves rotational core strength'
-        },
-        {
-          id: 8,
-          name: 'Shoulder Press',
-          bodyPart: 'shoulders',
-          image: 'https://via.placeholder.com/300x200?text=Shoulder+Press',
-          instructions: 'Sit or stand holding dumbbells at shoulder level. Press weights overhead until arms are extended. Lower back to shoulder level.',
-          difficulty: 'intermediate',
-          equipment: 'dumbbells',
-          muscles: ['deltoids', 'triceps'],
-          benefits: 'Builds shoulder strength and stability'
-        },
-        {
-          id: 9,
-          name: 'Glute Bridge',
-          bodyPart: 'glutes',
-          image: 'https://via.placeholder.com/300x200?text=Glute+Bridge',
-          instructions: 'Lie on back with knees bent and feet flat on floor. Lift hips until body forms straight line from shoulders to knees. Lower back down.',
-          difficulty: 'beginner',
-          equipment: 'bodyweight',
-          muscles: ['glutes', 'hamstrings', 'lower back'],
-          benefits: 'Strengthens glutes and improves hip stability'
-        },
-        {
-          id: 10,
-          name: 'Deadlift',
-          bodyPart: 'back',
-          image: 'https://via.placeholder.com/300x200?text=Deadlift',
-          instructions: 'Stand with feet hip-width apart. Bend at hips and knees to grasp barbell. Keep back straight. Stand up by extending hips and knees. Lower bar back to ground.',
-          difficulty: 'intermediate',
-          equipment: 'barbell',
-          muscles: ['lower back', 'hamstrings', 'glutes', 'traps'],
-          benefits: 'Builds overall posterior chain strength'
-        }
-      ];
+    const fetchExercises = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(API_PATHS.EXERCISE.GET_EXERCISES);
+        const data = await response.data;
 
-      setExercises(sampleExercises);
-      setFilteredExercises(sampleExercises);
-      setLoading(false);
-    }, 1000);
+        setExercises(data.exercises || []);
+        setFilteredExercises(data.exercises || []);
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExercises();
   }, []);
 
   // Filter exercises when search query or selected body part changes
@@ -172,7 +69,7 @@ const Exercises = () => {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(exercise =>
         exercise.name.toLowerCase().includes(query) ||
-        exercise.muscles.some(muscle => muscle.toLowerCase().includes(query)) ||
+        exercise.primaryMuscles.some(muscle => muscle.toLowerCase().includes(query)) ||
         exercise.bodyPart.toLowerCase().includes(query)
       );
     }
@@ -257,9 +154,9 @@ const Exercises = () => {
           </div>
         ) : filteredExercises.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredExercises.map(exercise => (
+            {filteredExercises.map((exercise, index) => (
               <ExerciseCard
-                key={exercise.id}
+                key={index}
                 exercise={exercise}
                 onViewDetails={(exercise) => setSelectedExercise(exercise)}
               />
