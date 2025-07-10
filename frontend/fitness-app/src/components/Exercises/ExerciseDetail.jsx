@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTimes, FaDumbbell, FaCheck } from 'react-icons/fa';
+import { GiBiceps } from 'react-icons/gi';
 
 const ExerciseDetail = ({ exercise, onClose }) => {
   if (!exercise) return null;
@@ -45,7 +46,7 @@ const ExerciseDetail = ({ exercise, onClose }) => {
               <div>
                 <h3 className="text-white text-lg font-medium mb-3">How to Perform</h3>
                 <ol className="list-decimal pl-5 space-y-2 text-white/80">
-                  {exercise.instructions.split('. ').filter(step => step.trim()).map((step, index) => (
+                  {exercise.description.split('. ').filter(step => step.trim()).map((step, index) => (
                     <li key={index} className="pl-1">{step.trim()}.</li>
                   ))}
                 </ol>
@@ -63,11 +64,11 @@ const ExerciseDetail = ({ exercise, onClose }) => {
               {/* Muscles */}
               <div>
                 <h3 className="text-white text-lg font-medium mb-2 flex items-center gap-2">
-                  <FaMuscle className="text-[#f67a45]" /> 
+                  <GiBiceps className="text-[#f67a45]" /> 
                   Muscles Targeted
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {exercise.muscles.map((muscle, index) => (
+                  {exercise.primaryMuscles.map((muscle, index) => (
                     <span 
                       key={index} 
                       className="bg-[#1A1A2F] text-white/80 px-3 py-1 rounded-full text-sm capitalize"
