@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaSearch } from 'react-icons/fa';
+import { API_PATHS } from '../../utils/apiPaths';
+import axiosInstance from '../../utils/axiosInstance';
 
 const ExerciseSelector = ({ onSelectExercise }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -8,113 +10,37 @@ const ExerciseSelector = ({ onSelectExercise }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
 
-  // Mock categories for exercises
+  // Categories for exercises
   const categories = [
     'all',
-    'chest',
-    'back',
-    'arms',
-    'shoulders',
-    'legs',
-    'core',
-    'cardio',
-    'full body'
+    'Chest',
+    'Back',
+    'Arms',
+    'Shoulders',
+    'Legs',
+    'Core',
+    'Cardio',
+    'Full body'
   ];
 
-  // Load exercises data
+  // Load exercises
   useEffect(() => {
-    // In a real app, you would fetch this from an API
-    setLoading(true);
+    const fetchExercises = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosInstance.get(API_PATHS.EXERCISE.GET_EXERCISES);
+        const data = await response.data;
 
-    // Simulate API call
-    setTimeout(() => {
-      const mockExercises = [
-        {
-          id: 1,
-          name: 'Push-up',
-          category: 'chest',
-          image: '/src/assets/exercises/pushup.jpg',
-          description: 'A classic bodyweight exercise that targets the chest, shoulders, and triceps.',
-          instructions: 'Start in a plank position with hands shoulder-width apart. Lower your body until your chest nearly touches the floor, then push back up.'
-        },
-        {
-          id: 2,
-          name: 'Pull-up',
-          category: 'back',
-          image: '/src/assets/exercises/pullup.jpg',
-          description: 'An upper body exercise that targets the back, biceps, and shoulders.',
-          instructions: 'Hang from a bar with palms facing away from you. Pull your body up until your chin is over the bar, then lower back down.'
-        },
-        {
-          id: 3,
-          name: 'Squat',
-          category: 'legs',
-          image: '/src/assets/exercises/squat.jpg',
-          description: 'A compound exercise that targets the quadriceps, hamstrings, and glutes.',
-          instructions: 'Stand with feet shoulder-width apart. Lower your body as if sitting in a chair, keeping knees behind toes. Return to standing position.'
-        },
-        {
-          id: 4,
-          name: 'Plank',
-          category: 'core',
-          image: '/src/assets/exercises/plank.jpg',
-          description: 'A core strengthening exercise that also engages the shoulders and back.',
-          instructions: 'Start in a push-up position but with weight on forearms. Keep body in a straight line from head to heels. Hold position.'
-        },
-        {
-          id: 5,
-          name: 'Burpee',
-          category: 'full body',
-          image: '/src/assets/exercises/burpee.jpg',
-          description: 'A full-body exercise that builds strength and endurance.',
-          instructions: 'Begin standing. Drop into squat position and place hands on floor. Kick feet back to plank position. Do a push-up. Jump feet back to squat position. Jump up with arms extended overhead.'
-        },
-        {
-          id: 6,
-          name: 'Bicycle Crunch',
-          category: 'core',
-          image: '/src/assets/exercises/bicycle.jpg',
-          description: 'An abdominal exercise that targets the obliques and rectus abdominis.',
-          instructions: 'Lie on your back with hands behind head. Bring knees to chest and lift shoulders off ground. Extend left leg while rotating upper body right, bringing left elbow toward right knee. Alternate sides.'
-        },
-        {
-          id: 7,
-          name: 'Dumbbell Curl',
-          category: 'arms',
-          image: '/src/assets/exercises/curl.jpg',
-          description: 'An isolation exercise that targets the biceps.',
-          instructions: 'Stand with a dumbbell in each hand, arms at sides, palms facing forward. Keeping elbows close to torso, curl weights toward shoulders. Slowly lower back down.'
-        },
-        {
-          id: 8,
-          name: 'Shoulder Press',
-          category: 'shoulders',
-          image: '/src/assets/exercises/shoulderpress.jpg',
-          description: 'An upper body exercise that primarily targets the deltoids.',
-          instructions: 'Sit or stand with a dumbbell in each hand at shoulder height. Press weights overhead until arms are extended. Lower back to starting position.'
-        },
-        {
-          id: 9,
-          name: 'Running',
-          category: 'cardio',
-          image: '/src/assets/exercises/running.jpg',
-          description: 'A cardiovascular exercise that improves endurance and burns calories.',
-          instructions: 'Maintain an upright posture with a slight forward lean. Land midfoot with each step. Keep arms bent at about 90 degrees and swing them forward and back, not across your body.'
-        },
-        {
-          id: 10,
-          name: 'Lunges',
-          category: 'legs',
-          image: '/src/assets/exercises/lunge.jpg',
-          description: 'A lower body exercise that targets the quadriceps, hamstrings, and glutes.',
-          instructions: 'Stand with feet hip-width apart. Step forward with one leg and lower your body until both knees are bent at about 90 degrees. Push back up to starting position and repeat with other leg.'
-        }
-      ];
+        setExercises(data.exercises || []);
+        setFilteredExercises(data.exercises || []);
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setExercises(mockExercises);
-      setFilteredExercises(mockExercises);
-      setLoading(false);
-    }, 800);
+    fetchExercises();
   }, []);
 
   // Filter exercises based on search query and category
@@ -125,7 +51,7 @@ const ExerciseSelector = ({ onSelectExercise }) => {
 
     // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(exercise => exercise.category === selectedCategory);
+      filtered = filtered.filter(exercise => exercise.bodyPart === selectedCategory);
     }
 
     // Filter by search query
@@ -194,9 +120,9 @@ const ExerciseSelector = ({ onSelectExercise }) => {
           </div>
         ) : filteredExercises.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {filteredExercises.map(exercise => (
+            {filteredExercises.map((exercise, index) => (
               <div
-                key={exercise.id}
+                key={index}
                 className="bg-[#1A1A2F] rounded-lg p-3 cursor-pointer hover:bg-[#1A1A2F]/70 transition-colors"
                 onClick={() => onSelectExercise(exercise)}
               >
@@ -208,7 +134,7 @@ const ExerciseSelector = ({ onSelectExercise }) => {
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = '/src/assets/exercises/default.jpg';
+                        e.target.src = '/exercise-default1.jpg';
                       }}
                     />
                   </div>

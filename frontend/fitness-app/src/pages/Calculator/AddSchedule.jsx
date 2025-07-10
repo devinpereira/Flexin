@@ -19,6 +19,8 @@ import {
   FaPlus,
   FaBars
 } from 'react-icons/fa';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const AddSchedule = () => {
   const navigate = useNavigate();
@@ -96,7 +98,7 @@ const AddSchedule = () => {
   };
 
   // Handle saving the schedule
-  const handleSaveSchedule = () => {
+  const handleSaveSchedule = async () => {
     if (!name.trim()) {
       setError('Please enter a schedule name');
       return;
@@ -126,22 +128,16 @@ const AddSchedule = () => {
       description,
       days: selectedDays,
       exercises,
-      createdAt: new Date().toISOString()
     };
 
-    // In a real app, you'd send this to an API
-    // For this demo, we'll store in localStorage
-    setTimeout(() => {
-      try {
-        const savedSchedules = JSON.parse(localStorage.getItem('customSchedules') || '[]');
-        localStorage.setItem('customSchedules', JSON.stringify([...savedSchedules, newSchedule]));
-        navigate('/custom-schedules');
-      } catch (err) {
-        setError('Failed to save schedule. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1000);
+  try {
+      await axiosInstance.post(API_PATHS.WORKOUT.CREATE_WORKOUT, { newSchedule });
+      navigate('/custom-schedules');
+    } catch (err) {
+      setError('Failed to save schedule. Please try again.', err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

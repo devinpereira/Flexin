@@ -65,6 +65,7 @@ export const API_PATHS = {
     GET_WORKOUT_PLANS: "/api/v1/workouts", // Done
     GENERATE_WORKOUT: "/api/v1/workout/generate", // Done
     UPDATE_WORKOUT: `/api/v1/workouts`, // Done
+    CREATE_WORKOUT: "/api/v1/workouts/create", // Done
   },
   EXERCISE: {
     GET_EXERCISES: "/api/v1/exercises", // Done
