@@ -5,6 +5,9 @@ import { Login, Signup, Logout, OAuthSuccess } from "./pages/Auth";
 import Store from "./pages/Store/index";
 import Checkout from "./pages/Store/Checkout";
 import ProductView from "./pages/Store/ProductView";
+import OrderConfirmation from "./pages/Store/OrderConfirmation";
+import Orders from "./pages/Store/Orders";
+import OrderDetails from "./pages/Store/OrderDetails";
 import {
   Trainers,
   Explore,
@@ -93,6 +96,9 @@ function App() {
                   <Route element={<PrivateRoute />}>
                     <Route path="/store" element={<Store />} />
                     <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/order-confirmation" element={<OrderConfirmation />} />
+                    <Route path="/orders" element={<Orders />} />
+                    <Route path="/orders/:orderId" element={<OrderDetails />} />
                     <Route path="/product/:productId" element={<ProductView />} />
                     <Route path="/trainers/my-trainers" element={<Trainers />} />
                     <Route path="/explore" element={<Explore />} />

@@ -8,6 +8,23 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { items = [], total = "0.00" } = location.state || {};
 
+  // Debug: Log cart items
+  useEffect(() => {
+    console.log('Checkout component loaded');
+    console.log('Cart items:', items);
+    console.log('Total:', total);
+
+    items.forEach((item, index) => {
+      console.log(`Item ${index + 1}:`, {
+        id: item.id,
+        _id: item._id,
+        name: item.name || item.productName,
+        price: item.price,
+        quantity: item.quantity
+      });
+    });
+  }, [items, total]);
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -26,6 +43,8 @@ const Checkout = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [newAddressData, setNewAddressData] = useState({
     fullName: '',
     addressLine1: '',
@@ -42,6 +61,7 @@ const Checkout = () => {
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
+        setIsLoadingAddresses(true);
         const token = localStorage.getItem('token');
         if (token) {
           const response = await addressesApi.getAddresses();
@@ -53,8 +73,14 @@ const Checkout = () => {
               setSelectedAddress(defaultAddress);
             }
           }
+        } else {
+          // Use fallback addresses for demo
+          setSavedAddresses([
+            { id: 1, name: 'Home', address: '123 Main St, Colombo', isDefault: true },
+            { id: 2, name: 'Work', address: '456 Business Ave, Kandy', isDefault: false }
+          ]);
+          setSelectedAddress({ id: 1, name: 'Home', address: '123 Main St, Colombo', isDefault: true });
         }
-        setIsLoading(false);
       } catch (error) {
         console.error('Error fetching addresses:', error);
         // Use fallback addresses
@@ -62,6 +88,9 @@ const Checkout = () => {
           { id: 1, name: 'Home', address: '123 Main St, Colombo', isDefault: true },
           { id: 2, name: 'Work', address: '456 Business Ave, Kandy', isDefault: false }
         ]);
+        setSelectedAddress({ id: 1, name: 'Home', address: '123 Main St, Colombo', isDefault: true });
+      } finally {
+        setIsLoadingAddresses(false);
         setIsLoading(false);
       }
     };
@@ -73,6 +102,85 @@ const Checkout = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCustomerInfo(prev => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  // Comprehensive form validation
+  const validateForm = () => {
+    const errors = {};
+
+    // Customer info validation
+    if (!customerInfo.firstName.trim()) {
+      errors.firstName = 'First name is required';
+    }
+    if (!customerInfo.lastName.trim()) {
+      errors.lastName = 'Last name is required';
+    }
+    if (!customerInfo.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(customerInfo.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    if (!customerInfo.phone.trim()) {
+      errors.phone = 'Phone number is required';
+    } else if (!/^\+?[0-9]{10,15}$/.test(customerInfo.phone.replace(/[\s-()]/g, ''))) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+
+    // Address validation
+    if (!selectedAddress) {
+      errors.address = 'Please select a shipping address';
+    }
+
+    // Payment validation
+    if (!selectedPayment) {
+      errors.payment = 'Please select a payment method';
+    }
+
+    return errors;
+  };
+
+  // Validate cart items before checkout
+  const validateCartItems = async () => {
+    try {
+      const { productsApi } = await import('../../api/storeApi');
+
+      for (const item of items) {
+        const productId = item.id || item._id;
+        if (!productId) {
+          throw new Error(`Product ${item.name} is missing ID`);
+        }
+
+        try {
+          const response = await productsApi.getProduct(productId);
+          if (!response.success || !response.product) {
+            throw new Error(`Product ${item.name} is no longer available`);
+          }
+
+          const product = response.product;
+          if (!product.isActive) {
+            throw new Error(`Product ${item.name} is no longer available`);
+          }
+
+          if (product.quantity < item.quantity) {
+            throw new Error(`Insufficient stock for ${item.name}. Only ${product.quantity} available`);
+          }
+        } catch (productError) {
+          if (productError.message.includes('404')) {
+            throw new Error(`Product ${item.name} was not found`);
+          }
+          throw productError;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Cart validation error:', error);
+      throw error;
+    }
   };
 
   // Handle address input changes
@@ -141,8 +249,15 @@ const Checkout = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedAddress || !selectedPayment) {
-      alert('Please select both shipping address and payment method');
+    // Validate form
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setFormErrors(validationErrors);
+      // Scroll to first error
+      const firstErrorField = document.querySelector('.error-field');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -151,9 +266,20 @@ const Checkout = () => {
       return;
     }
 
+    // Validate all items have valid product IDs
+    const invalidItems = items.filter(item => !item.id && !item._id);
+    if (invalidItems.length > 0) {
+      console.error('Items with missing IDs:', invalidItems);
+      alert('Some items in your cart are missing product information. Please refresh your cart and try again.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      // First validate cart items exist and are available
+      await validateCartItems();
+
       // Prepare order data
       const orderData = {
         items: items.map(item => ({
@@ -161,18 +287,26 @@ const Checkout = () => {
           quantity: item.quantity
         })),
         addressId: selectedAddress.id || selectedAddress._id,
-        paymentMethod: selectedPayment.type,
+        paymentMethod: selectedPayment.type, // This should be 'card', 'paypal', or 'cash_on_delivery'
         customerInfo
       };
+
+      console.log('Order data being sent:', orderData);
+      console.log('Selected payment details:', selectedPayment);
+      console.log('Items details:', items);
 
       const response = await ordersApi.createOrder(orderData);
 
       if (response.success) {
-        alert('Order placed successfully!');
-        navigate('/store', {
+        // Navigate to order confirmation page
+        navigate('/order-confirmation', {
           state: {
-            message: 'Order placed successfully!',
-            orderId: response.order._id
+            orderId: response.order._id,
+            orderDetails: response.order,
+            customerInfo,
+            selectedAddress,
+            items,
+            total
           }
         });
       } else {
@@ -180,11 +314,47 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Error creating order:', error);
-      alert(error.message || 'Failed to place order. Please try again.');
+      console.error('Full error details:', JSON.stringify(error, null, 2));
+
+      // More specific error messages
+      if (error.message && error.message.includes('not found')) {
+        alert('One or more products in your cart are no longer available. Please refresh your cart and try again.');
+        // Optionally redirect back to cart
+        setTimeout(() => {
+          navigate('/store/cart');
+        }, 2000);
+      } else if (error.message && error.message.includes('Insufficient stock')) {
+        alert('Some items in your cart don\'t have enough stock. Please update quantities and try again.');
+        setTimeout(() => {
+          navigate('/store/cart');
+        }, 2000);
+      } else if (error.message && error.message.includes('no longer available')) {
+        alert('Some products in your cart are no longer available. Please remove them and try again.');
+        setTimeout(() => {
+          navigate('/store/cart');
+        }, 2000);
+      } else {
+        alert(error.message || 'Failed to place order. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading while fetching initial data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-cover bg-center bg-fixed overflow-x-hidden"
+        style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
+        <div className="container mx-auto pt-8 px-4">
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="w-12 h-12 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-white text-lg">Loading checkout...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-cover bg-center bg-fixed overflow-x-hidden"
@@ -204,58 +374,82 @@ const Checkout = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      First Name
+                      First Name *
                     </label>
                     <input
                       type="text"
                       name="firstName"
                       value={customerInfo.firstName}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
-                      required
+                      className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 transition-colors ${formErrors.firstName
+                          ? 'border-red-500 focus:ring-red-500 error-field'
+                          : 'border-white/30 focus:ring-[#F16436]'
+                        }`}
+                      placeholder="Enter your first name"
                     />
+                    {formErrors.firstName && (
+                      <p className="text-red-400 text-sm mt-1">{formErrors.firstName}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Last Name
+                      Last Name *
                     </label>
                     <input
                       type="text"
                       name="lastName"
                       value={customerInfo.lastName}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
-                      required
+                      className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 transition-colors ${formErrors.lastName
+                          ? 'border-red-500 focus:ring-red-500 error-field'
+                          : 'border-white/30 focus:ring-[#F16436]'
+                        }`}
+                      placeholder="Enter your last name"
                     />
+                    {formErrors.lastName && (
+                      <p className="text-red-400 text-sm mt-1">{formErrors.lastName}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Email
+                      Email *
                     </label>
                     <input
                       type="email"
                       name="email"
                       value={customerInfo.email}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
-                      required
+                      className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 transition-colors ${formErrors.email
+                          ? 'border-red-500 focus:ring-red-500 error-field'
+                          : 'border-white/30 focus:ring-[#F16436]'
+                        }`}
+                      placeholder="Enter your email address"
                     />
+                    {formErrors.email && (
+                      <p className="text-red-400 text-sm mt-1">{formErrors.email}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Phone
+                      Phone *
                     </label>
                     <input
                       type="tel"
                       name="phone"
                       value={customerInfo.phone}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
-                      required
+                      className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 transition-colors ${formErrors.phone
+                          ? 'border-red-500 focus:ring-red-500 error-field'
+                          : 'border-white/30 focus:ring-[#F16436]'
+                        }`}
+                      placeholder="Enter your phone number"
                     />
+                    {formErrors.phone && (
+                      <p className="text-red-400 text-sm mt-1">{formErrors.phone}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -263,10 +457,10 @@ const Checkout = () => {
               {/* Shipping Address */}
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 mb-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-white text-xl font-bold">Shipping Address</h2>
+                  <h2 className="text-white text-xl font-bold">Shipping Address *</h2>
                   <button
                     type="button"
-                    className="bg-[#f67a45] text-white px-4 py-2 rounded-md text-sm"
+                    className="bg-[#f67a45] text-white px-4 py-2 rounded-md text-sm hover:bg-[#e56d3d] transition-colors"
                     onClick={() => setShowAddressModal(true)}
                   >
                     {selectedAddress ? 'Change' : 'Add'} Address
@@ -274,22 +468,27 @@ const Checkout = () => {
                 </div>
 
                 {selectedAddress ? (
-                  <div className="bg-[#1e1e35] p-4 rounded-lg">
+                  <div className="bg-[#1e1e35] p-4 rounded-lg border-l-4 border-green-500">
                     <p className="text-white font-medium">{selectedAddress.fullName || selectedAddress.name}</p>
                     <p className="text-white/70">{selectedAddress.address || `${selectedAddress.addressLine1}, ${selectedAddress.city} ${selectedAddress.postalCode}`}</p>
                   </div>
                 ) : (
-                  <p className="text-white/70">No shipping address selected</p>
+                  <div className={`p-4 rounded-lg border-2 border-dashed ${formErrors.address ? 'border-red-500 bg-red-500/10' : 'border-white/30'}`}>
+                    <p className="text-white/70 text-center">No shipping address selected</p>
+                  </div>
+                )}
+                {formErrors.address && (
+                  <p className="text-red-400 text-sm mt-2">{formErrors.address}</p>
                 )}
               </div>
 
               {/* Payment Method */}
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 mb-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-white text-xl font-bold">Payment Method</h2>
+                  <h2 className="text-white text-xl font-bold">Payment Method *</h2>
                   <button
                     type="button"
-                    className="bg-[#f67a45] text-white px-4 py-2 rounded-md text-sm"
+                    className="bg-[#f67a45] text-white px-4 py-2 rounded-md text-sm hover:bg-[#e56d3d] transition-colors"
                     onClick={() => setShowPaymentModal(true)}
                   >
                     {selectedPayment ? 'Change' : 'Add'} Payment
@@ -297,23 +496,35 @@ const Checkout = () => {
                 </div>
 
                 {selectedPayment ? (
-                  <div className="bg-[#1e1e35] p-4 rounded-lg">
-                    <p className="text-white font-medium">{selectedPayment.type}</p>
-                    {selectedPayment.type === 'Card' && (
+                  <div className="bg-[#1e1e35] p-4 rounded-lg border-l-4 border-green-500">
+                    <p className="text-white font-medium">{selectedPayment.displayName || selectedPayment.type}</p>
+                    {selectedPayment.type === 'card' && (
                       <p className="text-white/70">**** **** **** {selectedPayment.lastFour}</p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-white/70">No payment method selected</p>
+                  <div className={`p-4 rounded-lg border-2 border-dashed ${formErrors.payment ? 'border-red-500 bg-red-500/10' : 'border-white/30'}`}>
+                    <p className="text-white/70 text-center">No payment method selected</p>
+                  </div>
+                )}
+                {formErrors.payment && (
+                  <p className="text-red-400 text-sm mt-2">{formErrors.payment}</p>
                 )}
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-[#f67a45] text-white py-3 rounded-md hover:bg-[#e56d3d] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!selectedAddress || !selectedPayment || isSubmitting}
+                className="w-full bg-[#f67a45] text-white py-3 rounded-md hover:bg-[#e56d3d] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={isSubmitting}
               >
-                {isSubmitting ? 'Placing Order...' : 'Place Order'}
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Placing Order...</span>
+                  </>
+                ) : (
+                  'Place Order'
+                )}
               </button>
             </form>
           </div>
@@ -328,7 +539,7 @@ const Checkout = () => {
                   <div key={item.id || item._id} className="flex items-center mb-4">
                     <div className="w-16 h-16 bg-gray-700/30 rounded-lg mr-3">
                       <img
-                        src={item.image || item.images?.[0] || '/default.jpg'}
+                        src={item.image || item.images?.[0]?.url || item.images?.[0] || '/default.jpg'}
                         alt={item.name || item.productName}
                         className="w-full h-full object-cover rounded-lg"
                         onError={(e) => {
@@ -368,13 +579,13 @@ const Checkout = () => {
 
       {/* Payment Method Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-4">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
               <h3 className="text-white text-xl font-bold">Select Payment Method</h3>
               <button
                 onClick={() => setShowPaymentModal(false)}
-                className="text-white/70 hover:text-white"
+                className="text-white/70 hover:text-white transition-colors"
               >
                 <AiOutlineClose size={20} />
               </button>
@@ -382,85 +593,147 @@ const Checkout = () => {
 
             <div className="space-y-4 mb-6">
               <button
-                className={`w-full text-left p-4 rounded-lg border ${paymentMethod === 'card' ? 'border-[#f67a45]' : 'border-white/30'
+                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'card'
+                    ? 'border-[#f67a45] bg-[#f67a45]/10'
+                    : 'border-white/30 hover:border-white/50'
                   }`}
                 onClick={() => handlePaymentMethodSelect('card')}
               >
-                <p className="text-white font-medium">Credit/Debit Card</p>
-                <p className="text-white/70 text-sm">Pay with Visa, Mastercard, etc.</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    💳
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Credit/Debit Card</p>
+                    <p className="text-white/70 text-sm">Pay with Visa, Mastercard, etc.</p>
+                  </div>
+                </div>
               </button>
 
               <button
-                className={`w-full text-left p-4 rounded-lg border ${paymentMethod === 'online' ? 'border-[#f67a45]' : 'border-white/30'
+                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'paypal'
+                    ? 'border-[#f67a45] bg-[#f67a45]/10'
+                    : 'border-white/30 hover:border-white/50'
                   }`}
-                onClick={() => handlePaymentMethodSelect('online')}
+                onClick={() => handlePaymentMethodSelect('paypal')}
               >
-                <p className="text-white font-medium">Online Payment</p>
-                <p className="text-white/70 text-sm">Pay with PayPal, Apple Pay, etc.</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
+                    🅿️
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">PayPal</p>
+                    <p className="text-white/70 text-sm">Pay with your PayPal account</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${paymentMethod === 'cash'
+                    ? 'border-[#f67a45] bg-[#f67a45]/10'
+                    : 'border-white/30 hover:border-white/50'
+                  }`}
+                onClick={() => handlePaymentMethodSelect('cash')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    💵
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Cash on Delivery</p>
+                    <p className="text-white/70 text-sm">Pay when you receive your order</p>
+                  </div>
+                </div>
               </button>
             </div>
 
             {paymentMethod === 'card' && (
-              <div className="space-y-4">
+              <div className="space-y-4 mb-6 p-4 bg-[#1a1a2f] rounded-lg">
+                <h4 className="text-white font-medium mb-3">Card Details</h4>
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">
-                    Card Number
+                    Card Number *
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                    className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#f67a45] transition-colors"
                     placeholder="1234 5678 9012 3456"
+                    maxLength="19"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Expiry Date
+                      Expiry Date *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#f67a45] transition-colors"
                       placeholder="MM/YY"
+                      maxLength="5"
                     />
                   </div>
 
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      CVC
+                      CVC *
                     </label>
                     <input
                       type="text"
-                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                      className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#f67a45] transition-colors"
                       placeholder="123"
+                      maxLength="4"
                     />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">
-                    Cardholder Name
+                    Cardholder Name *
                   </label>
                   <input
                     type="text"
-                    className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#F16436]"
+                    className="w-full px-4 py-3 bg-transparent border border-white/30 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-[#f67a45] transition-colors"
                     placeholder="John Doe"
                   />
                 </div>
               </div>
             )}
 
+            {paymentMethod === 'paypal' && (
+              <div className="mb-6 p-4 bg-[#1a1a2f] rounded-lg">
+                <p className="text-white/70 text-sm">
+                  You will be redirected to PayPal to complete your payment securely.
+                </p>
+              </div>
+            )}
+
+            {paymentMethod === 'cash' && (
+              <div className="mb-6 p-4 bg-[#1a1a2f] rounded-lg">
+                <p className="text-white/70 text-sm">
+                  You can pay with cash when your order is delivered. Please have the exact amount ready.
+                </p>
+              </div>
+            )}
+
             <button
-              className="w-full mt-6 bg-[#f67a45] text-white py-3 rounded-md hover:bg-[#e56d3d] transition-colors font-medium"
+              className="w-full bg-[#f67a45] text-white py-3 rounded-lg hover:bg-[#e56d3d] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!paymentMethod}
               onClick={() => {
-                setSelectedPayment({
-                  type: paymentMethod === 'card' ? 'Card' : 'Online Payment',
-                  lastFour: '4242'
-                });
-                setShowPaymentModal(false);
+                if (paymentMethod) {
+                  setSelectedPayment({
+                    type: paymentMethod === 'card' ? 'card' :
+                      paymentMethod === 'paypal' ? 'paypal' : 'cash_on_delivery',
+                    displayName: paymentMethod === 'card' ? 'Credit Card' :
+                      paymentMethod === 'paypal' ? 'PayPal' : 'Cash on Delivery',
+                    lastFour: paymentMethod === 'card' ? '4242' : undefined
+                  });
+                  setShowPaymentModal(false);
+                }
               }}
             >
-              Save Payment Method
+              {paymentMethod ? 'Save Payment Method' : 'Select a Payment Method'}
             </button>
           </div>
         </div>

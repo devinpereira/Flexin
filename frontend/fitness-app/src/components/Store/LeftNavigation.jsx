@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiShoppingCart, FiTag, FiX, FiDroplet, FiHeart, FiHome, FiClock } from 'react-icons/fi';
+import { FiShoppingCart, FiTag, FiX, FiDroplet, FiHeart, FiHome, FiClock, FiPackage } from 'react-icons/fi';
 import { AiFillCaretDown, AiFillCaretUp } from 'react-icons/ai';
 import { MdKeyboardArrowRight, MdFitnessCenter, MdLocalDining } from 'react-icons/md';
 import { GiClothes, GiBackpack } from 'react-icons/gi';
@@ -245,6 +245,18 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
               <div className="flex items-center">
                 <FiTag className="mr-2" />
                 <span>Offers & Deals</span>
+              </div>
+            </button>
+
+            <button
+              className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-white hover:bg-[#1e1e35]"
+              onClick={() => {
+                window.location.href = '/orders';
+              }}
+            >
+              <div className="flex items-center">
+                <FiPackage className="mr-2" />
+                <span>My Orders</span>
               </div>
             </button>
           </div>
