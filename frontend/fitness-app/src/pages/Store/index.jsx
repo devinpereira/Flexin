@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
 import MainStoreView from '../../components/Store/MainStoreView';
 import ShoppingCartView from '../../components/Store/ShoppingCartView';
@@ -10,11 +10,21 @@ import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
 const Store = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeView, setActiveView] = useState('main');
   const [activeCategory, setActiveCategory] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+
+  // Handle navigation state from other pages
+  useEffect(() => {
+    if (location.state?.activeView) {
+      setActiveView(location.state.activeView);
+      // Clear the state to prevent it from persisting on subsequent visits
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   // Fetch cart items from local storage on component mount
   useEffect(() => {

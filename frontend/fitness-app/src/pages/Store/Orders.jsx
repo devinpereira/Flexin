@@ -13,6 +13,26 @@ const Orders = () => {
     const [sortBy, setSortBy] = useState('newest');
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
+    // Handle navigation for LeftNavigation component
+    const handleNavigation = (view) => {
+        switch (view) {
+            case 'main':
+                navigate('/store');
+                break;
+            case 'cart':
+                navigate('/store', { state: { activeView: 'cart' } });
+                break;
+            case 'deals':
+                navigate('/store', { state: { activeView: 'deals' } });
+                break;
+            case 'orders':
+                // Already on orders page, do nothing
+                break;
+            default:
+                navigate('/store');
+        }
+    };
+
     useEffect(() => {
         fetchOrders();
     }, []);
@@ -105,8 +125,8 @@ const Orders = () => {
                         {/* Left Navigation - Categories */}
                         <LeftNavigation
                             activeView="orders"
-                            setActiveView={() => { }}
-                            onCategorySelect={() => { }}
+                            setActiveView={handleNavigation}
+                            onCategorySelect={() => navigate('/store')}
                             cartItemsCount={0}
                             isMobileNavOpen={isMobileNavOpen}
                             setIsMobileNavOpen={setIsMobileNavOpen}
@@ -136,8 +156,8 @@ const Orders = () => {
                     {/* Left Navigation - Categories */}
                     <LeftNavigation
                         activeView="orders"
-                        setActiveView={() => { }}
-                        onCategorySelect={() => { }}
+                        setActiveView={handleNavigation}
+                        onCategorySelect={() => navigate('/store')}
                         cartItemsCount={0}
                         isMobileNavOpen={isMobileNavOpen}
                         setIsMobileNavOpen={setIsMobileNavOpen}

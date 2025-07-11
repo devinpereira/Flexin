@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiTag, FiX, FiDroplet, FiHeart, FiHome, FiClock, FiPackage } from 'react-icons/fi';
 import { AiFillCaretDown, AiFillCaretUp } from 'react-icons/ai';
 import { MdKeyboardArrowRight, MdFitnessCenter, MdLocalDining } from 'react-icons/md';
@@ -7,6 +8,7 @@ import { categoriesApi } from '../../api/storeApi';
 import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
 const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItemsCount, isMobileNavOpen, setIsMobileNavOpen, onProductClick }) => {
+  const navigate = useNavigate();
   const [expandedCategories, setExpandedCategories] = useState({});
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,6 +148,14 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
 
   // Handle view change
   const handleViewChange = (view) => {
+    if (view === 'orders') {
+      // Navigate to orders page using React Router
+      navigate('/orders');
+      setIsMobileNavOpen(false);
+      return;
+    }
+    
+    // For other views, use the existing setActiveView function
     setActiveView(view);
     setIsMobileNavOpen(false);
   };
@@ -249,10 +259,9 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
             </button>
 
             <button
-              className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-white hover:bg-[#1e1e35]"
-              onClick={() => {
-                window.location.href = '/orders';
-              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg ${activeView === 'orders' ? 'bg-[#f67a45] text-white' : 'text-white hover:bg-[#1e1e35]'
+                }`}
+              onClick={() => handleViewChange('orders')}
             >
               <div className="flex items-center">
                 <FiPackage className="mr-2" />

@@ -13,6 +13,26 @@ const OrderDetails = () => {
     const [error, setError] = useState(null);
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
+    // Handle navigation for LeftNavigation component
+    const handleNavigation = (view) => {
+        switch (view) {
+            case 'main':
+                navigate('/store');
+                break;
+            case 'cart':
+                navigate('/store', { state: { activeView: 'cart' } });
+                break;
+            case 'deals':
+                navigate('/store', { state: { activeView: 'deals' } });
+                break;
+            case 'orders':
+                navigate('/orders');
+                break;
+            default:
+                navigate('/store');
+        }
+    };
+
     // Helper function to process Cloudinary images (matching ProductView pattern)
     const processCloudinaryImage = (imageData) => {
         if (!imageData) return '/public/default.jpg';
@@ -142,8 +162,8 @@ const OrderDetails = () => {
                         {/* Left Navigation - Categories */}
                         <LeftNavigation
                             activeView="orders"
-                            setActiveView={() => { }}
-                            onCategorySelect={() => { }}
+                            setActiveView={handleNavigation}
+                            onCategorySelect={() => navigate('/store')}
                             cartItemsCount={0}
                             isMobileNavOpen={isMobileNavOpen}
                             setIsMobileNavOpen={setIsMobileNavOpen}
@@ -174,8 +194,8 @@ const OrderDetails = () => {
                         {/* Left Navigation - Categories */}
                         <LeftNavigation
                             activeView="orders"
-                            setActiveView={() => { }}
-                            onCategorySelect={() => { }}
+                            setActiveView={handleNavigation}
+                            onCategorySelect={() => navigate('/store')}
                             cartItemsCount={0}
                             isMobileNavOpen={isMobileNavOpen}
                             setIsMobileNavOpen={setIsMobileNavOpen}
@@ -219,8 +239,8 @@ const OrderDetails = () => {
                     {/* Left Navigation - Categories */}
                     <LeftNavigation
                         activeView="orders"
-                        setActiveView={() => { }}
-                        onCategorySelect={() => { }}
+                        setActiveView={handleNavigation}
+                        onCategorySelect={() => navigate('/store')}
                         cartItemsCount={0}
                         isMobileNavOpen={isMobileNavOpen}
                         setIsMobileNavOpen={setIsMobileNavOpen}
