@@ -40,37 +40,25 @@ const Post = ({ post, onLike }) => {
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(post.comments);
 
-  /**
-   * Handle liking/unliking a post
-   * Updates UI optimistically then calls the API
-   */
   const handleLike = async () => {
-    // Optimistic UI update
     setLiked(!liked);
     setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
 
     try {
-      // API call to update like status
       await axiosInstance.post(`${API_PATHS.POST.LIKE_POST(post.id)}`);
       if (onLike) onLike(post.id);
     } catch (err) {
-      // Revert UI if API call fails
       setLiked(liked);
       setLikesCount((prev) => (liked ? prev + 1 : prev - 1));
       console.error("Failed to like/unlike post:", err);
     }
   };
 
-  /**
-   * Handle adding a new comment to a post
-   * Submits to API and updates local state
-   */
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
 
     try {
-      // API call to add comment
       const res = await axiosInstance.post(
         `${API_PATHS.COMMENT.ADD_COMMENT(post.id)}`,
         {
@@ -78,7 +66,6 @@ const Post = ({ post, onLike }) => {
         }
       );
 
-      // Format the new comment
       const newComment = {
         _id: res.data._id,
         userId: {
@@ -89,7 +76,6 @@ const Post = ({ post, onLike }) => {
         createdAt: new Date(res.data.createdAt).toISOString(),
       };
 
-      // Update state with the new comment
       setCommentCount((prev) => prev + 1);
       setComments([newComment, ...comments]);
       setCommentText("");
@@ -98,10 +84,6 @@ const Post = ({ post, onLike }) => {
     }
   };
 
-  /**
-   * Fetch comments when comment section is expanded
-   * Loads comments from API only when needed (lazy loading)
-   */
   const handleCommentClick = async () => {
     setShowComments(!showComments);
     if (!showComments && comments.length === 0) {
@@ -116,16 +98,10 @@ const Post = ({ post, onLike }) => {
     }
   };
 
-  /**
-   * Image carousel navigation - previous image
-   */
   const goToPrevImage = () => {
     setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
-  /**
-   * Image carousel navigation - next image
-   */
   const goToNextImage = () => {
     setCurrentImageIndex((prev) => {
       if (post.images && Array.isArray(post.images)) {
@@ -158,7 +134,7 @@ const Post = ({ post, onLike }) => {
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = "/src/assets/profile1.png";
+                e.target.src = "/default.jpg";
               }}
             />
           </div>
@@ -206,7 +182,7 @@ const Post = ({ post, onLike }) => {
             className="w-full h-auto max-h-[500px] object-contain bg-black"
             onError={(e) => {
               e.target.onerror = null;
-              e.target.src = "/src/assets/posts/default.jpg";
+              e.target.src = "/post-default.jpg";
             }}
           />
 
@@ -268,7 +244,7 @@ const Post = ({ post, onLike }) => {
               className="w-full h-auto"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = "/src/assets/posts/default.jpg";
+                e.target.src = "/post-default.jpg";
               }}
             />
           </div>
@@ -342,7 +318,7 @@ const Post = ({ post, onLike }) => {
                     src={
                       comment.userId?.profileImageUrl
                         ? comment.userId.profileImageUrl
-                        : "/src/assets/profile1.png"
+                        : "/default.jpg"
                     }
                     alt="Profile"
                     className="w-full h-full object-cover"

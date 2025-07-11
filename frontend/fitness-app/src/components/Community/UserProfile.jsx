@@ -152,12 +152,12 @@ const UserProfile = ({ user, onBack }) => {
                 <div className="p-4 flex items-center">
                   <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                     <img
-                      src={profile.profileImage ? `${BASE_URL}/${profile.profileImage}` : '/src/assets/profile1.png'}
+                      src={profile.profileImage ? `${profile.profileImage}` : '/default.jpg'}
                       alt={profile.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "/src/assets/profile1.png";
+                        e.target.src = "/default.jpg";
                       }}
                     />
                   </div>
@@ -176,13 +176,13 @@ const UserProfile = ({ user, onBack }) => {
                 {post.content && post.content.length > 0 && (
                   <div className="w-full">
                     <img
-                      src={`${BASE_URL}/${post.content[0]}`}
+                      src={post.content[0]}
                       alt="Post"
                       className="w-full h-auto cursor-pointer"
                       onClick={() => setSelectedImagePost(post)}
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "/src/assets/posts/default.jpg";
+                        e.target.src = "/post-default.jpg";
                       }}
                     />
                   </div>
