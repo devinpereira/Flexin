@@ -123,14 +123,13 @@ const AddSchedule = () => {
 
     // Create schedule object
     const newSchedule = {
-      id: uuidv4(),
       name,
       description,
       days: selectedDays,
       exercises,
     };
 
-  try {
+    try {
       await axiosInstance.post(API_PATHS.WORKOUT.CREATE_WORKOUT, { newSchedule });
       navigate('/custom-schedules');
     } catch (err) {

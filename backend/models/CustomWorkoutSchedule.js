@@ -18,7 +18,6 @@ const exerciseSchema = new mongoose.Schema({
 });
 
 const customWorkoutScheduleSchema = new mongoose.Schema({
-  id: { type: String, required: true }, // UUID for frontend identification
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
   description: String,

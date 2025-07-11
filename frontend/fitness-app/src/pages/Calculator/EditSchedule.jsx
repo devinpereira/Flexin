@@ -6,6 +6,8 @@ import DaysSelector from '../../components/CustomSchedule/DaysSelector';
 import ExerciseSelector from '../../components/CustomSchedule/ExerciseSelector';
 import DayExercises from '../../components/CustomSchedule/DayExercises';
 import { FaPlus, FaSave, FaArrowLeft, FaTrash } from 'react-icons/fa';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const EditSchedule = () => {
   const { scheduleId } = useParams();
@@ -24,27 +26,30 @@ const EditSchedule = () => {
 
   // Load schedule data
   useEffect(() => {
-    try {
-      const savedSchedules = JSON.parse(localStorage.getItem('customSchedules') || '[]');
-      const schedule = savedSchedules.find(s => s.id === scheduleId);
+    const fetchSchedule = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.WORKOUT.GET_CUSTOM_WORKOUT(scheduleId));
+        const schedule = response.data;
+        if (schedule) {
+          setName(schedule.name || '');
+          setDescription(schedule.description || '');
+          setSelectedDays(schedule.days || []);
+          setExercises(schedule.exercises || {});
 
-      if (schedule) {
-        setName(schedule.name || '');
-        setDescription(schedule.description || '');
-        setSelectedDays(schedule.days || []);
-        setExercises(schedule.exercises || {});
-
-        if (schedule.days && schedule.days.length > 0) {
-          setCurrentDay(schedule.days[0]);
+          if (schedule.days && schedule.days.length > 0) {
+            setCurrentDay(schedule.days[0]);
+          }
+        } else {
+          setError('Schedule not found');
         }
-      } else {
-        setError('Schedule not found');
+      } catch (err) {
+        setError('Failed to load schedule');
+      } finally {
+        setInitialLoading(false);
       }
-    } catch (err) {
-      setError('Failed to load schedule');
-    } finally {
-      setInitialLoading(false);
-    }
+    };
+
+    fetchSchedule();
   }, [scheduleId]);
 
   // Handle adding a new exercise to a specific day
@@ -91,7 +96,7 @@ const EditSchedule = () => {
   };
 
   // Handle saving the updated schedule
-  const handleSaveSchedule = () => {
+  const handleSaveSchedule = async () => {
     if (!name.trim()) {
       setError('Please enter a schedule name');
       return;
@@ -116,30 +121,21 @@ const EditSchedule = () => {
 
     // Update schedule object
     const updatedSchedule = {
-      id: scheduleId,
       name,
       description,
       days: selectedDays,
       exercises,
-      updatedAt: new Date().toISOString()
     };
 
     // In a real app, you'd send this to an API
-    // For this demo, we'll update in localStorage
-    setTimeout(() => {
-      try {
-        const savedSchedules = JSON.parse(localStorage.getItem('customSchedules') || '[]');
-        const updatedSchedules = savedSchedules.map(s =>
-          s.id === scheduleId ? updatedSchedule : s
-        );
-        localStorage.setItem('customSchedules', JSON.stringify(updatedSchedules));
-        navigate('/custom-schedules');
-      } catch (err) {
-        setError('Failed to save schedule. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    }, 1000);
+    try {
+      await axiosInstance.patch(API_PATHS.WORKOUT.UPDATE_CUSTOM_WORKOUT(scheduleId), { schedule: updatedSchedule });
+      navigate('/custom-schedules');
+    } catch (err) {
+      setError('Failed to save schedule. Please try again.', err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle deleting the schedule
