@@ -129,7 +129,7 @@ const EditSchedule = () => {
 
     // In a real app, you'd send this to an API
     try {
-      await axiosInstance.patch(API_PATHS.WORKOUT.UPDATE_CUSTOM_WORKOUT(scheduleId), { schedule: updatedSchedule });
+      await axiosInstance.patch(API_PATHS.WORKOUT.UPDATE_CUSTOM_WORKOUT(scheduleId), updatedSchedule);
       navigate('/custom-schedules');
     } catch (err) {
       setError('Failed to save schedule. Please try again.', err.message);

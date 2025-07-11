@@ -102,27 +102,27 @@ export const getCustomWorkoutPlan = async (req, res) => {
 
 export const updateWorkoutPlan = async (req, res) => {
   const { id: scheduleId } = req.params;
-  const { schedule } = req.body;
+  const { name, description, days, exercises } = req.body;
 
   try {
-    if (!schedule || typeof schedule !== 'object') {
-      return res.status(400).json({ message: "Invalid schedule format" });
-    }
+    // Get the workout plan
+    const Plan = await CustomWorkoutSchedule.findById(scheduleId);
 
-    // Get the latest workout plan
-    const latestPlan = await CustomWorkoutSchedule.findById(scheduleId);
-
-    if (!latestPlan) {
+    if (!Plan) {
       return res.status(404).json({ message: "No existing workout plan found to update" });
     }
 
-    // Update the schedule
-    latestPlan.schedule = schedule;
-    await latestPlan.save();
+    // Update individual fields
+    Plan.name = name;
+    Plan.description = description;
+    Plan.days = days;
+    Plan.exercises = exercises;
 
-    return res.status(200).json({ message: "Workout plan updated successfully", schedule: latestPlan.schedule });
+    await Plan.save();
+
+    return res.status(200).json({ message: "Workout plan updated successfully", schedule: Plan.schedule });
   } catch (err) {
     console.error("Error updating workout plan:", err);
-    return res.status(500).json({ message: "Server error. Failed to update workout plan." });
+    return res.status(500).json({ message: "Server error. Failed to update workout plan.", error: err.message });
   }
 };
