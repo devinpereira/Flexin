@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import CalculatorLayout from '../../components/Calculator/CalculatorLayout';
 import ScheduleCard from '../../components/CustomSchedule/ScheduleCard';
 import { FaPlus, FaTimes } from 'react-icons/fa';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const CustomSchedules = () => {
   const navigate = useNavigate();
@@ -12,13 +14,14 @@ const CustomSchedules = () => {
   const [alertType, setAlertType] = useState('success');
   const [showTutorialImages, setShowTutorialImages] = useState(true);
 
-  // Mock data for schedules (in a real app, this would come from an API/database)
+  // Fetch the custom schedules
   useEffect(() => {
-    // Simulate loading schedules
-    const savedSchedules = localStorage.getItem('customSchedules');
-    if (savedSchedules) {
-      setSchedules(JSON.parse(savedSchedules));
+    const fetchCustomSchedules = async () =>{
+      const response = await axiosInstance.get(API_PATHS.WORKOUT.GET_CUSTOM_WORKOUTS);
+      setSchedules(response.data || []);
     }
+
+    fetchCustomSchedules();
   }, []);
 
   const handleAddSchedule = () => {
@@ -38,9 +41,9 @@ const CustomSchedules = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
               {schedules.map((schedule) => (
                 <ScheduleCard
-                  key={schedule.id}
+                  key={schedule._id}
                   schedule={schedule}
-                  onClick={() => handleViewSchedule(schedule.id)}
+                  onClick={() => handleViewSchedule(schedule._id)}
                 />
               ))}
 
