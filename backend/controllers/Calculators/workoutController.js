@@ -126,3 +126,18 @@ export const updateWorkoutPlan = async (req, res) => {
     return res.status(500).json({ message: "Server error. Failed to update workout plan.", error: err.message });
   }
 };
+
+export const deleteCustomWorkoutPlan = async (req, res) => {
+  const { id: scheduleId } = req.params;
+
+  try {
+    const plan = await CustomWorkoutSchedule.findByIdAndDelete(scheduleId);
+    if (!plan) {
+      return res.status(404).json({ message: "No custom workout plan found to delete" });
+    }
+    res.status(200).json({ message: "Custom workout plan deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting workout plan:", err);
+    res.status(500).json({ message: "Server error. Failed to delete workout plan." });
+  }
+}

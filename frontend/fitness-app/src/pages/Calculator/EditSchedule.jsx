@@ -139,23 +139,17 @@ const EditSchedule = () => {
   };
 
   // Handle deleting the schedule
-  const handleDeleteSchedule = () => {
+  const handleDeleteSchedule = async () => {
     setIsLoading(true);
 
-    // In a real app, you'd send a delete request to an API
-    // For this demo, we'll remove from localStorage
-    setTimeout(() => {
-      try {
-        const savedSchedules = JSON.parse(localStorage.getItem('customSchedules') || '[]');
-        const filteredSchedules = savedSchedules.filter(s => s.id !== scheduleId);
-        localStorage.setItem('customSchedules', JSON.stringify(filteredSchedules));
-        navigate('/custom-schedules');
-      } catch (err) {
-        setError('Failed to delete schedule. Please try again.');
-        setIsLoading(false);
-        setShowDeleteConfirm(false);
-      }
-    }, 1000);
+    try {
+      await axiosInstance.delete(API_PATHS.WORKOUT.DELETE_CUSTOM_WORKOUT(scheduleId));
+      navigate('/custom-schedules');
+    } catch (err) {
+      setError('Failed to delete schedule. Please try again.');
+      setIsLoading(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   if (initialLoading) {

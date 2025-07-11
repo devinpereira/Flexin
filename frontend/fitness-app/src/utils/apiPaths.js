@@ -69,6 +69,7 @@ export const API_PATHS = {
     GET_CUSTOM_WORKOUTS: "/api/v1/workouts/custom", // Done
     GET_CUSTOM_WORKOUT: (workoutId) => `/api/v1/workouts/custom/${workoutId}`, // Done
     UPDATE_CUSTOM_WORKOUT: (workoutId) => `/api/v1/workouts/custom/${workoutId}`, // Done
+    DELETE_CUSTOM_WORKOUT: (workoutId) => `/api/v1/workouts/custom/${workoutId}`, // Done
   },
   EXERCISE: {
     GET_EXERCISES: "/api/v1/exercises", // Done
