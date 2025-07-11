@@ -142,10 +142,14 @@ export const ordersApi = {
     // Create new order
     createOrder: async (orderData) => {
         try {
+            console.log('Sending order data to API:', orderData);
             const response = await api.post(API_PATHS.STORE_ORDERS.CREATE_ORDER, orderData);
+            console.log('Order API response:', response.data);
             return response.data;
         } catch (error) {
-            throw error.response?.data || error.message;
+            console.error('Order API error:', error);
+            console.error('Error response:', error.response?.data);
+            throw error.response?.data || { success: false, message: error.message };
         }
     },
 

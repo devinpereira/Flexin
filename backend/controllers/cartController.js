@@ -1,5 +1,7 @@
 import Cart from "../models/Cart.js";
 import Product from "../models/Product.js";
+// Import admin store models for correct product source
+import StoreProduct from "../models/adminstore/StoreProduct.js";
 
 // Get Cart Items
 export const getCart = async (req, res) => {
@@ -65,7 +67,11 @@ export const addToCart = async (req, res) => {
         }
 
         // Check if product exists and is active
-        const product = await Product.findOne({ _id: productId, isActive: true });
+        const product = await StoreProduct.findOne({
+            _id: productId,
+            isActive: true,
+            status: 'active'
+        });
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -180,8 +186,8 @@ export const updateCartItem = async (req, res) => {
             cart.items.splice(itemIndex, 1);
         } else {
             // Check stock availability
-            const product = await Product.findById(productId);
-            if (!product || !product.isActive) {
+            const product = await StoreProduct.findById(productId);
+            if (!product || !product.isActive || product.status !== 'active') {
                 return res.status(404).json({
                     success: false,
                     message: "Product not found or unavailable"

@@ -21,7 +21,7 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
               name: item.productId.productName || item.productId.name,
               price: item.productId.price,
               quantity: item.quantity,
-              image: item.productId.images?.[0] || '/public/default.jpg'
+              image: item.productId.images?.[0]?.url || item.productId.images?.[0] || '/default.jpg'
             }));
             setBackendCartItems(formattedItems);
             setSelectedItems(formattedItems.map(item => item.id));
@@ -192,7 +192,7 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
                       className="w-full h-full object-cover rounded-lg"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = '/public/default.jpg';
+                        e.target.src = '/default.jpg';
                       }}
                     />
                   </div>
