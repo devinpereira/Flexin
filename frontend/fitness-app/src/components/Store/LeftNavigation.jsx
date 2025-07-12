@@ -154,7 +154,7 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
       setIsMobileNavOpen(false);
       return;
     }
-    
+
     // For other views, use the existing setActiveView function
     setActiveView(view);
     setIsMobileNavOpen(false);
@@ -213,11 +213,11 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
         </button>
       </div>
 
-      {/* Navigation Sidebar - Hidden on mobile unless toggled open */}
-      <div className={`fixed lg:relative z-40 lg:z-0 inset-y-0 left-0 w-72 bg-[#121225] border-r border-gray-700 lg:border-none transform ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } transition-transform duration-300 ease-in-out lg:transition-none overflow-y-auto h-screen lg:h-auto`}>
+      {/* Navigation Sidebar - Fixed position like TrainerLayout */}
+      <div className={`fixed z-40 left-0 top-20 w-72 bg-[#121225] border-r border-gray-700 transform ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        } transition-transform duration-300 ease-in-out lg:transition-none overflow-y-auto h-[calc(100vh-80px)]`}>
 
-        <div className="p-6 pb-20 lg:pb-6 overflow-y-auto max-h-screen">
+        <div className="p-6 pb-20 lg:pb-6">
           {/* Main Navigation Items */}
           <div className="space-y-3 mb-8">
             <button

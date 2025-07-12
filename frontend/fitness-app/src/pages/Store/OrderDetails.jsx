@@ -158,7 +158,7 @@ const OrderDetails = () => {
                 <Navigation />
 
                 <div className="container mx-auto pt-8 px-4">
-                    <div className="flex flex-col lg:flex-row gap-8">
+                    <div className="flex flex-col lg:flex-row">
                         {/* Left Navigation - Categories */}
                         <LeftNavigation
                             activeView="orders"
@@ -170,8 +170,8 @@ const OrderDetails = () => {
                             onProductClick={() => { }}
                         />
 
-                        {/* Main Content Area */}
-                        <div className="flex-1">
+                        {/* Main Content Area with proper spacing for fixed sidebar */}
+                        <div className="w-full lg:pl-80">
                             <div className="flex flex-col items-center justify-center h-64">
                                 <div className="w-12 h-12 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin mb-4"></div>
                                 <p className="text-white text-lg">Loading order details...</p>
@@ -190,7 +190,7 @@ const OrderDetails = () => {
                 <Navigation />
 
                 <div className="container mx-auto pt-8 px-4">
-                    <div className="flex flex-col lg:flex-row gap-8">
+                    <div className="flex flex-col lg:flex-row">
                         {/* Left Navigation - Categories */}
                         <LeftNavigation
                             activeView="orders"
@@ -202,8 +202,8 @@ const OrderDetails = () => {
                             onProductClick={() => { }}
                         />
 
-                        {/* Main Content Area */}
-                        <div className="flex-1">
+                        {/* Main Content Area with proper spacing for fixed sidebar */}
+                        <div className="w-full lg:pl-80">
                             <div className="flex flex-col items-center justify-center h-64">
                                 <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                     ❌
@@ -235,7 +235,7 @@ const OrderDetails = () => {
             <Navigation />
 
             <div className="container mx-auto pt-8 px-4">
-                <div className="flex flex-col lg:flex-row gap-8">
+                <div className="flex flex-col lg:flex-row">
                     {/* Left Navigation - Categories */}
                     <LeftNavigation
                         activeView="orders"
@@ -247,8 +247,8 @@ const OrderDetails = () => {
                         onProductClick={() => { }}
                     />
 
-                    {/* Main Content Area */}
-                    <div className="flex-1">
+                    {/* Main Content Area with proper spacing for fixed sidebar */}
+                    <div className="w-full lg:pl-80">
                         {/* Header */}
                         <div className="flex items-center gap-4 mb-8">
                             <button
@@ -283,8 +283,8 @@ const OrderDetails = () => {
                                                 {statusSteps.map((step, index) => (
                                                     <div key={step.key} className="flex flex-col items-center relative">
                                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-colors ${step.status === 'completed'
-                                                                ? 'bg-[#f67a45] border-[#f67a45] text-white'
-                                                                : 'bg-transparent border-white/30 text-white/50'
+                                                            ? 'bg-[#f67a45] border-[#f67a45] text-white'
+                                                            : 'bg-transparent border-white/30 text-white/50'
                                                             }`}>
                                                             <span className="text-lg">{step.icon}</span>
                                                         </div>
@@ -295,8 +295,8 @@ const OrderDetails = () => {
 
                                                         {index < statusSteps.length - 1 && (
                                                             <div className={`absolute top-6 left-full w-full h-0.5 ${statusSteps[index + 1].status === 'completed'
-                                                                    ? 'bg-[#f67a45]'
-                                                                    : 'bg-white/20'
+                                                                ? 'bg-[#f67a45]'
+                                                                : 'bg-white/20'
                                                                 }`} style={{ width: 'calc(100% - 24px)', marginLeft: '12px' }} />
                                                         )}
                                                     </div>

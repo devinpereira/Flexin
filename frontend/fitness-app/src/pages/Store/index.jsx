@@ -177,7 +177,7 @@ const Store = () => {
       <Navigation />
 
       <div className="container mx-auto pt-8 px-4">
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row">
           {/* Left Navigation - Categories */}
           <LeftNavigation
             activeView={activeView}
@@ -189,8 +189,8 @@ const Store = () => {
             onProductClick={handleProductClick}
           />
 
-          {/* Main Content Area */}
-          <div className="flex-1 overflow-hidden">
+          {/* Main Content Area with proper spacing for fixed sidebar */}
+          <div className="w-full lg:pl-80">
             {renderView()}
           </div>
         </div>
