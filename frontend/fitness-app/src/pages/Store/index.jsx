@@ -176,7 +176,7 @@ const Store = () => {
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
 
-      <div className="container mx-auto pt-8 px-4">
+      <div className="container mx-auto pt-4 sm:pt-8 px-4 pb-24 md:pb-8">
         <div className="flex flex-col lg:flex-row">
           {/* Left Navigation - Categories */}
           <LeftNavigation
@@ -190,7 +190,7 @@ const Store = () => {
           />
 
           {/* Main Content Area with proper spacing for fixed sidebar */}
-          <div className="w-full lg:pl-80">
+          <div className="w-full lg:pl-[290px]">
             {renderView()}
           </div>
         </div>

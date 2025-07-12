@@ -370,7 +370,7 @@ const Checkout = () => {
       <div className="min-h-screen bg-cover bg-center bg-fixed"
         style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
         <Navigation />
-        <div className="container mx-auto pt-8 px-4">
+        <div className="container mx-auto pt-4 sm:pt-8 px-4 pb-24 md:pb-8">
           <div className="flex flex-col lg:flex-row">
             <LeftNavigation
               activeView="cart"
@@ -381,7 +381,7 @@ const Checkout = () => {
               setIsMobileNavOpen={setIsMobileNavOpen}
               onProductClick={() => { }}
             />
-            <div className="w-full lg:pl-80">
+            <div className="w-full lg:pl-[290px]">
               <div className="flex flex-col items-center justify-center h-64">
                 <div className="w-12 h-12 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p className="text-white text-lg">Loading checkout...</p>
@@ -398,7 +398,7 @@ const Checkout = () => {
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
 
-      <div className="container mx-auto pt-8 px-4">
+      <div className="container mx-auto pt-4 sm:pt-8 px-4 pb-24 md:pb-8">
         <div className="flex flex-col lg:flex-row">
           <LeftNavigation
             activeView="cart"
@@ -410,7 +410,7 @@ const Checkout = () => {
             onProductClick={() => { }}
           />
 
-          <div className="w-full lg:pl-80">
+          <div className="w-full lg:pl-[290px]">
             <h1 className="text-white text-3xl font-bold mb-8">Checkout</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

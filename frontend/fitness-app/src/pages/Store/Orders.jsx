@@ -120,7 +120,7 @@ const Orders = () => {
                 style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
                 <Navigation />
 
-                <div className="container mx-auto pt-8 px-4">
+                <div className="container mx-auto pt-4 sm:pt-8 px-4 pb-24 md:pb-8">
                     <div className="flex flex-col lg:flex-row">
                         {/* Left Navigation - Categories */}
                         <LeftNavigation
@@ -134,7 +134,7 @@ const Orders = () => {
                         />
 
                         {/* Main Content Area with proper spacing for fixed sidebar */}
-                        <div className="w-full lg:pl-80">
+                        <div className="w-full lg:pl-[290px]">
                             <div className="flex flex-col items-center justify-center h-64">
                                 <div className="w-12 h-12 border-4 border-[#f67a45] border-t-transparent rounded-full animate-spin mb-4"></div>
                                 <p className="text-white text-lg">Loading your orders...</p>
@@ -151,7 +151,7 @@ const Orders = () => {
             style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
             <Navigation />
 
-            <div className="container mx-auto pt-8 px-4">
+            <div className="container mx-auto pt-4 sm:pt-8 px-4 pb-24 md:pb-8">
                 <div className="flex flex-col lg:flex-row">
                     {/* Left Navigation - Categories */}
                     <LeftNavigation
@@ -165,7 +165,7 @@ const Orders = () => {
                     />
 
                     {/* Main Content Area with proper spacing for fixed sidebar */}
-                    <div className="w-full lg:pl-80">
+                    <div className="w-full lg:pl-[290px]">
                         {/* Header */}
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
                             <div>

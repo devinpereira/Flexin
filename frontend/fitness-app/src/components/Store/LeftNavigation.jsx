@@ -214,11 +214,8 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
       </div>
 
       {/* Navigation Sidebar - Fixed position like TrainerLayout */}
-      <div className={`fixed z-40 left-0 top-20 w-72 bg-[#121225] border-r border-gray-700 transform ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        } transition-transform duration-300 ease-in-out lg:transition-none overflow-y-auto h-[calc(100vh-80px)]`}>
-
-        <div className="p-6 pb-20 lg:pb-6">
-          {/* Main Navigation Items */}
+      <div className={`hidden lg:block fixed left-0 top-20 z-10 h-[calc(100vh-80px)]`}>
+        <nav className="bg-[#121225] border-r border-gray-700 w-72 p-6 h-full overflow-y-auto">
           <div className="space-y-3 mb-8">
             <button
               className={`w-full flex items-center justify-between px-4 py-3 rounded-lg ${activeView === 'main' ? 'bg-[#f67a45] text-white' : 'text-white hover:bg-[#1e1e35]'
@@ -404,6 +401,64 @@ const LeftNavigation = ({ activeView, setActiveView, onCategorySelect, cartItems
                   {cartItemsCount}
                 </span>
               )}
+            </button>
+          </div>
+        </nav>
+      </div>
+
+      {/* Mobile Navigation for smaller screens */}
+      <div className={`lg:hidden fixed z-40 left-0 top-20 w-72 bg-[#121225] border-r border-gray-700 transform ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
+        } transition-transform duration-300 ease-in-out overflow-y-auto h-[calc(100vh-80px)]`}>
+        <div className="p-6">
+          {/* Mobile navigation content - same as desktop but visible only on mobile */}
+          <div className="space-y-3 mb-8">
+            <button
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg ${activeView === 'main' ? 'bg-[#f67a45] text-white' : 'text-white hover:bg-[#1e1e35]'
+                }`}
+              onClick={() => handleViewChange('main')}
+            >
+              <div className="flex items-center">
+                <FiHome className="mr-2" />
+                <span>Main Store</span>
+              </div>
+            </button>
+
+            <button
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg ${activeView === 'cart' ? 'bg-[#f67a45] text-white' : 'text-white hover:bg-[#1e1e35]'
+                }`}
+              onClick={() => handleViewChange('cart')}
+            >
+              <div className="flex items-center">
+                <FiShoppingCart className="mr-2" />
+                <span>Shopping Cart</span>
+              </div>
+              {cartItemsCount > 0 && (
+                <span className="bg-[#f67a45] text-white text-xs px-2 py-1 rounded-full">
+                  {cartItemsCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg ${activeView === 'deals' ? 'bg-[#f67a45] text-white' : 'text-white hover:bg-[#1e1e35]'
+                }`}
+              onClick={() => handleViewChange('deals')}
+            >
+              <div className="flex items-center">
+                <FiTag className="mr-2" />
+                <span>Offers & Deals</span>
+              </div>
+            </button>
+
+            <button
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg ${activeView === 'orders' ? 'bg-[#f67a45] text-white' : 'text-white hover:bg-[#1e1e35]'
+                }`}
+              onClick={() => handleViewChange('orders')}
+            >
+              <div className="flex items-center">
+                <FiPackage className="mr-2" />
+                <span>My Orders</span>
+              </div>
             </button>
           </div>
         </div>
