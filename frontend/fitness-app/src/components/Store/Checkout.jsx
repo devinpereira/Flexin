@@ -8,12 +8,116 @@ import Navigation from '../Navigation';
 const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { items = [], total = "0.00" } = location.state || {};
+
+  // Get items from location state or fallback to localStorage
+  const getCartItems = () => {
+    console.log('=== GET CART ITEMS CALLED ===');
+    console.log('Checkout - getCartItems called');
+    console.log('Checkout - location.state:', location.state);
+    console.log('Checkout - location.state.items:', location.state?.items);
+    console.log('Checkout - location.state.items length:', location.state?.items?.length);
+
+    // First try to get items from navigation state (when coming from Store component)
+    if (location.state && location.state.items && Array.isArray(location.state.items) && location.state.items.length > 0) {
+      console.log('Checkout - Using items from location.state:', location.state.items);
+      console.log('=== END GET CART ITEMS (location.state) ===');
+      return location.state.items;
+    }
+
+    // Fallback to localStorage (when coming from ProductView or direct navigation)
+    console.log('Checkout - No valid location.state.items, checking localStorage');
+    const savedCartItems = localStorage.getItem('cartItems');
+    console.log('Checkout - localStorage cartItems raw:', savedCartItems);
+    console.log('Checkout - localStorage cartItems type:', typeof savedCartItems);
+    console.log('Checkout - localStorage cartItems length:', savedCartItems?.length);
+
+    if (savedCartItems && savedCartItems !== 'null' && savedCartItems !== 'undefined') {
+      try {
+        const parsed = JSON.parse(savedCartItems);
+        console.log('Checkout - localStorage cartItems parsed:', parsed);
+        console.log('Checkout - localStorage parsed type:', typeof parsed);
+        console.log('Checkout - localStorage parsed isArray:', Array.isArray(parsed));
+        console.log('Checkout - localStorage parsed length:', parsed?.length);
+
+        // If we have cart items in localStorage but no selected items from navigation state,
+        // we'll use all items from localStorage as if they were all selected
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          console.log('Checkout - Using all items from localStorage as checkout items');
+          console.log('=== END GET CART ITEMS (localStorage) ===');
+          return parsed;
+        } else {
+          console.log('Checkout - localStorage parsed but empty or invalid:', parsed);
+        }
+
+        console.log('=== END GET CART ITEMS (localStorage empty) ===');
+        return parsed || [];
+      } catch (error) {
+        console.error('Checkout - Error parsing cart items from localStorage:', error);
+        console.log('=== END GET CART ITEMS (localStorage error) ===');
+        return [];
+      }
+    }
+
+    console.log('Checkout - No cart items found anywhere, returning empty array');
+    console.log('=== END GET CART ITEMS (empty) ===');
+    return [];
+  };
+
+  const getCartTotal = () => {
+    // Use provided total or calculate from cart items
+    if (location.state && location.state.total) {
+      return location.state.total;
+    }
+
+    // Calculate total from cart items
+    const cartItems = getCartItems();
+    const total = cartItems.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      return sum + (price * quantity);
+    }, 0);
+
+    return total.toFixed(2);
+  };
+
+  const [checkoutItems, setCheckoutItems] = useState([]);
+  const [checkoutTotal, setCheckoutTotal] = useState('0.00');
+
+  // Initialize checkout data
+  useEffect(() => {
+    console.log('=== CHECKOUT INITIALIZATION ===');
+    const items = getCartItems();
+    const total = getCartTotal();
+
+    console.log('Checkout - Initialized items:', items);
+    console.log('Checkout - Initialized total:', total);
+
+    setCheckoutItems(items);
+    setCheckoutTotal(total);
+    console.log('=== END CHECKOUT INITIALIZATION ===');
+  }, [location.state]); // Re-run when location state changes
+
+  const items = checkoutItems;
+  const total = checkoutTotal;
 
   // Debug: Log cart items
   useEffect(() => {
-    console.log('Checkout component loaded');
-    console.log('Cart items:', items);
+    console.log('=== CHECKOUT COMPONENT LOADED ===');
+    console.log('Location state:', location.state);
+    console.log('Location state items:', location.state?.items);
+    console.log('Location state total:', location.state?.total);
+    console.log('localStorage cartItems raw:', localStorage.getItem('cartItems'));
+
+    try {
+      const parsedLocalStorage = JSON.parse(localStorage.getItem('cartItems') || '[]');
+      console.log('localStorage cartItems parsed:', parsedLocalStorage);
+    } catch (e) {
+      console.log('Error parsing localStorage:', e);
+    }
+
+    console.log('Cart items source:', location.state?.items ? 'location.state' : 'localStorage');
+    console.log('Final cart items array:', items);
+    console.log('Final cart items length:', items.length);
     console.log('Total:', total);
 
     items.forEach((item, index) => {
@@ -22,9 +126,11 @@ const Checkout = () => {
         _id: item._id,
         name: item.name || item.productName,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        fullItem: item
       });
     });
+    console.log('=== END CHECKOUT DEBUG ===');
   }, [items, total]);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -285,6 +391,29 @@ const Checkout = () => {
     }
 
     if (items.length === 0) {
+      console.log('=== CART EMPTY DEBUG ===');
+      console.log('Checkout - Cart validation failed: items array is empty');
+      console.log('Checkout - Current items:', items);
+      console.log('Checkout - Items type:', typeof items);
+      console.log('Checkout - Items isArray:', Array.isArray(items));
+      console.log('Checkout - location.state:', location.state);
+      console.log('Checkout - location.state.items:', location.state?.items);
+      console.log('Checkout - localStorage cartItems raw:', localStorage.getItem('cartItems'));
+
+      try {
+        const localStorageData = localStorage.getItem('cartItems');
+        if (localStorageData) {
+          const parsed = JSON.parse(localStorageData);
+          console.log('Checkout - localStorage parsed successfully:', parsed);
+          console.log('Checkout - localStorage items count:', parsed.length);
+        } else {
+          console.log('Checkout - localStorage is null/empty');
+        }
+      } catch (e) {
+        console.log('Checkout - Error parsing localStorage:', e);
+      }
+
+      console.log('=== END CART EMPTY DEBUG ===');
       alert('Your cart is empty');
       return;
     }
