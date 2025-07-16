@@ -24,6 +24,7 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
         const formattedPosts = data.map(post => ({
           id: post._id,
           user: {
+            id: post.user._id,
             name: post.user.name,
             username: `@${post.user.username}`,
             profileImage: post.user.profileImageUrl ? post.user.profileImageUrl : "/default.jpg",
@@ -91,13 +92,19 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
 
   const handleDeletePost = async (postId) => {
     try {
-      // For development purposes, just update the UI
+      await axiosInstance.delete(`${API_PATHS.POST.DELETE_POST(postId)}`);
       setPosts(posts.filter(post => post.id !== postId));
-
-      // In production, this would call the API
-      // await axiosInstance.delete(`${API_PATHS.POST.DELETE_POST(postId)}`);
     } catch (err) {
       console.error("Error deleting post:", err);
+    }
+  };
+
+  const handleDeleteComment = async (postId, commentId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.COMMENT.DELETE_COMMENT(postId, commentId));
+      // Comment count will be updated by the Post component
+    } catch (err) {
+      console.error("Error deleting comment:", err);
     }
   };
 
@@ -165,7 +172,10 @@ const CommunityHome = ({ profileImage, createMode = false }) => {
                 post={post}
                 onLike={handleLikePost}
                 onDelete={handleDeletePost}
+                onDeleteComment={handleDeleteComment}
                 onUpdate={handleUpdatePost}
+                currentUser={user}
+                showOwnerActions={true}
               />
             </motion.div>
           ))}

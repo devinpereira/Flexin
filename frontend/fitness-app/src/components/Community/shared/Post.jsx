@@ -7,10 +7,12 @@ import {
   FaEllipsisH,
   FaChevronLeft,
   FaChevronRight,
+  FaTrash,
 } from "react-icons/fa";
 import { formatDistanceToNow } from 'date-fns';
 import axiosInstance from "../../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
+import { UserContext } from "../../../context/UserContext";
 
 /**
  * Post Component - Renders an individual social media post
@@ -28,8 +30,12 @@ import { API_PATHS, BASE_URL } from "../../../utils/apiPaths";
  * 
  * @param {Object} post - The post data to display
  * @param {Function} onLike - Callback for when a post is liked/unliked
+ * @param {Function} onDelete - Callback for when a post is deleted
+ * @param {Function} onDeleteComment - Callback for when a comment is deleted
+ * @param {Object} currentUser - Current user object
+ * @param {boolean} showOwnerActions - Whether to show owner actions (delete, etc.)
  */
-const Post = ({ post, onLike }) => {
+const Post = ({ post, onLike, onDelete, onDeleteComment, currentUser, showOwnerActions = false }) => {
   // State management for post interactions
   const [liked, setLiked] = useState(post.isliked);
   const [likesCount, setLikesCount] = useState(post.likes);
@@ -39,6 +45,16 @@ const Post = ({ post, onLike }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [comments, setComments] = useState([]);
   const [commentCount, setCommentCount] = useState(post.comments);
+  const { user: loggedInUser } = useContext(UserContext);
+
+  // Debug logging
+  console.log("Post User ID:", post.user.id);
+  console.log("Logged in User ID:", loggedInUser?._id);
+  console.log("Post user:", post.user);
+  console.log("Logged in user:", loggedInUser);
+
+  // Check if current user is the post owner
+  const isPostOwner = loggedInUser && post.user.id === loggedInUser._id;
 
   const handleLike = async () => {
     setLiked(!liked);
@@ -95,6 +111,23 @@ const Post = ({ post, onLike }) => {
       } catch (err) {
         console.error("Error fetching comments:", err.message);
       }
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.COMMENT.DELETE_COMMENT(post.id, commentId));
+      
+      // Update local state
+      setComments(comments.filter(comment => comment._id !== commentId));
+      setCommentCount(prev => Math.max(0, prev - 1));
+      
+      // Call parent callback if provided
+      if (onDeleteComment) {
+        onDeleteComment(post.id, commentId);
+      }
+    } catch (err) {
+      console.error("Error deleting comment:", err);
     }
   };
 
@@ -165,6 +198,15 @@ const Post = ({ post, onLike }) => {
               <button className="w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/10 text-sm">
                 Report Post
               </button>
+              {isPostOwner && onDelete && (
+                <button 
+                  onClick={() => onDelete(post.id)}
+                  className="w-full text-left px-4 py-2 text-red-400 hover:bg-red-500/10 text-sm flex items-center gap-2"
+                >
+                  <FaTrash size={12} />
+                  Delete Post
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -325,15 +367,28 @@ const Post = ({ post, onLike }) => {
                   />
                 </div>
                 <div className="bg-[#1A1A2F] rounded-lg p-3 flex-1">
-                  <div className="flex justify-between">
-                    <span className="text-white font-medium">
-                      {comment.userId.fullName}
-                    </span>
-                    <span className="text-gray-400 text-xs">
-                      {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                    </span>
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-white font-medium">
+                          {comment.userId.fullName}
+                        </span>
+                        <span className="text-gray-400 text-xs">
+                          {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-white/90">{comment.comment}</p>
+                    </div>
+                    {loggedInUser && comment.userId._id === loggedInUser._id && (
+                      <button
+                        onClick={() => handleDeleteComment(comment._id)}
+                        className="text-gray-400 hover:text-red-400 p-1 rounded transition-colors ml-2"
+                        title="Delete comment"
+                      >
+                        <FaTrash size={12} />
+                      </button>
+                    )}
                   </div>
-                  <p className="text-white/90">{comment.comment}</p>
                 </div>
               </div>
             ))}

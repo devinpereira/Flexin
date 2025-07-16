@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   FaUserEdit,
   FaTh,
@@ -8,12 +8,15 @@ import {
   FaCamera,
   FaImage,
   FaRegHeart,
+  FaHeart,
   FaComment,
+  FaTrash,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS, BASE_URL } from "../../utils/apiPaths";
 import CreatePost from "../../components/Community/shared/CreatePost";
+import Post from "../../components/Community/shared/Post";
 import { formatDistanceToNow } from 'date-fns';
 
 // Import modals
@@ -24,6 +27,7 @@ import CreatePostModal from "../../components/Community/modals/CreatePostModal";
 import PostImageModal from "../../components/Community/modals/PostImageModal";
 import CommunityLayout from "../../layouts/CommunityLayout";
 import { useNavigate, useParams } from "react-router-dom";
+import { UserContext } from "../../context/UserContext";
 
 const CommunityProfile = () => {
   const [activeTab, setActiveTab] = useState("posts");
@@ -37,6 +41,7 @@ const CommunityProfile = () => {
   const [user, setUser] = useState({});
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
+  const { user: currentUser } = useContext(UserContext);
 
   // Fetch user profile data
   useEffect(() => {
@@ -62,7 +67,14 @@ const CommunityProfile = () => {
           ? API_PATHS.POST.GET_USER_POSTS(userId)
           : API_PATHS.POST.GET_ALL_POSTS;
         const res = await axiosInstance.get(url);
-        setPosts(res.data);
+        
+        // Format posts similar to Home component
+        const formattedPosts = res.data.map(post => ({
+          ...post,
+          isliked: post.liked // Map the liked field to isliked for consistency
+        }));
+        
+        setPosts(formattedPosts);
       } catch (err) {
         console.error("Error fetching posts:", err);
       }
@@ -167,6 +179,66 @@ const CommunityProfile = () => {
   // Handle closing the image modal
   const handleCloseImageModal = () => {
     setSelectedImagePost(null);
+  };
+
+  // Handle post like
+  const handleLikePost = async (postId, isLiked) => {
+    try {
+      await axiosInstance.post(API_PATHS.POST.LIKE_POST(postId));
+
+      // Update local state
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            likes: isLiked ? post.likes + 1 : post.likes - 1,
+            isliked: isLiked
+          };
+        }
+        return post;
+      }));
+    } catch (err) {
+      console.error("Error liking post:", err);
+    }
+  };
+
+  // Handle post deletion
+  const handleDeletePost = async (postId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.POST.DELETE_POST(postId));
+
+      // Update local state
+      setPosts(posts.filter(post => post._id !== postId));
+
+      // Update user post count
+      setUser(prevUser => ({
+        ...prevUser,
+        noOfPosts: Math.max(0, (prevUser.noOfPosts || 0) - 1)
+      }));
+    } catch (err) {
+      console.error("Error deleting post:", err);
+    }
+  };
+
+  // Handle comment deletion
+  const handleDeleteComment = async (postId, commentId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.COMMENT.DELETE_COMMENT(postId, commentId));
+
+      // Update local state - this would be handled by the Post component
+      // but we can also update the comment count locally if needed
+      setPosts(posts.map(post => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            comments: Math.max(0, (post.comments || 0) - 1)
+          };
+        }
+        return post;
+      }));
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+    }
   };
 
   // Handle new post created
@@ -314,78 +386,38 @@ const CommunityProfile = () => {
               <>
                 {posts.length > 0 ? (
                   <div className="space-y-4">
-                    {posts.map((post) => (
-                      <div
-                        key={post._id}
-                        className="bg-[#1A1A2F] rounded-lg overflow-hidden"
-                      >
-                        {/* Post Header */}
-                        <div className="p-4 flex items-center">
-                          <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                            <img
-                              src={
-                                user.profileImageUrl
-                                  ? user.profileImageUrl
-                                  : "/default.jpg"
-                              }
-                              alt={user.fullName}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/default.jpg";
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <h4 className="text-white font-medium">
-                              {user.fullName}
-                            </h4>
-                            <p className="text-gray-400 text-xs">
-                              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                            </p>
-                          </div>
-                        </div>
+                    {posts.map((post) => {
+                      // Format post data to match Post component expectations
+                      const formattedPost = {
+                        id: post._id,
+                        user: {
+                          id: post.userId,
+                          name: user.fullName,
+                          username: `@${user.username}`,
+                          profileImage: user.profileImageUrl || "/default.jpg",
+                        },
+                        content: post.description,
+                        images: post.content && post.content.length > 0 
+                          ? post.content.map(img => ({ preview: img }))
+                          : [],
+                        likes: post.likes || 0,
+                        isliked: post.isliked || false,
+                        comments: post.comments || 0,
+                        timestamp: post.createdAt
+                      };
 
-                        {/* Post Content */}
-                        <div className="px-4 pb-3">
-                          <p className="text-white">{post.description}</p>
-                        </div>
-
-                        {/* Post Image */}
-                        {post.content && post.content.length > 0 && (
-                          <div className="w-full">
-                            <img
-                              src={post.content[0]}
-                              alt="Post"
-                              className="w-full h-auto cursor-pointer"
-                              onClick={() => handleImageClick(post)}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "/post-default.jpg";
-                              }}
-                            />
-                          </div>
-                        )}
-
-                        {/* Post Stats */}
-                        <div className="px-4 py-2 border-t border-gray-700 text-sm text-gray-400 flex justify-between">
-                          <span>{post.likes} likes</span>
-                          <span>{post.comments} comments</span>
-                        </div>
-
-                        {/* Post Actions */}
-                        <div className="px-4 py-2 border-t border-gray-700 flex justify-between">
-                          <button className="flex items-center gap-2 text-white hover:text-[#f67a45] flex-1 justify-center py-1">
-                            <FaRegHeart />
-                            <span>Like</span>
-                          </button>
-                          <button className="flex items-center gap-2 text-white hover:text-[#f67a45] flex-1 justify-center py-1">
-                            <FaComment />
-                            <span>Comment</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      return (
+                        <Post
+                          key={post._id}
+                          post={formattedPost}
+                          onLike={handleLikePost}
+                          onDelete={handleDeletePost}
+                          onDeleteComment={handleDeleteComment}
+                          currentUser={currentUser}
+                          showOwnerActions={!userId || userId === currentUser?._id}
+                        />
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="py-10 text-center">
@@ -466,9 +498,7 @@ const CommunityProfile = () => {
             }}
             user={user}
             onClose={handleCloseImageModal}
-            onLike={(postId, isLiked) => {
-              // Handle like functionality if needed
-            }}
+            onLike={(postId, isLiked) => handleLikePost(postId, isLiked)}
           />
         )}
       </div>
