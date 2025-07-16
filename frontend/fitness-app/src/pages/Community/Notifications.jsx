@@ -76,6 +76,24 @@ const CommunityNotifications = () => {
           ...prevNotifications,
         ]);
       });
+
+      socket.on("followPostNotify", (data) => {
+        setNotifications((prevNotifications) => [
+          {
+            id: data.notificationId,
+            type: "follow",
+            user: {
+              name: data.requesterName,
+              profileImage: data.requesterProfileImage,
+            },
+            content: data.message,
+            postImage: data.postImage,
+            time: new Date().toISOString(),
+            read: false,
+          },
+          ...prevNotifications,
+        ]);
+      });
     }
 
     return () => {

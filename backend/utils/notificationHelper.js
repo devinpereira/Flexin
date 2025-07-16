@@ -27,14 +27,22 @@ export const sendNotification = async ({
   // 2. Emit socket notification if the user is online
   const recipientSocketId = onlineUsers.get(recipientId.toString());
   if (recipientSocketId) {
+    const typeToPrefix = {
+      like: "liker",
+      follow: "follower",
+      comment: "commenter"
+    };
+    
+    const prefix = typeToPrefix[type] || typeToPrefix.default;
+    
     io.to(recipientSocketId).emit(`${type}PostNotify`, {
       notificationId: notification._id,
-      [`${type === "like" ? "liker" : "commenter"}Name`]: sender.fullName,
-      [`${type === "like" ? "liker" : "commenter"}ProfileImage`]: sender.profileImageUrl
-        ? `${BASE_URL}/${sender.profileImageUrl}`
-        : "/src/assets/profile1.png",
+      [`${prefix}Name`]: sender.fullName,
+      [`${prefix}ProfileImage`]: sender.profileImageUrl
+        ? sender.profileImageUrl
+        : "/default.jpg",
       message,
-      postImage,
+      postImage: postImage ? postImage : "/post-default.jpg",
       ...extraData,
     });
   }

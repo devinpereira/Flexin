@@ -1,6 +1,7 @@
 import Follow from "../../models/Follow.js";
 import User from "../../models/User.js";
 import ProfileData from "../../models/ProfileData.js";
+import { sendNotification } from "../../utils/notificationHelper.js";
 
 // Search for Friends
 export const searchFriends = async (req, res) => {
@@ -110,6 +111,10 @@ export const unfollowUser = async (req, res) => {
     const { followingId } = req.params;
     const followerId = req.user._id;
 
+    if (!followingId || followingId === 'undefined') {
+      return res.status(400).json({ error: "Following ID is required" });
+    }
+
     const follow = await Follow.findOneAndDelete({
       followerId,
       followingId,
@@ -143,6 +148,8 @@ export const unfollowUser = async (req, res) => {
 export const approveFollowRequest = async (req, res) => {
   try {
     const { followId } = req.params;
+    const io = req.app.get("io");
+    const onlineUsers = req.app.get("onlineUsers");
 
     const follow = await Follow.findById(followId);
     if (!follow) {
@@ -165,6 +172,19 @@ export const approveFollowRequest = async (req, res) => {
       { $inc: { followers: 1 } },
       { new: true }
     );
+
+    const user = await User.findById(followerId);
+
+    await sendNotification({
+      io,
+      onlineUsers,
+      recipientId: followingId,
+      sender: user,
+      type: "follow",
+      postId: null,
+      message: "accepted your friend request",
+      postImage: null,
+    });
 
     res.json({ message: "Follow request approved" });
   } catch (err) {

@@ -81,7 +81,7 @@ const CommunityFriends = () => {
       );
       setFollowing(following.filter((user) => user.id !== id));
     } catch (error) {
-      console.error("Error sending follow request", error);
+      console.error("Error unfollowing user", error);
     }
   };
 
@@ -266,7 +266,7 @@ const CommunityFriends = () => {
                         {activeTab === "following" && (
                           <button
                             className="bg-[#1A1A2F] text-white p-2 rounded-full hover:bg-red-500/20 hover:text-red-500"
-                            onClick={() => handleUnfollow(friend._id)}
+                            onClick={() => handleUnfollow(friend.id)}
                           >
                             <FaUserMinus size={14} />
                           </button>
