@@ -35,12 +35,12 @@ const ProductView = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [cartItemsCount, setCartItemsCount] = useState(0);
 
-  // Get cart items count from localStorage
+  // Get cart items count from localStorage (same logic as Store component)
   const getCartItemsCount = () => {
     const savedCartItems = localStorage.getItem('cartItems');
     if (savedCartItems) {
       const cartItems = JSON.parse(savedCartItems);
-      return cartItems.length;
+      return cartItems.length; // Count unique products, same as Store component
     }
     return 0;
   };
@@ -55,7 +55,7 @@ const ProductView = () => {
       if (currentCount !== cartItemsCount) {
         setCartItemsCount(currentCount);
       }
-    }, 1000);
+    }, 500); // Check more frequently
 
     return () => clearInterval(interval);
   }, [cartItemsCount]);
@@ -242,130 +242,160 @@ const ProductView = () => {
     }
   };
 
-  // Handle adding the product to the cart
+  // Format product data for consistency (same as MainStoreView)
+  const formatProduct = (product) => {
+    if (!product) {
+      console.error('Product is undefined or null:', product);
+      return { id: null };
+    }
+
+    return {
+      id: product._id || product.id,
+      name: product.productName || product.name,
+      category: product.categoryId?.name || product.category,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      discountPercentage: product.discountPercentage,
+      rating: product.averageRating || 0,
+      reviewCount: product.reviewCount || 0,
+      image: product.images?.[0] || '/public/default.jpg',
+      images: product.images || ['/public/default.jpg'],
+      description: product.description,
+      shortDescription: product.shortDescription,
+      brand: product.brand,
+      isFeatured: product.isFeatured,
+      quantity: product.quantity,
+      categoryId: product.categoryId,
+      subcategoryId: product.subcategoryId,
+      specifications: product.specifications || [],
+      tags: product.tags || [],
+      averageRating: product.averageRating || 0
+    };
+  };
+
+  // Handle adding the product to the cart (exact same logic as MainStoreView)
   const handleAddToCart = async () => {
     try {
-      // Try to add to backend cart if user is authenticated
+      const formattedProduct = formatProduct(product);
+      console.log('ProductView - Adding to cart - Formatted product:', formattedProduct);
+
+      // Try to add to backend cart if user is authenticated (same as MainStoreView)
       const token = localStorage.getItem('token');
       if (token) {
-        await cartApi.addToCart(product.id, quantity);
-        console.log(`Added ${quantity} of ${product.name} to backend cart`);
+        await cartApi.addToCart(formattedProduct.id, quantity);
+        console.log(`Added ${quantity} of ${formattedProduct.name} to backend cart`);
       }
 
-      // Update local cart state in localStorage (same logic as Store/index.jsx)
+      // Add visual feedback - highlight the button (same as MainStoreView)
+      setIsAddedToCart(true);
+      setTimeout(() => {
+        setIsAddedToCart(false);
+      }, 2000);
+
+      // Update localStorage directly (same as Store component does)
       const savedCartItems = localStorage.getItem('cartItems');
       let cartItems = savedCartItems ? JSON.parse(savedCartItems) : [];
+      console.log('ProductView - Current cart items before adding:', cartItems);
 
-      // Create formatted product for cart (ensure consistent structure with MainStoreView)
-      const cartProduct = {
-        id: product._id || product.id,
-        name: product.productName || product.name,
-        category: product.categoryId?.name || product.category,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        discountPercentage: product.discountPercentage,
-        rating: product.averageRating || 0,
-        reviewCount: product.reviewCount || 0,
-        image: product.images?.[0] || product.image || '/public/default.jpg',
-        images: product.images || [product.image] || ['/public/default.jpg'],
-        description: product.description,
-        shortDescription: product.shortDescription,
-        brand: product.brand,
-        isFeatured: product.isFeatured,
-        quantity: quantity, // This is the cart quantity, not stock quantity
-        stockQuantity: product.quantity, // Preserve original stock quantity
-        categoryId: product.categoryId,
-        subcategoryId: product.subcategoryId,
-        specifications: product.specifications || [],
-        tags: product.tags || [],
-        averageRating: product.averageRating || 0
-      };
-
-      // Check if product already exists in cart
-      const existingItemIndex = cartItems.findIndex(item => item.id === cartProduct.id);
+      const existingItemIndex = cartItems.findIndex(item => item.id === formattedProduct.id);
 
       if (existingItemIndex >= 0) {
-        // Update existing item quantity
         cartItems[existingItemIndex].quantity += quantity;
+        console.log('ProductView - Updated existing item quantity:', cartItems[existingItemIndex]);
       } else {
-        // Add new item to cart
-        cartItems.push(cartProduct);
+        cartItems.push({ ...formattedProduct, quantity });
+        console.log('ProductView - Added new item to cart:', { ...formattedProduct, quantity });
       }
 
-      // Save updated cart to localStorage
+      // Save to localStorage (this is what the Store component and Checkout both read from)
       localStorage.setItem('cartItems', JSON.stringify(cartItems));
-      console.log(`Updated local cart: Added ${quantity} of ${product.name}`);
-
-      // Update cart count
       setCartItemsCount(cartItems.length);
 
-      // Set added to cart state
-      setIsAddedToCart(true);
+      console.log('ProductView - Cart updated:', cartItems);
+      console.log('ProductView - Cart count:', cartItems.length);
+      console.log('ProductView - localStorage cartItems:', localStorage.getItem('cartItems'));
 
       // Show notification
       setShowNotification(true);
-
-      // Hide notification after 3 seconds
       setTimeout(() => {
         setShowNotification(false);
       }, 3000);
 
-      // Reset the "added to cart" highlight after 2 seconds
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      // Still update local cart even if API fails (same as MainStoreView)
+      const formattedProduct = formatProduct(product);
+      setIsAddedToCart(true);
       setTimeout(() => {
         setIsAddedToCart(false);
       }, 2000);
-    } catch (error) {
-      console.error('Error adding to cart:', error);
 
-      // Even if backend fails, still update local cart
-      try {
-        const savedCartItems = localStorage.getItem('cartItems');
-        let cartItems = savedCartItems ? JSON.parse(savedCartItems) : [];
+      const savedCartItems = localStorage.getItem('cartItems');
+      let cartItems = savedCartItems ? JSON.parse(savedCartItems) : [];
+      console.log('ProductView - Current cart items before adding (error case):', cartItems);
 
-        const cartProduct = {
-          id: product._id || product.id,
-          name: product.productName || product.name,
-          category: product.categoryId?.name || product.category,
-          price: product.price,
-          originalPrice: product.originalPrice,
-          discountPercentage: product.discountPercentage,
-          rating: product.averageRating || 0,
-          reviewCount: product.reviewCount || 0,
-          image: product.images?.[0] || product.image || '/public/default.jpg',
-          images: product.images || [product.image] || ['/public/default.jpg'],
-          description: product.description,
-          shortDescription: product.shortDescription,
-          brand: product.brand,
-          isFeatured: product.isFeatured,
-          quantity: quantity, // This is the cart quantity, not stock quantity
-          stockQuantity: product.quantity, // Preserve original stock quantity
-          categoryId: product.categoryId,
-          subcategoryId: product.subcategoryId,
-          specifications: product.specifications || [],
-          tags: product.tags || [],
-          averageRating: product.averageRating || 0
-        };
+      const existingItemIndex = cartItems.findIndex(item => item.id === formattedProduct.id);
 
-        const existingItemIndex = cartItems.findIndex(item => item.id === cartProduct.id);
-
-        if (existingItemIndex >= 0) {
-          cartItems[existingItemIndex].quantity += quantity;
-        } else {
-          cartItems.push(cartProduct);
-        }
-
-        localStorage.setItem('cartItems', JSON.stringify(cartItems));
-        setCartItemsCount(cartItems.length);
-        console.log(`Updated local cart (fallback): Added ${quantity} of ${product.name}`);
-      } catch (localError) {
-        console.error('Error updating local cart:', localError);
+      if (existingItemIndex >= 0) {
+        cartItems[existingItemIndex].quantity += quantity;
+      } else {
+        cartItems.push({ ...formattedProduct, quantity });
       }
 
-      // Still show notification and highlight even if API fails
-      setIsAddedToCart(true);
+      localStorage.setItem('cartItems', JSON.stringify(cartItems));
+      setCartItemsCount(cartItems.length);
+
+      console.log('ProductView - Cart updated (error case):', cartItems);
+      console.log('ProductView - localStorage cartItems (error case):', localStorage.getItem('cartItems'));
+
       setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3000);
-      setTimeout(() => setIsAddedToCart(false), 2000);
+      setTimeout(() => {
+        setShowNotification(false);
+      }, 3000);
+    }
+  };
+
+  // Handle buy now - directly go to checkout with this product
+  const handleBuyNow = async () => {
+    try {
+      const formattedProduct = formatProduct(product);
+      console.log('ProductView - Buy Now - Formatted product:', formattedProduct);
+
+      // Add the product to cart first (for backend consistency)
+      const token = localStorage.getItem('token');
+      if (token) {
+        await cartApi.addToCart(formattedProduct.id, quantity);
+        console.log(`Added ${quantity} of ${formattedProduct.name} to backend cart for buy now`);
+      }
+
+      // Create the checkout item
+      const checkoutItem = { ...formattedProduct, quantity };
+      const total = (parseFloat(formattedProduct.price) * quantity).toFixed(2);
+
+      console.log('ProductView - Buy Now - Checkout item:', checkoutItem);
+      console.log('ProductView - Buy Now - Total:', total);
+
+      // Navigate directly to checkout with this item
+      navigate('/checkout', {
+        state: {
+          items: [checkoutItem],
+          total: total
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in buy now:', error);
+      // Even if backend fails, still allow checkout
+      const formattedProduct = formatProduct(product);
+      const checkoutItem = { ...formattedProduct, quantity };
+      const total = (parseFloat(formattedProduct.price) * quantity).toFixed(2);
+
+      navigate('/checkout', {
+        state: {
+          items: [checkoutItem],
+          total: total
+        }
+      });
     }
   };
 
@@ -481,6 +511,8 @@ const ProductView = () => {
     if (product.quantity <= 5) return { status: 'low-stock', text: `Only ${product.quantity} left`, color: 'text-yellow-500' };
     return { status: 'in-stock', text: 'In Stock', color: 'text-green-500' };
   };
+
+
 
   // If product data is still loading
   if (isLoading) {
@@ -801,6 +833,14 @@ const ProductView = () => {
                           <span>Add to Cart</span>
                         </>
                       )}
+                    </button>
+
+                    <button
+                      className="py-2 px-6 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-2"
+                      onClick={handleBuyNow}
+                      disabled={(product.quantity || 0) <= 0}
+                    >
+                      <span>Buy Now</span>
                     </button>
                   </div>
 

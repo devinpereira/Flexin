@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { AiOutlineDelete, AiOutlinePlus, AiOutlineMinus } from 'react-icons/ai';
 import { cartApi } from '../../api/storeApi';
 
@@ -38,46 +38,95 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
     fetchCart();
   }, []);
 
-  // Use backend cart items if available, otherwise use props
-  const displayCartItems = backendCartItems.length > 0 ? backendCartItems : cartItems;
+  // Use backend cart items if available, otherwise use props, then localStorage as final fallback
+  const displayCartItems = useMemo(() => {
+    if (backendCartItems.length > 0) {
+      console.log('ShoppingCartView - Using backend cart items');
+      return backendCartItems;
+    }
+
+    if (cartItems.length > 0) {
+      console.log('ShoppingCartView - Using props cart items');
+      return cartItems;
+    }
+
+    // Final fallback to localStorage
+    const savedCartItems = localStorage.getItem('cartItems');
+    if (savedCartItems) {
+      try {
+        const parsed = JSON.parse(savedCartItems);
+        console.log('ShoppingCartView - Using localStorage cart items as fallback:', parsed);
+        return parsed;
+      } catch (error) {
+        console.error('Error parsing localStorage cart items:', error);
+      }
+    }
+
+    console.log('ShoppingCartView - No cart items found anywhere');
+    return [];
+  }, [backendCartItems, cartItems]);
+
+  console.log('ShoppingCartView - backendCartItems:', backendCartItems);
+  console.log('ShoppingCartView - cartItems (props):', cartItems);
+  console.log('ShoppingCartView - displayCartItems:', displayCartItems);
 
   // Update selected items when cart items change
   useEffect(() => {
-    setSelectedItems(displayCartItems.map(item => item.id));
+    const newSelectedItems = displayCartItems.map(item => item.id);
+    console.log('=== SHOPPING CART VIEW SELECTION UPDATE ===');
+    console.log('ShoppingCartView - displayCartItems for selection:', displayCartItems);
+    console.log('ShoppingCartView - displayCartItems IDs:', displayCartItems.map(item => ({ id: item.id, name: item.name })));
+    console.log('ShoppingCartView - Setting selectedItems to:', newSelectedItems);
+    console.log('ShoppingCartView - Previous selectedItems:', selectedItems);
+    console.log('=== END SELECTION UPDATE ===');
+    setSelectedItems(newSelectedItems);
   }, [displayCartItems]);
 
   // Demo data for shipping cost
   const shippingCost = 10.99;
 
   // Calculate subtotal of selected items
-  const calculateSubtotal = () => {
+  const calculateSubtotal = useCallback(() => {
     return displayCartItems
       .filter(item => selectedItems.includes(item.id))
       .reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0)
       .toFixed(2);
-  };
+  }, [displayCartItems, selectedItems]);
 
   // Calculate total including shipping
-  const calculateTotal = () => {
+  const calculateTotal = useCallback(() => {
     const subtotal = parseFloat(calculateSubtotal());
     return (subtotal + (subtotal > 0 ? shippingCost : 0)).toFixed(2);
-  };
+  }, [calculateSubtotal, shippingCost]);
 
   // Toggle item selection
   const toggleSelectItem = (itemId) => {
-    setSelectedItems(prev =>
-      prev.includes(itemId)
+    console.log('ShoppingCartView - toggleSelectItem called with:', itemId);
+    console.log('ShoppingCartView - Current selectedItems:', selectedItems);
+
+    setSelectedItems(prev => {
+      const newSelection = prev.includes(itemId)
         ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
-    );
+        : [...prev, itemId];
+
+      console.log('ShoppingCartView - New selectedItems after toggle:', newSelection);
+      return newSelection;
+    });
   };
 
   // Toggle select all items
   const toggleSelectAll = () => {
+    console.log('ShoppingCartView - toggleSelectAll called');
+    console.log('ShoppingCartView - Current selectedItems length:', selectedItems.length);
+    console.log('ShoppingCartView - displayCartItems length:', displayCartItems.length);
+
     if (selectedItems.length === displayCartItems.length) {
+      console.log('ShoppingCartView - Deselecting all items');
       setSelectedItems([]);
     } else {
-      setSelectedItems(displayCartItems.map(item => item.id));
+      const allIds = displayCartItems.map(item => item.id);
+      console.log('ShoppingCartView - Selecting all items:', allIds);
+      setSelectedItems(allIds);
     }
   };
 
@@ -128,6 +177,27 @@ const ShoppingCartView = ({ cartItems = [], updateCartItem, removeCartItem, onCh
 
   // Handle checkout button
   const handleCheckout = () => {
+    console.log('=== SHOPPING CART VIEW CHECKOUT ===');
+    console.log('ShoppingCartView - handleCheckout called');
+    console.log('ShoppingCartView - selectedItems:', selectedItems);
+    console.log('ShoppingCartView - selectedItems length:', selectedItems.length);
+    console.log('ShoppingCartView - calculateTotal():', calculateTotal());
+    console.log('ShoppingCartView - displayCartItems:', displayCartItems);
+    console.log('ShoppingCartView - displayCartItems length:', displayCartItems.length);
+
+    // Verify that selected items exist in the cart
+    selectedItems.forEach(selectedId => {
+      const foundItem = displayCartItems.find(item => item.id === selectedId);
+      if (foundItem) {
+        console.log(`ShoppingCartView - Selected item ${selectedId} found:`, foundItem);
+      } else {
+        console.log(`ShoppingCartView - WARNING: Selected item ${selectedId} NOT found in displayCartItems`);
+      }
+    });
+
+    console.log('ShoppingCartView - Calling onCheckout with:', selectedItems, calculateTotal());
+    console.log('=== END SHOPPING CART VIEW CHECKOUT ===');
+
     onCheckout(selectedItems, calculateTotal());
   };
 

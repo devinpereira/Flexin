@@ -89,7 +89,7 @@ const OrderConfirmation = () => {
                                 <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <FiCheck className="text-green-500 w-10 h-10" />
                                 </div>
-                                <h1 className="text-white text-3xl md:text-4xl font-bold mb-2">Order Confirmed!</h1>
+                                <h1 className="text-white text-3xl md:text-4xl font-bold mb-2">Order received successfully</h1>
                                 <p className="text-white/70 text-lg mb-4">Thank you for your purchase, {customerInfo?.firstName}!</p>
                                 <div className="bg-[#1a1a2f] rounded-lg p-4 inline-block">
                                     <p className="text-[#f67a45] font-bold text-lg">Order #{orderId}</p>
@@ -241,7 +241,7 @@ const OrderConfirmation = () => {
                                     Payment Information
                                 </h2>
                                 <div className="bg-[#1a1a2f] rounded-lg p-4">
-                                    <p className="text-white/70">A confirmation email has been sent to:</p>
+                                    <p className="text-white/70">You will receive a confirmation email once your order is confirmed</p>
                                     <p className="text-white font-medium">{customerInfo?.email}</p>
                                 </div>
                             </div>
