@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaArrowLeft, FaUserPlus, FaUserCheck, FaTh, FaRegHeart, FaComment } from 'react-icons/fa';
+import { FaArrowLeft, FaUserPlus, FaUserCheck, FaTh, FaRegHeart, FaHeart, FaComment } from 'react-icons/fa';
 import { API_PATHS, BASE_URL } from '../../utils/apiPaths';
 import axiosInstance from '../../utils/axiosInstance';
 import { formatDistanceToNow } from 'date-fns';
@@ -25,7 +25,14 @@ const SearchProfileView = ({ userId, onBack }) => {
 
         // Fetch user posts
         const postsRes = await axiosInstance.get(API_PATHS.POST.GET_USER_POSTS(userId));
-        setPosts(postsRes.data);
+        
+        // Format posts similar to Home component
+        const formattedPosts = postsRes.data.map(post => ({
+          ...post,
+          isliked: post.liked // Map the liked field to isliked for consistency
+        }));
+        
+        setPosts(formattedPosts);
       } catch (err) {
         console.error('Error fetching user data:', err);
       } finally {
@@ -76,13 +83,33 @@ const SearchProfileView = ({ userId, onBack }) => {
           return {
             ...post,
             likes: isLiked ? post.likes + 1 : post.likes - 1,
-            liked: isLiked
+            isliked: isLiked
           };
         }
         return post;
       }));
     } catch (err) {
       console.error("Error liking post:", err);
+    }
+  };
+
+  // Handle post deletion
+  const handleDeletePost = async (postId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.POST.DELETE_POST(postId));
+      setPosts(posts.filter(post => post._id !== postId));
+    } catch (err) {
+      console.error("Error deleting post:", err);
+    }
+  };
+
+  // Handle comment deletion
+  const handleDeleteComment = async (postId, commentId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.COMMENT.DELETE_COMMENT(postId, commentId));
+      // Comment count will be updated by the Post component
+    } catch (err) {
+      console.error("Error deleting comment:", err);
     }
   };
 
@@ -131,7 +158,7 @@ const SearchProfileView = ({ userId, onBack }) => {
           <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-[#121225]">
             <img
               src={profile.profileImageUrl || "/src/assets/profile1.png"}
-              alt={profile.fullName}
+              alt={profile.name}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.onerror = null;
@@ -142,7 +169,7 @@ const SearchProfileView = ({ userId, onBack }) => {
 
           {/* Profile Info */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-white text-2xl font-bold">{profile.fullName}</h1>
+            <h1 className="text-white text-2xl font-bold">{profile.name}</h1>
             <p className="text-gray-400 mb-3">@{profile.username}</p>
             <p className="text-white/80 mb-4">{profile.bio || "No bio available"}</p>
 
@@ -209,7 +236,7 @@ const SearchProfileView = ({ userId, onBack }) => {
                   <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                     <img
                       src={profile.profileImageUrl || "/src/assets/profile1.png"}
-                      alt={profile.fullName}
+                      alt={profile.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
@@ -218,9 +245,9 @@ const SearchProfileView = ({ userId, onBack }) => {
                     />
                   </div>
                   <div>
-                    <h4 className="text-white font-medium">{profile.fullName}</h4>
+                    <h4 className="text-white font-medium">{profile.name}</h4>
                     <p className="text-gray-400 text-xs">
-                      {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                      @{profile.username} • {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                     </p>
                   </div>
                 </div>
@@ -255,10 +282,12 @@ const SearchProfileView = ({ userId, onBack }) => {
                 {/* Post Actions */}
                 <div className="px-4 py-2 border-t border-gray-700 flex justify-between">
                   <button
-                    className="flex items-center gap-2 text-white hover:text-[#f67a45] flex-1 justify-center py-1"
-                    onClick={() => handleLikePost(post._id, !post.liked)}
+                    className={`flex items-center gap-2 hover:text-[#f67a45] flex-1 justify-center py-1 ${
+                      post.isliked ? 'text-[#f67a45]' : 'text-white'
+                    }`}
+                    onClick={() => handleLikePost(post._id, !post.isliked)}
                   >
-                    <FaRegHeart />
+                    {post.isliked ? <FaHeart /> : <FaRegHeart />}
                     <span>Like</span>
                   </button>
                   <button className="flex items-center gap-2 text-white hover:text-[#f67a45] flex-1 justify-center py-1">
@@ -286,6 +315,8 @@ const SearchProfileView = ({ userId, onBack }) => {
           user={profile}
           onClose={() => setSelectedPost(null)}
           onLike={(postId, isLiked) => handleLikePost(postId, isLiked)}
+          onDelete={handleDeletePost}
+          onDeleteComment={handleDeleteComment}
         />
       )}
     </div>
