@@ -4,6 +4,8 @@ import AdminLayout from '../../../components/Admin/AdminLayout';
 import { useNotification } from '../../../hooks/useNotification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
 import { FaSave, FaArrowLeft, FaCamera, FaExclamationTriangle, FaPlus } from 'react-icons/fa';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 const AddExercise = () => {
   const navigate = useNavigate();
@@ -18,26 +20,34 @@ const AddExercise = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    bodyPart: '',
     equipment: '',
     difficulty: 'beginner',
     description: '',
     instructions: '',
+    type: '',
+    primaryMuscles: [],
+    secondaryMuscles: [],
     muscleGroups: [],
-    duration: 30,
-    calories: 0,
+    sets: 3,
+    reps: 10,
+    image: '',
+    modalImage: '',
+    category: '',
     videoUrl: '',
     imageFile: null,
-    imagePreview: null
+    duration: 0,
+    calories: 0
   });
 
   const [errors, setErrors] = useState({});
 
   // Available options for dropdowns
-  const categories = ['Strength', 'Cardio', 'Flexibility', 'Balance', 'Core', 'HIIT', 'Recovery'];
-  const equipments = ['None', 'Dumbbells', 'Barbell', 'Kettlebell', 'Resistance Bands', 'Pull-up Bar', 'Bench', 'Yoga Mat', 'Treadmill', 'Exercise Ball', 'Other'];
-  const difficulties = ['beginner', 'intermediate', 'advanced', 'expert'];
-  const muscleGroupsList = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Abs', 'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Forearms', 'Full Body'];
+  const bodyParts = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Full Body', 'Cardio'];
+  const equipments = ['No equipment', 'Limited equipment', 'Full gym access'];
+  const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
+  const exerciseTypes = ['Strength', 'Cardio', 'Flexibility', 'Balance', 'HIIT', 'Recovery'];
+  const musclesList = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Abs', 'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Forearms'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,16 +73,44 @@ const AddExercise = () => {
     });
   };
 
-  const handleMuscleGroupChange = (muscleGroup) => {
-    if (formData.muscleGroups.includes(muscleGroup)) {
+  const handlePrimaryMuscleChange = (muscle) => {
+    if (formData.primaryMuscles.includes(muscle)) {
       setFormData({
         ...formData,
-        muscleGroups: formData.muscleGroups.filter(mg => mg !== muscleGroup)
+        primaryMuscles: formData.primaryMuscles.filter(m => m !== muscle)
       });
     } else {
       setFormData({
         ...formData,
-        muscleGroups: [...formData.muscleGroups, muscleGroup]
+        primaryMuscles: [...formData.primaryMuscles, muscle]
+      });
+    }
+  };
+
+  const handleSecondaryMuscleChange = (muscle) => {
+    if (formData.secondaryMuscles.includes(muscle)) {
+      setFormData({
+        ...formData,
+        secondaryMuscles: formData.secondaryMuscles.filter(m => m !== muscle)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        secondaryMuscles: [...formData.secondaryMuscles, muscle]
+      });
+    }
+  };
+
+  const handleMuscleGroupChange = (muscle) => {
+    if (formData.muscleGroups.includes(muscle)) {
+      setFormData({
+        ...formData,
+        muscleGroups: formData.muscleGroups.filter(m => m !== muscle)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        muscleGroups: [...formData.muscleGroups, muscle]
       });
     }
   };
@@ -111,24 +149,32 @@ const AddExercise = () => {
       newErrors.name = 'Exercise name is required';
     }
 
-    if (!formData.category) {
-      newErrors.category = 'Category is required';
+    if (!formData.bodyPart) {
+      newErrors.bodyPart = 'Body part is required';
     }
 
     if (!formData.equipment) {
       newErrors.equipment = 'Equipment is required';
     }
 
+    if (!formData.type) {
+      newErrors.type = 'Exercise type is required';
+    }
+
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required';
     }
 
-    if (!formData.instructions.trim()) {
-      newErrors.instructions = 'Instructions are required';
+    if (formData.primaryMuscles.length === 0) {
+      newErrors.primaryMuscles = 'Select at least one primary muscle';
     }
 
-    if (formData.muscleGroups.length === 0) {
-      newErrors.muscleGroups = 'Select at least one muscle group';
+    if (!formData.image) {
+      newErrors.image = 'Image URL is required';
+    }
+
+    if (!formData.modalImage) {
+      newErrors.modalImage = 'Modal image URL is required';
     }
 
     setErrors(newErrors);
@@ -179,12 +225,8 @@ const AddExercise = () => {
     setIsSubmitting(true);
 
     try {
-      // In a real app, this would be an API call
-      // await axiosInstance.post('/api/exercises', formData);
-
-      // Simulate API call with timeout
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      // Call the API to add a new exercise
+      const response = await axiosInstance.post(API_PATHS.EXERCISE.ADD_EXERCISE, formData);
       showSuccess(`Exercise "${formData.name}" added successfully!`);
 
       // Redirect after a short delay
@@ -193,7 +235,7 @@ const AddExercise = () => {
       }, 1500);
 
     } catch (err) {
-      showError('Failed to add exercise. Please try again.');
+      showError(err.response?.data?.message || 'Failed to add exercise. Please try again.');
       console.error('Error adding exercise:', err);
       setIsSubmitting(false);
     }
@@ -257,20 +299,20 @@ const AddExercise = () => {
 
                 <div>
                   <label className="block text-white text-sm font-medium mb-2">
-                    Category <span className="text-red-500">*</span>
+                    Body Part <span className="text-red-500">*</span>
                   </label>
                   <select
-                    name="category"
-                    value={formData.category}
+                    name="bodyPart"
+                    value={formData.bodyPart}
                     onChange={handleChange}
-                    className={`bg-[#1A1A2F] text-white border ${errors.category ? 'border-red-500' : 'border-gray-700'} rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#f67a45]`}
+                    className={`bg-[#1A1A2F] text-white border ${errors.bodyPart ? 'border-red-500' : 'border-gray-700'} rounded-lg px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[#f67a45]`}
                   >
-                    <option value="" disabled>Select Category</option>
-                    {categories.map((category, index) => (
-                      <option key={index} value={category}>{category}</option>
+                    <option value="" disabled>Select Body Part</option>
+                    {bodyParts.map((bodyPart, index) => (
+                      <option key={index} value={bodyPart}>{bodyPart}</option>
                     ))}
                   </select>
-                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
+                  {errors.bodyPart && <p className="text-red-500 text-xs mt-1">{errors.bodyPart}</p>}
                 </div>
 
                 <div>
@@ -398,7 +440,7 @@ const AddExercise = () => {
                   Muscle Groups <span className="text-red-500">*</span>
                 </label>
                 <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2 ${errors.muscleGroups ? 'border border-red-500 rounded-lg p-2' : ''}`}>
-                  {muscleGroupsList.map((muscle, index) => (
+                  {musclesList.map((muscle, index) => (
                     <div key={index} className="flex items-center">
                       <input
                         type="checkbox"

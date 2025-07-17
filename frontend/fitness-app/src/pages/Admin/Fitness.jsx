@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '../../components/Admin/AdminLayout';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaFilter, FaDumbbell } from 'react-icons/fa';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { useNotification } from '../../hooks/useNotification';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const Fitness = () => {
   const [activeTab, setActiveTab] = useState('exercises');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [exercises, setExercises] = useState([]);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { showSuccess, showError, showInfo } = useNotification();
 
@@ -20,6 +24,27 @@ const Fitness = () => {
     onConfirm: () => { }
   });
 
+  // Fetch exercises when component mounts
+  useEffect(() => {
+    fetchExercises();
+  }, []);
+
+  // Function to fetch exercises from API
+  const fetchExercises = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosInstance.get(API_PATHS.EXERCISE.GET_EXERCISES);
+      if (response && response.data.exercises) {
+        setExercises(response.data.exercises);
+      }
+    } catch (error) {
+      showError(error.response?.data?.message || 'Failed to fetch exercises');
+      console.error('Error fetching exercises:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Mock data
   const workouts = [
     { id: 1, name: 'Full Body HIIT', category: 'HIIT', level: 'Intermediate', exercises: 12, duration: '45 min' },
@@ -27,14 +52,6 @@ const Fitness = () => {
     { id: 3, name: 'Core Crusher', category: 'Core', level: 'Beginner', exercises: 10, duration: '30 min' },
     { id: 4, name: 'Leg Day Challenge', category: 'Strength', level: 'Advanced', exercises: 9, duration: '50 min' },
     { id: 5, name: 'Cardio Blast', category: 'Cardio', level: 'Intermediate', exercises: 7, duration: '40 min' }
-  ];
-
-  const exercises = [
-    { id: 1, name: 'Push-ups', category: 'Upper Body', equipment: 'None', difficulty: 'Beginner' },
-    { id: 2, name: 'Squats', category: 'Lower Body', equipment: 'None', difficulty: 'Beginner' },
-    { id: 3, name: 'Deadlifts', category: 'Full Body', equipment: 'Barbell', difficulty: 'Intermediate' },
-    { id: 4, name: 'Pull-ups', category: 'Upper Body', equipment: 'Pull-up Bar', difficulty: 'Advanced' },
-    { id: 5, name: 'Plank', category: 'Core', equipment: 'None', difficulty: 'Beginner' }
   ];
 
   const mealPlans = [
@@ -53,8 +70,8 @@ const Fitness = () => {
 
   const filteredExercises = exercises.filter(exercise =>
     exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    exercise.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    exercise.equipment.toLowerCase().includes(searchQuery.toLowerCase())
+    (exercise.bodyPart && exercise.bodyPart.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (exercise.equipment && exercise.equipment.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredMealPlans = mealPlans.filter(plan =>
@@ -70,21 +87,45 @@ const Fitness = () => {
       message: `Are you sure you want to delete ${item.name}? This action cannot be undone.`,
       type: 'danger',
       onConfirm: () => {
-        // In a real app, this would be an API call
-        showSuccess(`${item.name} has been deleted successfully`);
+        if (activeTab === 'exercises') {
+          deleteExercise(item._id);
+        } else {
+          // For other tabs without API integration yet
+          showSuccess(`${item.name} has been deleted successfully`);
+          setConfirmDialog({ ...confirmDialog, isOpen: false });
+        }
       }
     });
   };
 
+  // Handle exercise deletion
+  const deleteExercise = async (exerciseId) => {
+    try {
+      await axiosInstance.delete(API_PATHS.EXERCISE.DELETE_EXERCISE(exerciseId));
+      showSuccess('Exercise deleted successfully');
+      // Refresh the exercise list
+      fetchExercises();
+      setConfirmDialog({ ...confirmDialog, isOpen: false });
+    } catch (error) {
+      showError(error.response?.data?.message || 'Failed to delete exercise');
+      console.error('Error deleting exercise:', error);
+      setConfirmDialog({ ...confirmDialog, isOpen: false });
+    }
+  };
+
   // Handle edit action
   const handleEditExercise = (exercise) => {
-    navigate(`/admin/fitness/edit-exercise?id=${exercise.id}`);
+    navigate(`/admin/fitness/edit-exercise/${exercise._id}`);
   };
 
   // Handle view action
   const handleViewItem = (item) => {
-    showInfo(`Viewing ${item.name}`);
-    // In a real app, this would navigate to a detail view
+    if (activeTab === 'exercises') {
+      showInfo(`Viewing exercise: ${item.name}`);
+      // You could implement a modal or detailed view here
+    } else {
+      showInfo(`Viewing ${item.name}`);
+    }
   };
 
   return (
@@ -158,69 +199,76 @@ const Fitness = () => {
       {/* Exercises Tab Content */}
       {activeTab === 'exercises' && (
         <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gray-800/50">
-                <tr>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Category</th>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Equipment</th>
-                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Difficulty</th>
-                  <th className="py-3 px-4 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {filteredExercises.length > 0 ? (
-                  filteredExercises.map((exercise) => (
-                    <tr key={exercise.id} className="hover:bg-gray-800/30">
-                      <td className="py-3 px-4 whitespace-nowrap text-white">{exercise.name}</td>
-                      <td className="py-3 px-4 whitespace-nowrap text-white/70">{exercise.category}</td>
-                      <td className="py-3 px-4 whitespace-nowrap text-white/70">{exercise.equipment}</td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${exercise.difficulty === 'Beginner' ? 'bg-green-400/10 text-green-400' :
-                            exercise.difficulty === 'Intermediate' ? 'bg-yellow-400/10 text-yellow-400' :
-                              'bg-red-400/10 text-red-400'
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#f67a45]"></div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gray-800/50">
+                  <tr>
+                    <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                    <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Body Part</th>
+                    <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Equipment</th>
+                    <th className="py-3 px-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Difficulty</th>
+                    <th className="py-3 px-4 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  {filteredExercises.length > 0 ? (
+                    filteredExercises.map((exercise) => (
+                      <tr key={exercise._id} className="hover:bg-gray-800/30">
+                        <td className="py-3 px-4 whitespace-nowrap text-white">{exercise.name}</td>
+                        <td className="py-3 px-4 whitespace-nowrap text-white/70">{exercise.bodyPart}</td>
+                        <td className="py-3 px-4 whitespace-nowrap text-white/70">{exercise.equipment}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            exercise.difficulty.toLowerCase() === 'beginner' ? 'bg-green-400/10 text-green-400' :
+                            exercise.difficulty.toLowerCase() === 'intermediate' ? 'bg-yellow-400/10 text-yellow-400' :
+                            'bg-red-400/10 text-red-400'
                           }`}>
-                          {exercise.difficulty}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleViewItem(exercise)}
-                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                            title="View Exercise"
-                          >
-                            <FaEye size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleEditExercise(exercise)}
-                            className="text-[#f67a45] hover:text-[#e56d3d] transition-colors"
-                            title="Edit Exercise"
-                          >
-                            <FaEdit size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(exercise)}
-                            className="text-red-400 hover:text-red-300 transition-colors"
-                            title="Delete Exercise"
-                          >
-                            <FaTrash size={16} />
-                          </button>
-                        </div>
+                            {exercise.difficulty}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleViewItem(exercise)}
+                              className="text-blue-400 hover:text-blue-300 transition-colors"
+                              title="View Exercise"
+                            >
+                              <FaEye size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleEditExercise(exercise)}
+                              className="text-[#f67a45] hover:text-[#e56d3d] transition-colors"
+                              title="Edit Exercise"
+                            >
+                              <FaEdit size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(exercise)}
+                              className="text-red-400 hover:text-red-300 transition-colors"
+                              title="Delete Exercise"
+                            >
+                              <FaTrash size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="py-6 text-center text-white/70">
+                        {loading ? 'Loading exercises...' : 'No exercises found'}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="py-6 text-center text-white/70">
-                      No exercises found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 

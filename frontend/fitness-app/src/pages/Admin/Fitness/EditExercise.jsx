@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { useNotification } from '../../../hooks/useNotification';
 import ConfirmDialog from '../../../components/ConfirmDialog';
-import { FaEdit, FaSave, FaTrash, FaArrowLeft, FaExclamationTriangle, FaSearch } from 'react-icons/fa';
+import { FaSave, FaArrowLeft, FaSearch, FaEdit, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import axiosInstance from '../../../utils/axiosInstance';
+import { API_PATHS } from '../../../utils/apiPaths';
 
 const EditExercise = () => {
   const navigate = useNavigate();
+  const { exerciseId } = useParams();
   const location = useLocation();
   const { showSuccess, showError } = useNotification();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedExercise, setSelectedExercise] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     title: '',
@@ -21,97 +23,97 @@ const EditExercise = () => {
 
   const [formData, setFormData] = useState({
     name: '',
-    category: '',
+    bodyPart: '',
     equipment: '',
     difficulty: 'beginner',
     description: '',
-    instructions: '',
-    muscleGroups: [],
-    duration: 0,
-    calories: 0,
-    videoUrl: '',
-    imageUrl: ''
+    type: '',
+    primaryMuscles: [],
+    secondaryMuscles: [],
+    sets: 3,
+    reps: 10,
+    image: '',
+    modalImage: ''
   });
 
-  // Available options for dropdowns
-  const categories = ['Strength', 'Cardio', 'Flexibility', 'Balance', 'Core', 'HIIT', 'Recovery'];
-  const equipments = ['None', 'Dumbbells', 'Barbell', 'Kettlebell', 'Resistance Bands', 'Pull-up Bar', 'Bench', 'Yoga Mat', 'Treadmill', 'Exercise Ball', 'Other'];
-  const difficulties = ['beginner', 'intermediate', 'advanced', 'expert'];
-  const muscleGroupsList = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Abs', 'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Forearms', 'Full Body'];
+  const [errors, setErrors] = useState({});
+  const [exercises, setExercises] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  // Mock data for exercises using useMemo to prevent unnecessary re-renders
-  const exercises = useMemo(() => [
-    {
-      id: 1,
-      name: 'Push-ups',
-      category: 'Strength',
-      equipment: 'None',
-      difficulty: 'intermediate',
-      description: 'A classic exercise that targets the chest, shoulders, and triceps.',
-      instructions: '1. Start in a plank position with your hands shoulder-width apart.\n2. Lower your body until your chest nearly touches the floor.\n3. Push yourself back up to the starting position.\n4. Repeat for desired number of repetitions.',
-      muscleGroups: ['Chest', 'Shoulders', 'Triceps'],
-      duration: 60,
-      calories: 100,
-      videoUrl: 'https://www.youtube.com/watch?v=IODxDxX7oi4',
-      imageUrl: '/src/assets/exercises/pushup.jpg'
-    },
-    {
-      id: 2,
-      name: 'Squats',
-      category: 'Strength',
-      equipment: 'None',
-      difficulty: 'beginner',
-      description: 'A compound exercise that targets the lower body muscles including quads, glutes, and hamstrings.',
-      instructions: '1. Stand with feet shoulder-width apart.\n2. Lower your body as if sitting in a chair.\n3. Keep your back straight and knees over your toes.\n4. Return to starting position.\n5. Repeat for desired repetitions.',
-      muscleGroups: ['Quads', 'Hamstrings', 'Glutes'],
-      duration: 45,
-      calories: 120,
-      videoUrl: 'https://www.youtube.com/watch?v=aclHkVaku9U',
-      imageUrl: '/src/assets/exercises/squat.jpg'
-    },
-    {
-      id: 3,
-      name: 'Plank',
-      category: 'Core',
-      equipment: 'None',
-      difficulty: 'beginner',
-      description: 'An isometric core exercise that strengthens your abs, back, and shoulders.',
-      instructions: '1. Start in a forearm plank position.\n2. Ensure your elbows are directly beneath your shoulders.\n3. Keep your body in a straight line from head to heels.\n4. Hold for desired duration.',
-      muscleGroups: ['Abs', 'Shoulders'],
-      duration: 30,
-      calories: 50,
-      videoUrl: 'https://www.youtube.com/watch?v=pSHjTRCQxIw',
-      imageUrl: '/src/assets/exercises/plank.jpg'
-    },
-    {
-      id: 4,
-      name: 'Pull-ups',
-      category: 'Strength',
-      equipment: 'Pull-up Bar',
-      difficulty: 'advanced',
-      description: 'An upper-body compound exercise that targets your back, biceps and shoulders.',
-      instructions: '1. Hang from a pull-up bar with palms facing away.\n2. Pull yourself up until your chin is over the bar.\n3. Lower yourself back to the starting position with control.\n4. Repeat for desired repetitions.',
-      muscleGroups: ['Back', 'Biceps', 'Shoulders'],
-      duration: 40,
-      calories: 80,
-      videoUrl: 'https://www.youtube.com/watch?v=eGo4IYlbE5g',
-      imageUrl: '/src/assets/exercises/pullup.jpg'
-    },
-    {
-      id: 5,
-      name: 'Deadlift',
-      category: 'Strength',
-      equipment: 'Barbell',
-      difficulty: 'intermediate',
-      description: 'A compound exercise that targets multiple muscle groups including the back, glutes, and hamstrings.',
-      instructions: '1. Stand with feet hip-width apart, barbell over midfoot.\n2. Bend at hips and knees to lower and grip the bar.\n3. Keeping back straight, stand up while holding the bar.\n4. Return to starting position by hinging at the hips.\n5. Repeat for desired repetitions.',
-      muscleGroups: ['Back', 'Glutes', 'Hamstrings', 'Quads'],
-      duration: 60,
-      calories: 150,
-      videoUrl: 'https://www.youtube.com/watch?v=ytGaGIn3SjE',
-      imageUrl: '/src/assets/exercises/deadlift.jpg'
+  // Available options for dropdowns
+  const bodyParts = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Full Body', 'Cardio'];
+  const equipments = ['No equipment', 'Limited equipment', 'Full gym access'];
+  const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
+  const exerciseTypes = ['Strength', 'Cardio', 'Flexibility', 'Balance', 'HIIT', 'Recovery'];
+  const categories = ['Strength', 'Cardio', 'Flexibility', 'Balance', 'HIIT', 'Recovery', 'Yoga', 'Pilates', 'CrossFit'];
+  const musclesList = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Abs', 'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Forearms'];
+
+  // Fetch exercise data when component mounts
+  useEffect(() => {
+    // If we have an exerciseId in the URL, try to fetch that exercise
+    if (exerciseId) {
+      fetchExerciseData();
+    } else {
+      // No exerciseId means we're in the exercise selection view
+      setIsLoading(false);
+      setIsEditing(false);
     }
-  ], []);
+  }, [exerciseId]);
+
+  // Function to fetch exercise data
+  const fetchExerciseData = async () => {
+    try {
+      const response = await axiosInstance.patch(API_PATHS.EXERCISE.GET_EXERCISE_BY_ID(exerciseId));
+      if (response && response.exercise) {
+        const exercise = response.exercise;
+        setFormData({
+          name: exercise.name || '',
+          bodyPart: exercise.bodyPart || '',
+          equipment: exercise.equipment || '',
+          difficulty: exercise.difficulty || 'beginner',
+          description: exercise.description || '',
+          type: exercise.type || '',
+          primaryMuscles: exercise.primaryMuscles || [],
+          secondaryMuscles: exercise.secondaryMuscles || [],
+          sets: exercise.sets || 3,
+          reps: exercise.reps || 10,
+          image: exercise.image || '',
+          modalImage: exercise.modalImage || ''
+        });
+        setSelectedExercise(exercise);
+        setIsEditing(true);
+      } else {
+        showError('Failed to fetch exercise data');
+      }
+    } catch (error) {
+      showError(error.response?.data?.message || 'Failed to fetch exercise data');
+      console.error('Error fetching exercise:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to fetch all exercises
+  const fetchAllExercises = async () => {
+    try {
+      const response = await axiosInstance.get(API_PATHS.EXERCISE.GET_EXERCISES);
+      if (response && response.data.exercises) {
+        setExercises(response.data.exercises);
+      } else {
+        setExercises([]);
+      }
+    } catch (error) {
+      console.error('Error fetching exercises:', error);
+      setExercises([]);
+    }
+  };
+
+  // Fetch all exercises when component mounts
+  useEffect(() => {
+    fetchAllExercises();
+  }, []);
 
   // Check for exercise ID in query params when component loads
   useEffect(() => {
@@ -129,11 +131,13 @@ const EditExercise = () => {
   }, [location.search, exercises, showError]);
 
   // Filter exercises based on search query
-  const filteredExercises = exercises.filter(exercise =>
-    exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    exercise.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    exercise.equipment.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredExercises = exercises && exercises.length > 0 
+    ? exercises.filter(exercise =>
+        exercise.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (exercise.category && exercise.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (exercise.equipment && exercise.equipment.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : [];
 
   // Handle selecting an exercise for editing
   const handleSelectExercise = (exercise) => {
@@ -145,7 +149,7 @@ const EditExercise = () => {
       difficulty: exercise.difficulty,
       description: exercise.description,
       instructions: exercise.instructions,
-      muscleGroups: [...exercise.muscleGroups],
+      muscleGroups: Array.isArray(exercise.muscleGroups) ? [...exercise.muscleGroups] : [],
       duration: exercise.duration,
       calories: exercise.calories,
       videoUrl: exercise.videoUrl,
@@ -186,7 +190,7 @@ const EditExercise = () => {
   };
 
   // Handle saving edited exercise
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     // Validate form data
     if (!formData.name || !formData.category || !formData.equipment) {
       showError('Please fill in all required fields');
@@ -194,6 +198,7 @@ const EditExercise = () => {
     }
 
     // In a real app, you would call an API to update the exercise
+    const response = await axiosInstance.patch(API_PATHS.EXERCISE.UPDATE_EXERCISE(exerciseId), formData);
     showSuccess(`Exercise "${formData.name}" has been updated successfully`);
 
     // Redirect back to the fitness page after short delay
@@ -233,7 +238,7 @@ const EditExercise = () => {
       difficulty: selectedExercise.difficulty,
       description: selectedExercise.description,
       instructions: selectedExercise.instructions,
-      muscleGroups: [...selectedExercise.muscleGroups],
+      muscleGroups: Array.isArray(selectedExercise.muscleGroups) ? [...selectedExercise.muscleGroups] : [],
       duration: selectedExercise.duration,
       calories: selectedExercise.calories,
       videoUrl: selectedExercise.videoUrl,
@@ -267,7 +272,17 @@ const EditExercise = () => {
         </button>
       </div>
 
-      {!isEditing ? (
+      {isLoading ? (
+        <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6 flex items-center justify-center">
+          <div className="text-center">
+            <svg className="animate-spin h-10 w-10 text-[#f67a45] mb-4 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="text-white">Loading exercise data...</p>
+          </div>
+        </div>
+      ) : !isEditing ? (
         <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-6">
           <h3 className="text-white text-xl font-bold mb-6">Select Exercise to Edit</h3>
 
@@ -291,7 +306,7 @@ const EditExercise = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredExercises.length > 0 ? (
               filteredExercises.map(exercise => (
-                <div key={exercise.id} className="bg-[#1A1A2F] border border-gray-800 rounded-lg overflow-hidden shadow-md">
+                <div key={exercise._id} className="bg-[#1A1A2F] border border-gray-800 rounded-lg overflow-hidden shadow-md">
                   <div className="h-32 bg-gradient-to-r from-[#1A1A2F] to-[#2D2D44] flex items-center justify-center">
                     <div className="w-16 h-16 rounded-full bg-[#f67a45]/20 flex items-center justify-center text-[#f67a45]">
                       <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
@@ -525,7 +540,7 @@ const EditExercise = () => {
                     Muscle Groups
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
-                    {muscleGroupsList.map((muscle, index) => (
+                    {musclesList.map((muscle, index) => (
                       <div key={index} className="flex items-center">
                         <input
                           type="checkbox"

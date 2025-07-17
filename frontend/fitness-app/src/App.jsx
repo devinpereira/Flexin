@@ -159,6 +159,7 @@ function App() {
                     <Route path="/admin/fitness" element={<AdminFitness />} />
                     <Route path="/admin/fitness/add-exercise" element={<AdminAddExercise />} />
                     <Route path="/admin/fitness/edit-exercise" element={<AdminEditExercise />} />
+                    <Route path="/admin/fitness/edit-exercise/:exerciseId" element={<AdminEditExercise />} />
                     <Route path="/admin/settings" element={<AdminSettings />} />
                   </Route>
 

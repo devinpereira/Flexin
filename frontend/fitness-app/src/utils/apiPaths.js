@@ -80,6 +80,7 @@ export const API_PATHS = {
     UPDATE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
     ADD_EXERCISE: "/api/v1/exercises",
     DELETE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
+    GET_EXERCISE_BY_ID: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
   },
 
   //  Store: Products
