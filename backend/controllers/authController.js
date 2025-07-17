@@ -76,6 +76,31 @@ export const loginUser = async (req, res) => {
     }
 };
 
+// Update User
+export const editUser = async (req, res) => {
+  const { fullName, email } = req.body;
+
+  if (!fullName || !email) {
+    return res.status(400).json({ message: "Please fill in all fields" });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.fullName = fullName;
+    user.email = email;
+
+    await user.save();
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating user", error: err.message });
+  }
+};
+
 // Get User Info
 export const getUserInfo = async (req, res) => {
   try {

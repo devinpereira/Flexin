@@ -244,4 +244,10 @@ export const API_PATHS = {
   MEAL_PLAN: {
     GET_MEAL_PLAN: (trainerId, userId) => `/api/v1/meal-plans/${trainerId}/${userId}`,
   },
+
+  ADMIN_DASHBOARD: {
+    GET_STATISTICS: "/api/v1/admin/statistics/getStatistics", // Done
+    GET_USER_REGISTRATION_INFO: "/api/v1/admin/statistics/userCount", // Done
+    GET_GENDER_DISTRIBUTION: "/api/v1/admin/statistics/genderInfo", // Done
+  },
 };

@@ -4,6 +4,8 @@ import { useNotification } from '../../hooks/useNotification';
 import AdminLayout from '../../components/Admin/AdminLayout';
 import { FaCamera, FaKey, FaSpinner } from 'react-icons/fa';
 import ConfirmDialog from '../../components/Admin/ConfirmDialog';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const Settings = () => {
   const { user } = useContext(UserContext);
@@ -22,14 +24,14 @@ const Settings = () => {
 
   // Profile form data
   const [formData, setFormData] = useState({
-    name: user?.name || '',
+    name: user?.fullName || '',
     email: user?.email || '',
     currentPassword: '',
     newPassword: '',
     confirmNewPassword: '',
     phone: user?.phone || '',
-    profileImage: null,
-    profileImagePreview: user?.profileImage || null
+    profileImageUrl: user?.profileImageUrl || null,
+    profileImagePreview: user?.profileImageUrl || null
   });
 
   // Form validation errors
@@ -125,7 +127,12 @@ const Settings = () => {
     setIsSubmitting(true);
     try {
       // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await axiosInstance.patch(API_PATHS.AUTH.UPDATE_PROFILE, {
+        name: formData.name,
+        email: formData.email,
+        profileImageUrl: formData.profileImageUrl
+      });
+      updateUser(response.data);
       showSuccess('Profile updated successfully');
       if (showPasswordFields) {
         setShowPasswordFields(false);

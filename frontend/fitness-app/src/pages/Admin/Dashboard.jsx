@@ -1,28 +1,60 @@
-import React, { useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import AdminLayout from '../../components/Admin/AdminLayout';
 import { FaUsers, FaUserFriends, FaUserTag, FaMoneyBillWave, FaMale, FaFemale, FaPlus } from 'react-icons/fa';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const Dashboard = () => {
-  // Mock data for dashboard statistics
+  const [statistics, setStatistics] = useState({ userCount: 0, trainerCount: 0, subscriberCount: 0 });
+  const [userRegistrationInfo, setUserRegistrationInfo] = useState([]);
+  const [genderDistribution, setGenderDistribution] = useState({ male: 0, female: 0, total: 0 });
+
+  useEffect(() => {
+    const getStatistics = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.ADMIN_DASHBOARD.GET_STATISTICS);
+        setStatistics(response.data);
+      } catch (error) {
+        console.error('Error fetching statistics:', error);
+      }
+    };
+
+    getStatistics();
+  }, []);
+
+  // Data for dashboard statistics
   const stats = [
-    { title: 'Total Users', value: '2,543', icon: <FaUsers size={24} />, color: '#3b82f6' },
-    { title: 'Total Trainers', value: '128', icon: <FaUserFriends size={24} />, color: '#f67a45' },
-    { title: 'Total Subscribers', value: '1,286', icon: <FaUserTag size={24} />, color: '#8b5cf6' },
+    { title: 'Total Users', value: statistics.userCount, icon: <FaUsers size={24} />, color: '#3b82f6' },
+    { title: 'Total Trainers', value: statistics.trainerCount, icon: <FaUserFriends size={24} />, color: '#f67a45' },
+    { title: 'Total Subscribers', value: statistics.subscriberCount, icon: <FaUserTag size={24} />, color: '#8b5cf6' },
     { title: 'Total Revenue', value: 'Rs. 3,245,180', icon: <FaMoneyBillWave size={24} />, color: '#10b981' }
   ];
 
-  // Mock data for user registration chart
+  useEffect(() => {
+    const fetchUserRegistrationInfo = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.ADMIN_DASHBOARD.GET_USER_REGISTRATION_INFO);
+        setUserRegistrationInfo(response.data);
+      } catch (error) {
+        console.error('Error fetching user registration info:', error);
+      }
+    };
+
+    fetchUserRegistrationInfo();
+  }, []);
+
+  // Data for user registration chart
   const chartData = {
-    labels: ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'],
+    labels: userRegistrationInfo.map(item => item._id),
     datasets: [
       {
         label: 'User Registrations',
-        data: [125, 320, 580, 865, 1540, 2543, 3200, 4000, 4800],
+        data: userRegistrationInfo.map(item => item.count),
         fill: true,
         backgroundColor: 'rgba(246, 122, 69, 0.2)',
         borderColor: '#f67a45',
@@ -79,11 +111,23 @@ const Dashboard = () => {
     { country: 'Other', users: 116, rate: '4.5%' }
   ];
 
-  // Mock data for gender distribution
+  useEffect(() => {
+    const fetchGenderDistribution = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.ADMIN_DASHBOARD.GET_GENDER_DISTRIBUTION);
+        setGenderDistribution(response.data);
+      } catch (error) {
+        console.error('Error fetching gender distribution:', error);
+      }
+    };
+    fetchGenderDistribution();
+  }, []);
+
+  // Data for gender distribution
   const genderData = {
-    male: 1625,
-    female: 918,
-    total: 2543
+    male: genderDistribution.male || 0,
+    female: genderDistribution.female || 0,
+    total: genderDistribution.total || 0
   };
 
   return (
