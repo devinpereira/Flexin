@@ -20,7 +20,12 @@ export const getFeedPosts = async (req, res) => {
 
     // Aggregate posts with user and profile data and liked status
     const feedPosts = await Post.aggregate([
-      { $match: { userId: { $in: followedUserIds } } },
+      {
+        $match: {
+          userId: { $in: followedUserIds },
+          status: { $ne: "removed" },
+        }
+      },
       { $sort: { createdAt: -1 } },
 
       // Join user info
@@ -101,8 +106,36 @@ export const getPosts = async (req, res) => {
   const userId = req.user._id;
 
   try {
-    const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+    const posts = await Post.find({ userId, status: { $ne: "removed" } }).sort({ createdAt: -1 });
     res.status(200).json(posts);
+  } catch (err) {
+    res.status(500).json({ message: "Server Error", error: err.message });
+  }
+};
+
+// Get All Posts
+export const getAllPosts = async (req, res) => {
+  try {
+    // Fetch all posts and populate user info
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Fetch usernames for all userIds
+    const userIds = posts.map(post => post.userId);
+    const profiles = await User.find({ _id: { $in: userIds } }).select("_id fullName").lean();
+    const profileMap = profiles.reduce((acc, profile) => {
+      acc[profile._id.toString()] = profile.fullName;
+      return acc;
+    }, {});
+
+    // Add username and status to each post
+    const postsWithUsername = posts.map(post => ({
+      ...post,
+      author: profileMap[post.userId.toString()] || null,
+    }));
+
+    res.status(200).json(postsWithUsername);
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -117,7 +150,7 @@ export const getPostsByUserId = async (req, res) => {
   }
 
   try {
-    const posts = await Post.find({ userId }).sort({ createdAt: -1 });
+    const posts = await Post.find({ userId, status: { $ne: "removed" } }).sort({ createdAt: -1 });
     if (!posts) {
       return res.status(404).json({ message: "No posts found for this user" });
     }
@@ -326,6 +359,50 @@ export const likePost = async (req, res) => {
     });
 
     res.json({ message: "Post liked" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const reportPost = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    post.reports = post.reports + 1;
+    await post.save();
+
+    res.json({ message: "Post reported" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const flagPost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    const { status } = req.body;
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    post.status = status;
+    await post.save();
+
+    res.json({ message: "Post flagged" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const removePost = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    post.status = "removed";
+    await post.save();
+
+    res.json({ message: "Post removed" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

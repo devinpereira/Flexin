@@ -20,7 +20,16 @@ const postSchema = new mongoose.Schema(
     comments: {
       type: Number,
       default: 0,
-    }
+    },
+    status: {
+      type: String,
+      enum: ['active', 'flagged', 'removed'],
+      default: 'active',
+    },
+    reports: {
+      type: Number,
+      default: 0,
+    },
   },
   { 
     timestamps: true,

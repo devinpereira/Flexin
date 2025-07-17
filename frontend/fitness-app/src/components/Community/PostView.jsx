@@ -19,7 +19,7 @@ const PostView = ({ post, onClose }) => {
             <h3 className="text-white font-medium">{post.author}</h3>
             <p className="text-white/50 text-sm flex items-center gap-1">
               <FaClock size={12} />
-              {format(new Date(post.date), 'MMM d, yyyy')}
+              {format(new Date(post.createdAt), 'MMM d, yyyy')}
             </p>
           </div>
         </div>

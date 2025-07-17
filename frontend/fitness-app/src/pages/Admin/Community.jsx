@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotification } from '../../hooks/useNotification';
 import AdminLayout from '../../components/Admin/AdminLayout';
 import {
@@ -9,6 +9,8 @@ import {
 import ConfirmDialog from '../../components/Admin/ConfirmDialog';
 import Modal from '../../components/Modal';
 import PostView from '../../components/Community/PostView';
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
 
 const Community = () => {
   const { showSuccess, showError } = useNotification();
@@ -35,65 +37,16 @@ const Community = () => {
 
   // View modal state
   const [viewItem, setViewItem] = useState(null);
+  const [posts, setPosts] = useState([]);
 
-  // Mock data for posts
-  const posts = [
-    {
-      id: 1,
-      title: 'My fitness journey - 6 months progress',
-      author: 'John Smith',
-      authorId: 'user123',
-      date: '2025-06-15',
-      status: 'active',
-      likes: 87,
-      comments: 24,
-      reports: 0
-    },
-    {
-      id: 2,
-      title: 'Best protein supplements for vegans',
-      author: 'Emma Wilson',
-      authorId: 'user456',
-      date: '2025-06-13',
-      status: 'active',
-      likes: 45,
-      comments: 12,
-      reports: 0
-    },
-    {
-      id: 3,
-      title: 'How to stay motivated during winter',
-      author: 'Michael Brown',
-      authorId: 'user789',
-      date: '2025-06-06',
-      status: 'active',
-      likes: 62,
-      comments: 18,
-      reports: 0
-    },
-    {
-      id: 4,
-      title: 'Training routine for beginners',
-      author: 'Sarah Davis',
-      authorId: 'user321',
-      date: '2025-06-08',
-      status: 'flagged',
-      likes: 38,
-      comments: 9,
-      reports: 2
-    },
-    {
-      id: 5,
-      title: '[SPAM] Buy fitness products with discount',
-      author: 'Spammer Account',
-      authorId: 'user999',
-      date: '2025-06-05',
-      status: 'removed',
-      likes: 3,
-      comments: 1,
-      reports: 8
-    }
-  ];
+  // Fetch data for posts
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const response = await axiosInstance.get(API_PATHS.POST.GET_POSTS);
+      setPosts(response.data);
+    };
+    fetchPosts();
+  }, []);
 
   // Mock data for comments
   const comments = [
@@ -224,7 +177,7 @@ const Community = () => {
         items = posts;
         filterFn = post => {
           const matchesStatus = selectedStatus === 'all' || post.status === selectedStatus;
-          const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          const matchesSearch = post.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
             post.author.toLowerCase().includes(searchQuery.toLowerCase());
           return matchesStatus && matchesSearch;
         };
@@ -323,8 +276,20 @@ const Community = () => {
       message,
       onConfirm: () => {
         // In a real app, this would call an API to update the status
-        // For demo purposes, we just show a success notification
-        showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} status updated to ${newStatus}`);
+        const updateStatus = async () => {
+          try {
+            if (type === 'post') {
+              await axiosInstance.patch(API_PATHS.POST.FLAG_POST(item._id), { status: newStatus });
+            } else {
+              return;
+            }
+            showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} status updated to ${newStatus}`);
+          } catch (error) {
+            showError('Error updating status');
+            console.error(error);
+          }
+        };
+        updateStatus();
       },
       type: 'warning'
     });
@@ -338,8 +303,20 @@ const Community = () => {
       message: `Are you sure you want to permanently delete this ${type}? This action cannot be undone.`,
       onConfirm: () => {
         // In a real app, this would call an API to delete the item
-        // For demo purposes, we just show a success notification
-        showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully`);
+        const removePost = async () => {
+          try {
+            if (type === 'post') {
+              await axiosInstance.patch(API_PATHS.POST.REMOVE_POST(item._id));
+            } else {
+              return;
+            }
+            showSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully`);
+          } catch (error) {
+            showError('Error deleting post');
+            console.error(error);
+          }
+        };
+        removePost();
       },
       type: 'danger'
     });
@@ -491,10 +468,10 @@ const Community = () => {
         </thead>
         <tbody>
           {filteredItems.map((post) => (
-            <tr key={post.id} className="border-b border-white/5 hover:bg-[#1d1d3a] transition-colors">
-              <td className="py-3 px-4 text-white">{post.title}</td>
+            <tr key={post._id} className="border-b border-white/5 hover:bg-[#1d1d3a] transition-colors">
+              <td className="py-3 px-4 text-white">{post.description}</td>
               <td className="py-3 px-4 text-white">{post.author}</td>
-              <td className="py-3 px-4 text-center text-white/70">{post.date}</td>
+              <td className="py-3 px-4 text-center text-white/70">{post.createdAt}</td>
               <td className="py-3 px-4 text-center">{renderStatusBadge(post.status)}</td>
               <td className="py-3 px-4 text-center text-white/70">
                 {post.likes} likes • {post.comments} comments
@@ -517,9 +494,9 @@ const Community = () => {
                   </button>
                   {post.status === 'active' ? (
                     <button
-                      onClick={() => handleStatusChange(post, 'post', 'removed')}
+                      onClick={() => handleStatusChange(post, 'post', 'flagged')}
                       className="p-2 text-white/70 hover:text-red-400 transition-colors"
-                      title="Remove Post"
+                      title="Flag Post"
                     >
                       <FaBan size={16} />
                     </button>
@@ -753,7 +730,6 @@ const Community = () => {
     <AdminLayout pageTitle="Community Management">
       {/* Page header with export button */}
       <div className="flex flex-wrap justify-between items-center mb-6">
-        <h2 className="text-white text-2xl font-bold">Community Management</h2>
         <div className="flex items-center gap-3 mt-2 sm:mt-0">
           <button
             onClick={handleExport}

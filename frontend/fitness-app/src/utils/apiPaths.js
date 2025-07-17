@@ -21,6 +21,10 @@ export const API_PATHS = {
     DELETE_POST: (postId) => `/api/v1/posts/${postId}`,
     LIKE_POST: (postId) => `/api/v1/posts/${postId}/like`, // Done
     GET_USER_POSTS: (userId) => `/api/v1/posts/user/${userId}`, // Done
+    GET_POSTS: "/api/v1/posts/all",
+    REPORT_POST: (postId) => `/api/v1/posts/report/${postId}`, // Done
+    FLAG_POST: (postId) => `/api/v1/posts/flag/${postId}`, // Done
+    REMOVE_POST: (postId) => `/api/v1/posts/remove/${postId}`,
   },
   COMMENT: {
     GET_COMMENTS: (postId) => `/api/v1/comments/${postId}`, // Done
