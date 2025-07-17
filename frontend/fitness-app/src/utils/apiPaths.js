@@ -14,49 +14,56 @@ export const API_PATHS = {
   },
   POST: {
     GET_FEED_POSTS: "/api/v1/posts/feed", // Done
-    GET_ALL_POSTS: "/api/v1/posts/",
-    GET_POST: (postId) => `/api/v1/posts/${postId}`,
+    GET_ALL_POSTS: "/api/v1/posts/", // Done
+    GET_POST: (postId) => `/api/v1/posts/${postId}`, 
     CREATE_POST: "/api/v1/posts", // Done
     UPDATE_POST: (postId) => `/api/v1/posts/${postId}`,
-    DELETE_POST: (postId) => `/api/v1/posts/${postId}`,
+    DELETE_POST: (postId) => `/api/v1/posts/${postId}`, // Done
     LIKE_POST: (postId) => `/api/v1/posts/${postId}/like`, // Done
     GET_USER_POSTS: (userId) => `/api/v1/posts/user/${userId}`, // Done
-    GET_POSTS: "/api/v1/posts/all",
+    GET_POSTS: "/api/v1/posts/all", // Done
     REPORT_POST: (postId) => `/api/v1/posts/report/${postId}`, // Done
     FLAG_POST: (postId) => `/api/v1/posts/flag/${postId}`, // Done
-    REMOVE_POST: (postId) => `/api/v1/posts/remove/${postId}`,
+    REMOVE_POST: (postId) => `/api/v1/posts/remove/${postId}`, // Done
   },
   COMMENT: {
     GET_COMMENTS: (postId) => `/api/v1/comments/${postId}`, // Done
     ADD_COMMENT: (postId) => `/api/v1/comments/${postId}`, // Done
-    DELETE_COMMENT: (postId, commentId) => `/api/v1/comments/${postId}/${commentId}`,
+    DELETE_COMMENT: (postId, commentId) => `/api/v1/comments/${postId}/${commentId}`, // Done
   },
   FOLLOW: {
     UNFOLLOW_USER: (followingId) => `/api/v1/friends/unfollow/${followingId}`, // Done
     GET_FOLLOWERS: (userId) => `/api/v1/friends/followers/${userId}`, // Done
     SEARCH_FOLLOWERS: (username) => `/api/v1/friends/search/${username}`, // Done
     SEND_FOLLOW_REQUEST: (followingId) => `/api/v1/friends/follow/${followingId}`, // Done
-    APPROVE_FOLLOW_REQUEST: (followId) => `/api/v1/friends/approve/${followId}`,
-    REJECT_FOLLOW_REQUEST: (followId) => `/api/v1/friends/reject/${followId}`,
+    APPROVE_FOLLOW_REQUEST: (followId) => `/api/v1/friends/approve/${followId}`, // Done
+    REJECT_FOLLOW_REQUEST: (followId) => `/api/v1/friends/reject/${followId}`, // Done
     GET_FOLLOW_REQUESTS: "/api/v1/friends/requests", // Done
     GET_FRIENDS: "/api/v1/friends/", // Done
-    GET_FOLLOWING: "/api/v1/friends/following",
-    GET_MY_FOLLOWERS: "/api/v1/friends/followers",
-    GET_SUGGESTIONS: "/api/v1/friends/suggestions",
+    GET_FOLLOWING: "/api/v1/friends/following", // Done
+    GET_MY_FOLLOWERS: "/api/v1/friends/followers", // Done
+    GET_SUGGESTIONS: "/api/v1/friends/suggestions", // Done
   },
   PROFILE: {
     REGISTER_PROFILE: "/api/v1/profile/register", // Done
     GET_PROFILE_INFO: "/api/v1/profile", // Done
     GET_USER_PROFILE: (userId) => `/api/v1/profile/user/${userId}`, // Done
     UPDATE_PROFILE: "/api/v1/profile/update", // Done
-    UPDATE_PROFILE_PIC: "/api/v1/profile/update-pic", // Done
+    UPDATE_PROFILE_PIC: "/api/v1/profile/update-pic", // 
+    FLAG_POST: "/api/v1/profile/flag",
+    UNFLAG_POST: "/api/v1/profile/unflag",
+    SUSPEND_PROFILE: "/api/v1/profile/suspend",
+    UNSUSPEND_PROFILE: "/api/v1/profile/unsuspend",
+    BAN_PROFILE: "/api/v1/profile/ban",
+    UNBAN_PROFILE: "/api/v1/profile/unban",
+    REPORT_PROFILE: "/api/v1/profile/report",
   },
   NOTIFICATION: {
     GET_NOTIFICATIONS: "/api/v1/notifications", // Done
-    MARK_AS_READ: (notificationId) => `/api/v1/notifications/read/${notificationId}`,
-    MARK_ALL_AS_READ: "/api/v1/notifications/read-all",
-    DELETE_NOTIFICATION: (notificationId) => `/api/v1/notifications/delete/${notificationId}`,
-    DELETE_ALL_NOTIFICATIONS: "/api/v1/notifications/delete-all",
+    MARK_AS_READ: (notificationId) => `/api/v1/notifications/read/${notificationId}`, // Done
+    MARK_ALL_AS_READ: "/api/v1/notifications/read-all", // Done
+    DELETE_NOTIFICATION: (notificationId) => `/api/v1/notifications/delete/${notificationId}`, // Done
+    DELETE_ALL_NOTIFICATIONS: "/api/v1/notifications/delete-all", // Done
   },
   FITNESS: {
     CREATE_FITNESS_PROFILE: "/api/v1/fitness/register", // Done
@@ -77,10 +84,10 @@ export const API_PATHS = {
   },
   EXERCISE: {
     GET_EXERCISES: "/api/v1/exercises", // Done
-    UPDATE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
-    ADD_EXERCISE: "/api/v1/exercises",
-    DELETE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
-    GET_EXERCISE_BY_ID: (exerciseId) => `/api/v1/exercises/${exerciseId}`,
+    UPDATE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`, // Done
+    ADD_EXERCISE: "/api/v1/exercises", // Done
+    DELETE_EXERCISE: (exerciseId) => `/api/v1/exercises/${exerciseId}`, // Done
+    GET_EXERCISE_BY_ID: (exerciseId) => `/api/v1/exercises/${exerciseId}`, // Done
   },
 
   //  Store: Products
