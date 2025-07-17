@@ -173,12 +173,12 @@ export const approveFollowRequest = async (req, res) => {
       { new: true }
     );
 
-    const user = await User.findById(followerId);
+    const user = await User.findById(followingId);
 
     await sendNotification({
       io,
       onlineUsers,
-      recipientId: followingId,
+      recipientId: followerId,
       sender: user,
       type: "follow",
       postId: null,
