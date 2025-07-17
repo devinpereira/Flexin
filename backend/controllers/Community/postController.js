@@ -364,21 +364,7 @@ export const likePost = async (req, res) => {
   }
 };
 
-export const reportPost = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const post = await Post.findById(req.params.id);
-    if (!post) return res.status(404).json({ error: "Post not found" });
-
-    post.reports = post.reports + 1;
-    await post.save();
-
-    res.json({ message: "Post reported" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
+// Flag a Post
 export const flagPost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -394,6 +380,7 @@ export const flagPost = async (req, res) => {
   }
 };
 
+// Remove a Post
 export const removePost = async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -405,5 +392,40 @@ export const removePost = async (req, res) => {
     res.json({ message: "Post removed" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// Report a Post
+export const reportPost = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Check if post exists
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Increment reports count
+    post.reports += 1;
+    await post.save();
+
+    // Create a report entry
+    await CommunityReports.create({
+      userId: userId,
+      postId: post._id,
+      type: "POST",
+    });
+
+    res.status(200).json({
+      message: "Post reported successfully",
+      post,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error reporting post",
+      error: err.message,
+    });
   }
 };

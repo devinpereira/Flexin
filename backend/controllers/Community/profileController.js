@@ -1,7 +1,7 @@
-import express from "express";
 import User from "../../models/User.js";
 import ProfileData from "../../models/ProfileData.js";
 import Post from "../../models/Post.js";
+import CommunityReports from "../../models/CommunityReports.js";
 
 export const registerProfile = async (req, res) => {
   const userId = req.user._id;
@@ -189,3 +189,201 @@ export const updateProfileImage = async (req, res) => {
     });
   }
 }
+
+export const banProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Update status to banned
+    profile.status = "banned";
+    await profile.save();
+
+    res.status(200).json({
+      message: "Profile banned successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error banning profile",
+      error: err.message,
+    });
+  }
+};
+
+export const unbanProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Update status to active
+    profile.status = "active";
+    await profile.save();
+
+    res.status(200).json({
+      message: "Profile unbanned successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error unbanning profile",
+      error: err.message,
+    });
+  }
+};
+
+export const flagProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Update status to flagged
+    profile.status = "flagged";
+    await profile.save();
+
+    res.status(200).json({
+      message: "Profile flagged successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error flagging profile",
+      error: err.message,
+    });
+  }
+};
+
+export const unflagProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Update status to active
+    profile.status = "active";
+    await profile.save();
+
+    res.status(200).json({
+      message: "Profile unflagged successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error unflagging profile",
+      error: err.message,
+    });
+  }
+};
+
+export const suspendProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Update status to suspended
+    profile.status = "suspended";
+    await profile.save();
+
+    res.status(200).json({
+      message: "Profile suspended successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error suspending profile",
+      error: err.message,
+    });
+  }
+};
+
+export const unsuspendProfile = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Update status to active
+    profile.status = "active";
+    await profile.save();
+
+    res.status(200).json({
+      message: "Profile unsuspended successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error unsuspending profile",
+      error: err.message,
+    });
+  }
+};
+
+export const reportProfile = async (req, res) => {
+  const Id = req.user.id;
+  const { userId, reason } = req.body;
+
+  try {
+    // Check if profile exists
+    const profile = await ProfileData.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // Increment reports count
+    profile.reports += 1;
+    await profile.save();
+
+    // Create a report entry
+    await CommunityReports.create({
+      userId: Id,
+      profileId: userId,
+      type: "PROFILE",
+      reason: reason ? reason : "Inappropriate content",
+    });
+
+    res.status(200).json({
+      message: "Profile reported successfully",
+      profile,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Error reporting profile",
+      error: err.message,
+    });
+  }
+};

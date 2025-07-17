@@ -29,6 +29,15 @@ const profileDataSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    status: {
+      type: String,
+      enum: ["active", "banned", "flagged", "suspended"],
+      default: "active",
+    },
+    reports: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
