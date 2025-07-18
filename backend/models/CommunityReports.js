@@ -44,4 +44,4 @@ reportSchema.pre("validate", function (next) {
   next();
 });
 
-export default mongoose.model("Report", reportSchema);
+export default mongoose.model("CommunityReport", reportSchema);

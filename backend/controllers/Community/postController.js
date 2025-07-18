@@ -4,6 +4,7 @@ import Comment from "../../models/Comment.js";
 import Follow from "../../models/Follow.js";
 import ProfileData from "../../models/ProfileData.js";
 import User from "../../models/User.js";
+import CommunityReports from "../../models/CommunityReports.js";
 import { deleteNotification, sendNotification } from "../../utils/notificationHelper.js";
 
 // Get Feed Posts

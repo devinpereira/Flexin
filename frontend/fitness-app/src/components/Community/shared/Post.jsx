@@ -144,6 +144,15 @@ const Post = ({ post, onLike, onDelete, onDeleteComment, currentUser, showOwnerA
     });
   };
 
+  const handleReportPost = (postId) => async () => {
+    try {
+      await axiosInstance.post(`${API_PATHS.POST.REPORT_POST(postId)}`);
+      alert("Post reported successfully.");
+    } catch (err) {
+      console.error("Error reporting post:", err);
+    }
+  };
+
   // Close the menu when clicking outside
   React.useEffect(() => {
     const handleClickOutside = () => setShowMenu(false);
@@ -195,7 +204,7 @@ const Post = ({ post, onLike, onDelete, onDeleteComment, currentUser, showOwnerA
               <button className="w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/10 text-sm">
                 Save Post
               </button>
-              <button className="w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/10 text-sm">
+              <button className="w-full text-left px-4 py-2 text-white hover:bg-[#f67a45]/10 text-sm" onClick={handleReportPost(post.id)}>
                 Report Post
               </button>
               {isPostOwner && onDelete && (
