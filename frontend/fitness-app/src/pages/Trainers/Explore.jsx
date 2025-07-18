@@ -51,11 +51,15 @@ const Explore = () => {
   const specialties = [
     "All Specialties",
     "Strength & Conditioning",
-    "Yoga & Flexibility",
     "Weight Loss",
-    "Nutrition",
     "Cardio & HIIT",
+    "Yoga & Flexibility",
+    "Nutrition",
     "Pilates",
+    "CrossFit",
+    "Bodybuilding",
+    "Rehabilitation",
+    "Sports Performance",
   ];
 
   // Filter trainers based on search and specialty
@@ -121,7 +125,8 @@ const Explore = () => {
             Are You a Professional Trainer?
           </h3>
           <p className="text-white/80">
-            Join our platform and connect with clients looking for your expertise.
+            Join our platform and connect with clients looking for your
+            expertise.
           </p>
         </div>
         <button
@@ -198,7 +203,7 @@ const Explore = () => {
               <div
                 key={trainer._id}
                 className="bg-[#1A1A2F] border border-gray-800 rounded-xl overflow-hidden transition-all hover:shadow-lg hover:border-[#f67a45]/30 hover:translate-y-[-2px] duration-300 min-h-[360px] flex flex-col"
-                style={{ margin: '1px', transform: 'translate3d(0,0,0)' }}
+                style={{ margin: "1px", transform: "translate3d(0,0,0)" }}
               >
                 {/* Card Header - Fixed height for consistent look */}
                 <div className="w-full pt-6 pb-2 flex flex-col items-center justify-center relative">

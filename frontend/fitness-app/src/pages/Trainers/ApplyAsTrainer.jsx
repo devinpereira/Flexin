@@ -1,9 +1,12 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUpload, FaCheckCircle, FaArrowLeft, FaSpinner } from "react-icons/fa";
+import {
+  FaUpload,
+  FaCheckCircle,
+  FaArrowLeft,
+  FaSpinner,
+} from "react-icons/fa";
 import TrainerLayout from "../../components/Trainers/TrainerLayout";
-// Import from mock API instead of actual API
-import { submitTrainerApplication } from "../../utils/MockTrainerAPI";
 
 const ApplyAsTrainer = () => {
   const navigate = useNavigate();
@@ -59,7 +62,10 @@ const ApplyAsTrainer = () => {
     setFormData((prev) => {
       const specialties = [...prev.specialties];
       if (specialties.includes(specialty)) {
-        return { ...prev, specialties: specialties.filter(s => s !== specialty) };
+        return {
+          ...prev,
+          specialties: specialties.filter((s) => s !== specialty),
+        };
       } else {
         return { ...prev, specialties: [...specialties, specialty] };
       }
@@ -143,19 +149,28 @@ const ApplyAsTrainer = () => {
     const newErrors = {};
 
     if (currentStep === 1) {
-      if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
+      if (!formData.fullName.trim())
+        newErrors.fullName = "Full name is required";
       if (!formData.email.trim()) newErrors.email = "Email is required";
-      else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Email is invalid";
+      else if (!/\S+@\S+\.\S+/.test(formData.email))
+        newErrors.email = "Email is invalid";
       if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-      if (!formData.experience.trim()) newErrors.experience = "Experience is required";
+      if (!formData.experience.trim())
+        newErrors.experience = "Experience is required";
     } else if (currentStep === 2) {
-      if (formData.specialties.length === 0) newErrors.specialties = "Please select at least one specialty";
+      if (formData.specialties.length === 0)
+        newErrors.specialties = "Please select at least one specialty";
       if (!formData.bio.trim()) newErrors.bio = "Bio is required";
-      else if (formData.bio.trim().length < 100) newErrors.bio = "Bio should be at least 100 characters";
+      else if (formData.bio.trim().length < 10)
+        newErrors.bio = "Bio should be at least 10 characters";
     } else if (currentStep === 3) {
-      if (!formData.profilePhoto) newErrors.profilePhoto = "Profile photo is required";
-      if (!formData.identificationDocument) newErrors.identificationDocument = "Identification document is required";
-      if (formData.certificates.length === 0) newErrors.certificates = "Please upload at least one certificate";
+      if (!formData.profilePhoto)
+        newErrors.profilePhoto = "Profile photo is required";
+      if (!formData.identificationDocument)
+        newErrors.identificationDocument =
+          "Identification document is required";
+      if (formData.certificates.length === 0)
+        newErrors.certificates = "Please upload at least one certificate";
     }
 
     setErrors(newErrors);
@@ -179,37 +194,42 @@ const ApplyAsTrainer = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateStep()) return;
-
+    if (currentStep !== 3) return;
+    if (!validateStep()) return; // <-- Add this line!
     setSubmitting(true);
+    setErrors({});
     try {
-      // Create FormData for file uploads
-      const applicationData = new FormData();
-      applicationData.append("fullName", formData.fullName);
-      applicationData.append("email", formData.email);
-      applicationData.append("phone", formData.phone);
-      applicationData.append("experience", formData.experience);
-      applicationData.append("bio", formData.bio);
-      applicationData.append("specialties", JSON.stringify(formData.specialties));
-
-      // Append files
-      applicationData.append("profilePhoto", formData.profilePhoto);
-      applicationData.append("identificationDocument", formData.identificationDocument);
-
-      // Append certificates
-      formData.certificates.forEach((cert, index) => {
-        applicationData.append(`certificate${index}`, cert);
+      const form = new FormData();
+      form.append("fullName", formData.fullName);
+      form.append("email", formData.email);
+      form.append("phone", formData.phone);
+      form.append("experience", formData.experience);
+      form.append("bio", formData.bio);
+      form.append("specialties", JSON.stringify(formData.specialties));
+      if (formData.profilePhoto)
+        form.append("profilePhoto", formData.profilePhoto);
+      if (formData.identificationDocument)
+        form.append("identificationDocument", formData.identificationDocument);
+      formData.certificates.forEach((cert, idx) => {
+        form.append(`certificate${idx}`, cert);
       });
 
-      // Submit application
-      await submitTrainerApplication(applicationData);
-      setSubmitted(true);
+      const res = await fetch(
+        "http://localhost:8000/api/v1/pending-trainer/apply",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: form,
+        }
+      );
 
-      // Scroll to top after submission
-      window.scrollTo(0, 0);
-    } catch (error) {
-      console.error("Error submitting application:", error);
-      setErrors({ submit: "Failed to submit application. Please try again later." });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to submit");
+      setSubmitted(true);
+    } catch (err) {
+      setErrors({ submit: err.message });
     } finally {
       setSubmitting(false);
     }
@@ -224,10 +244,13 @@ const ApplyAsTrainer = () => {
             <div className="bg-green-500/20 p-4 rounded-full mb-6">
               <FaCheckCircle className="text-green-500 text-5xl" />
             </div>
-            <h2 className="text-white text-2xl font-bold mb-4">Application Submitted Successfully!</h2>
+            <h2 className="text-white text-2xl font-bold mb-4">
+              Application Submitted Successfully!
+            </h2>
             <p className="text-white/70 mb-8 max-w-lg mx-auto">
-              Thank you for applying to be a trainer on our platform. Your application has been received and is under review.
-              We will notify you once the admin has reviewed your application.
+              Thank you for applying to be a trainer on our platform. Your
+              application has been received and is under review. We will notify
+              you once the admin has reviewed your application.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <button
@@ -267,30 +290,33 @@ const ApplyAsTrainer = () => {
         <div className="border-b border-white/10">
           <div className="flex">
             <div
-              className={`flex-1 py-4 text-center font-medium ${currentStep === 1
+              className={`flex-1 py-4 text-center font-medium ${
+                currentStep === 1
                   ? "bg-[#f67a45] text-white"
                   : currentStep > 1
-                    ? "bg-[#f67a45]/20 text-[#f67a45]"
-                    : "bg-gray-800 text-white/50"
-                }`}
+                  ? "bg-[#f67a45]/20 text-[#f67a45]"
+                  : "bg-gray-800 text-white/50"
+              }`}
             >
               1. Personal Information
             </div>
             <div
-              className={`flex-1 py-4 text-center font-medium ${currentStep === 2
+              className={`flex-1 py-4 text-center font-medium ${
+                currentStep === 2
                   ? "bg-[#f67a45] text-white"
                   : currentStep > 2
-                    ? "bg-[#f67a45]/20 text-[#f67a45]"
-                    : "bg-gray-800 text-white/50"
-                }`}
+                  ? "bg-[#f67a45]/20 text-[#f67a45]"
+                  : "bg-gray-800 text-white/50"
+              }`}
             >
               2. Professional Details
             </div>
             <div
-              className={`flex-1 py-4 text-center font-medium ${currentStep === 3
+              className={`flex-1 py-4 text-center font-medium ${
+                currentStep === 3
                   ? "bg-[#f67a45] text-white"
                   : "bg-gray-800 text-white/50"
-                }`}
+              }`}
             >
               3. Upload Documents
             </div>
@@ -298,11 +324,19 @@ const ApplyAsTrainer = () => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && currentStep !== 3) e.preventDefault();
+          }}
+        >
           {/* Step 1: Personal Information */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              <h2 className="text-white text-xl font-bold mb-6">Personal Information</h2>
+              <h2 className="text-white text-xl font-bold mb-6">
+                Personal Information
+              </h2>
 
               <div>
                 <label htmlFor="fullName" className="block text-white mb-2">
@@ -314,8 +348,9 @@ const ApplyAsTrainer = () => {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className={`w-full bg-[#1A1A2F] border ${errors.fullName ? "border-red-500" : "border-gray-700"
-                    } rounded-lg px-4 py-3 text-white`}
+                  className={`w-full bg-[#1A1A2F] border ${
+                    errors.fullName ? "border-red-500" : "border-gray-700"
+                  } rounded-lg px-4 py-3 text-white`}
                   placeholder="Enter your full name"
                 />
                 {errors.fullName && (
@@ -333,8 +368,9 @@ const ApplyAsTrainer = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full bg-[#1A1A2F] border ${errors.email ? "border-red-500" : "border-gray-700"
-                    } rounded-lg px-4 py-3 text-white`}
+                  className={`w-full bg-[#1A1A2F] border ${
+                    errors.email ? "border-red-500" : "border-gray-700"
+                  } rounded-lg px-4 py-3 text-white`}
                   placeholder="Enter your email address"
                 />
                 {errors.email && (
@@ -352,8 +388,9 @@ const ApplyAsTrainer = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className={`w-full bg-[#1A1A2F] border ${errors.phone ? "border-red-500" : "border-gray-700"
-                    } rounded-lg px-4 py-3 text-white`}
+                  className={`w-full bg-[#1A1A2F] border ${
+                    errors.phone ? "border-red-500" : "border-gray-700"
+                  } rounded-lg px-4 py-3 text-white`}
                   placeholder="Enter your phone number"
                 />
                 {errors.phone && (
@@ -370,8 +407,9 @@ const ApplyAsTrainer = () => {
                   name="experience"
                   value={formData.experience}
                   onChange={handleChange}
-                  className={`w-full bg-[#1A1A2F] border ${errors.experience ? "border-red-500" : "border-gray-700"
-                    } rounded-lg px-4 py-3 text-white`}
+                  className={`w-full bg-[#1A1A2F] border ${
+                    errors.experience ? "border-red-500" : "border-gray-700"
+                  } rounded-lg px-4 py-3 text-white`}
                 >
                   <option value="">Select your experience level</option>
                   <option value="1-2 years">1-2 years</option>
@@ -380,7 +418,9 @@ const ApplyAsTrainer = () => {
                   <option value="10+ years">10+ years</option>
                 </select>
                 {errors.experience && (
-                  <p className="text-red-500 text-sm mt-1">{errors.experience}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.experience}
+                  </p>
                 )}
               </div>
             </div>
@@ -389,12 +429,12 @@ const ApplyAsTrainer = () => {
           {/* Step 2: Professional Details */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              <h2 className="text-white text-xl font-bold mb-6">Professional Details</h2>
+              <h2 className="text-white text-xl font-bold mb-6">
+                Professional Details
+              </h2>
 
               <div>
-                <label className="block text-white mb-2">
-                  Specialties *
-                </label>
+                <label className="block text-white mb-2">Specialties *</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {specialtiesList.map((specialty) => (
                     <div key={specialty} className="flex items-center">
@@ -412,13 +452,18 @@ const ApplyAsTrainer = () => {
                   ))}
                 </div>
                 {errors.specialties && (
-                  <p className="text-red-500 text-sm mt-1">{errors.specialties}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.specialties}
+                  </p>
                 )}
               </div>
 
               <div>
                 <label htmlFor="bio" className="block text-white mb-2">
-                  Professional Bio * <span className="text-gray-400 text-sm">(Minimum 100 characters)</span>
+                  Professional Bio *{" "}
+                  <span className="text-gray-400 text-sm">
+                    (Minimum 10 characters)
+                  </span>
                 </label>
                 <textarea
                   id="bio"
@@ -426,12 +471,19 @@ const ApplyAsTrainer = () => {
                   value={formData.bio}
                   onChange={handleChange}
                   rows={6}
-                  className={`w-full bg-[#1A1A2F] border ${errors.bio ? "border-red-500" : "border-gray-700"
-                    } rounded-lg px-4 py-3 text-white`}
+                  className={`w-full bg-[#1A1A2F] border ${
+                    errors.bio ? "border-red-500" : "border-gray-700"
+                  } rounded-lg px-4 py-3 text-white`}
                   placeholder="Describe your professional background, approach to training, and what sets you apart as a trainer..."
                 ></textarea>
                 <div className="flex justify-between mt-1">
-                  <p className={`text-sm ${formData.bio.length < 100 ? "text-red-400" : "text-gray-400"}`}>
+                  <p
+                    className={`text-sm ${
+                      formData.bio.length < 10
+                        ? "text-red-400"
+                        : "text-gray-400"
+                    }`}
+                  >
                     {formData.bio.length}/500 characters
                   </p>
                   {errors.bio && (
@@ -445,13 +497,13 @@ const ApplyAsTrainer = () => {
           {/* Step 3: Upload Documents */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <h2 className="text-white text-xl font-bold mb-6">Upload Documents</h2>
+              <h2 className="text-white text-xl font-bold mb-6">
+                Upload Documents
+              </h2>
 
               {/* Profile Photo Upload */}
               <div>
-                <label className="block text-white mb-2">
-                  Profile Photo *
-                </label>
+                <label className="block text-white mb-2">Profile Photo *</label>
                 <div className="flex items-center">
                   <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden mr-4">
                     {formData.profilePhoto ? (
@@ -471,7 +523,9 @@ const ApplyAsTrainer = () => {
                       ref={fileInputRef}
                       className="hidden"
                       accept="image/*"
-                      onChange={(e) => handleFileUpload("profilePhoto", e.target.files)}
+                      onChange={(e) =>
+                        handleFileUpload("profilePhoto", e.target.files)
+                      }
                     />
                     <button
                       type="button"
@@ -481,18 +535,25 @@ const ApplyAsTrainer = () => {
                       <FaUpload className="mr-2" />
                       {formData.profilePhoto ? "Change Photo" : "Upload Photo"}
                     </button>
-                    <p className="text-gray-400 text-xs mt-1">JPEG, PNG. Max 5MB.</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      JPEG, PNG. Max 5MB.
+                    </p>
                   </div>
                 </div>
                 {errors.profilePhoto && (
-                  <p className="text-red-500 text-sm mt-1">{errors.profilePhoto}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.profilePhoto}
+                  </p>
                 )}
               </div>
 
               {/* ID Document Upload */}
               <div>
                 <label className="block text-white mb-2">
-                  Identification Document * <span className="text-gray-400 text-xs">(ID Card, Passport, Driver's License)</span>
+                  Identification Document *{" "}
+                  <span className="text-gray-400 text-xs">
+                    (ID Card, Passport, Driver's License)
+                  </span>
                 </label>
                 <div className="flex items-center">
                   <input
@@ -500,32 +561,46 @@ const ApplyAsTrainer = () => {
                     id="identificationDocument"
                     className="hidden"
                     accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => handleFileUpload("identificationDocument", e.target.files)}
+                    onChange={(e) =>
+                      handleFileUpload("identificationDocument", e.target.files)
+                    }
                   />
                   <button
                     type="button"
-                    onClick={() => document.getElementById("identificationDocument").click()}
+                    onClick={() =>
+                      document.getElementById("identificationDocument").click()
+                    }
                     className="bg-[#1A1A2F] border border-gray-700 text-white px-4 py-2 rounded-lg flex items-center"
                   >
                     <FaUpload className="mr-2" />
-                    {formData.identificationDocument ? "Change Document" : "Upload Document"}
+                    {formData.identificationDocument
+                      ? "Change Document"
+                      : "Upload Document"}
                   </button>
                   {formData.identificationDocument && (
                     <span className="ml-3 text-green-400 text-sm flex items-center">
-                      <FaCheckCircle className="mr-1" /> {formData.identificationDocument.name}
+                      <FaCheckCircle className="mr-1" />{" "}
+                      {formData.identificationDocument.name}
                     </span>
                   )}
                 </div>
-                <p className="text-gray-400 text-xs mt-1">PDF, JPEG, PNG. Max 5MB.</p>
+                <p className="text-gray-400 text-xs mt-1">
+                  PDF, JPEG, PNG. Max 5MB.
+                </p>
                 {errors.identificationDocument && (
-                  <p className="text-red-500 text-sm mt-1">{errors.identificationDocument}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.identificationDocument}
+                  </p>
                 )}
               </div>
 
               {/* Certificates Upload */}
               <div>
                 <label className="block text-white mb-2">
-                  Training Certificates * <span className="text-gray-400 text-xs">(Up to 5 certificates)</span>
+                  Training Certificates *{" "}
+                  <span className="text-gray-400 text-xs">
+                    (Up to 5 certificates)
+                  </span>
                 </label>
                 <div className="mb-3">
                   <input
@@ -538,13 +613,17 @@ const ApplyAsTrainer = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => document.getElementById("certificates").click()}
+                    onClick={() =>
+                      document.getElementById("certificates").click()
+                    }
                     className="bg-[#1A1A2F] border border-gray-700 text-white px-4 py-2 rounded-lg flex items-center"
                   >
                     <FaUpload className="mr-2" />
                     Upload Certificates
                   </button>
-                  <p className="text-gray-400 text-xs mt-1">PDF, JPEG, PNG. Max 5MB each.</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    PDF, JPEG, PNG. Max 5MB each.
+                  </p>
                 </div>
 
                 {/* Display uploaded certificates */}
@@ -552,8 +631,13 @@ const ApplyAsTrainer = () => {
                   <div className="space-y-2 mt-3">
                     <p className="text-white text-sm">Uploaded Certificates:</p>
                     {formData.certificates.map((cert, index) => (
-                      <div key={index} className="flex items-center justify-between bg-[#1A1A2F] rounded-lg p-2">
-                        <span className="text-white text-sm truncate max-w-xs">{cert.name}</span>
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-[#1A1A2F] rounded-lg p-2"
+                      >
+                        <span className="text-white text-sm truncate max-w-xs">
+                          {cert.name}
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleRemoveCertificate(index)}
@@ -567,13 +651,17 @@ const ApplyAsTrainer = () => {
                 )}
 
                 {errors.certificates && (
-                  <p className="text-red-500 text-sm mt-1">{errors.certificates}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.certificates}
+                  </p>
                 )}
               </div>
 
               {/* Terms & Conditions */}
               <div className="bg-[#1A1A2F] p-4 rounded-lg">
-                <h3 className="text-white font-medium mb-2">Terms & Conditions</h3>
+                <h3 className="text-white font-medium mb-2">
+                  Terms & Conditions
+                </h3>
                 <p className="text-white/70 text-sm mb-4">
                   By submitting this application, you agree to:
                 </p>
@@ -584,7 +672,8 @@ const ApplyAsTrainer = () => {
                   <li>Maintain professionalism in all client interactions</li>
                 </ul>
                 <p className="text-white/70 text-sm">
-                  Your application will be reviewed by our team, and you will be notified of the decision via email.
+                  Your application will be reviewed by our team, and you will be
+                  notified of the decision via email.
                 </p>
               </div>
 
