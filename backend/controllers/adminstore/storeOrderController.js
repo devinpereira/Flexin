@@ -5,7 +5,7 @@ import {
     StoreStockHistory
 } from "../../models/adminstore/index.js";
 import User from "../../models/User.js";
-import { sendOrderConfirmationEmail, prepareOrderDataForEmail } from "../../utils/emailHelper.js";
+import { sendOrderConfirmationEmail, prepareOrderDataForEmail, sendOrderShippedEmail, prepareOrderDataForShippedEmail } from "../../utils/emailHelper.js";
 
 // Get All Orders
 export const getAllOrders = async (req, res) => {
@@ -157,6 +157,24 @@ export const updateOrderStatus = async (req, res) => {
                 }
                 if (req.body.shippingProvider) {
                     order.shipping.provider = req.body.shippingProvider;
+                }
+
+                // Send order shipped email to customer
+                try {
+                    // Populate the order with product details for email
+                    await order.populate('items.productId', 'productName sku');
+
+                    const orderDataForShippedEmail = prepareOrderDataForShippedEmail(order);
+                    const emailResult = await sendOrderShippedEmail(orderDataForShippedEmail);
+
+                    if (emailResult.success) {
+                        console.log(`Order shipped email sent for order ${order.orderNumber}`);
+                    } else {
+                        console.error(`Failed to send shipped email for order ${order.orderNumber}:`, emailResult.error);
+                    }
+                } catch (emailError) {
+                    console.error(`Error sending shipped email for order ${order.orderNumber}:`, emailError);
+                    // Don't fail the status update if email fails
                 }
                 break;
 
