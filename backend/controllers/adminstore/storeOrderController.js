@@ -5,6 +5,7 @@ import {
     StoreStockHistory
 } from "../../models/adminstore/index.js";
 import User from "../../models/User.js";
+import { sendOrderConfirmationEmail, prepareOrderDataForEmail } from "../../utils/emailHelper.js";
 
 // Get All Orders
 export const getAllOrders = async (req, res) => {
@@ -128,6 +129,24 @@ export const updateOrderStatus = async (req, res) => {
                         { productId: item.productId },
                         { $inc: { 'stock.reservedStock': item.quantity } }
                     );
+                }
+
+                // Send order confirmation email to customer
+                try {
+                    // Populate the order with product details for email
+                    await order.populate('items.productId', 'productName sku');
+
+                    const orderDataForEmail = prepareOrderDataForEmail(order);
+                    const emailResult = await sendOrderConfirmationEmail(orderDataForEmail);
+
+                    if (emailResult.success) {
+                        console.log(`Order confirmation email sent for order ${order.orderNumber}`);
+                    } else {
+                        console.error(`Failed to send confirmation email for order ${order.orderNumber}:`, emailResult.error);
+                    }
+                } catch (emailError) {
+                    console.error(`Error sending confirmation email for order ${order.orderNumber}:`, emailError);
+                    // Don't fail the status update if email fails
                 }
                 break;
 
@@ -637,7 +656,8 @@ export const generateInvoice = async (req, res) => {
 // Send Order Confirmation
 export const sendOrderConfirmation = async (req, res) => {
     try {
-        const order = await StoreOrder.findById(req.params.id);
+        const order = await StoreOrder.findById(req.params.id)
+            .populate('items.productId', 'productName sku');
 
         if (!order) {
             return res.status(404).json({
@@ -646,16 +666,40 @@ export const sendOrderConfirmation = async (req, res) => {
             });
         }
 
-        // Here you would implement email sending logic
-        // For now, just mark as confirmation sent
-        order.confirmationSent = true;
-        await order.save();
+        // Send order confirmation email to customer
+        try {
+            const orderDataForEmail = prepareOrderDataForEmail(order);
+            const emailResult = await sendOrderConfirmationEmail(orderDataForEmail);
 
-        res.status(200).json({
-            success: true,
-            data: order,
-            message: 'Order confirmation sent successfully'
-        });
+            if (emailResult.success) {
+                // Mark as confirmation sent (if you want to track this)
+                // order.confirmationSent = true;
+                // await order.save();
+
+                res.status(200).json({
+                    success: true,
+                    data: order,
+                    message: 'Order confirmation email sent successfully',
+                    emailInfo: {
+                        messageId: emailResult.messageId,
+                        sentTo: order.customerInfo.email
+                    }
+                });
+            } else {
+                res.status(500).json({
+                    success: false,
+                    message: 'Failed to send order confirmation email',
+                    error: emailResult.error
+                });
+            }
+        } catch (emailError) {
+            console.error('Error sending order confirmation email:', emailError);
+            res.status(500).json({
+                success: false,
+                message: 'Error sending order confirmation email',
+                error: emailError.message
+            });
+        }
     } catch (error) {
         res.status(500).json({
             success: false,
