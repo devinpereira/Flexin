@@ -22,6 +22,7 @@ const workoutScheduleSchema = new mongoose.Schema({
     Saturday: [exerciseItemSchema],
     Sunday: [exerciseItemSchema],
   },
+  status: { type: String, default: "active" }, // active, completed, cancelled
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

@@ -60,3 +60,29 @@ export const createFitnessProfile = async (req, res) => {
         return res.status(500).json({ message: "Error checking existing profile", error: error.message });
     }
 };
+
+export const recalculateFitnessProfile = async (req, res) => {
+    const userId = req.user.id;
+    const { weight, weightUnit, height, heightUnit, } = req.body;
+
+    try {
+        const existingProfile = await FitnessProfile.findOne({ userId });
+        if (!existingProfile) {
+            return res.status(404).json({ message: "Fitness profile not found" });
+        }
+
+        // Convert weight and height to consistent units
+        existingProfile.weight = weightUnit === "lbs" ? weight * 0.453592 : weight;
+        existingProfile.height = heightUnit === "ft" ? height * 30.48 : height;
+
+        await existingProfile.save();
+
+        // Regenerate workout plan
+        const schedule = await generateWorkoutPlan(existingProfile);
+
+        return res.status(200).json({ message: "Fitness profile updated successfully", profile: existingProfile });
+
+    } catch (error) {
+        return res.status(500).json({ message: "Error updating fitness profile", error: error.message });
+    }
+};
