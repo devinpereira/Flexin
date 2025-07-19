@@ -3,7 +3,7 @@ import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import multer from 'multer';
 import { storage } from '../config/cloudinary.js';
-import { applyAsTrainer, getPendingTrainers } from '../controllers/pendingTrainer.controller.js';
+import { applyAsTrainer, getPendingTrainers, acceptTrainer, rejectTrainer } from '../controllers/pendingTrainer.controller.js';
 
 const router = express.Router();
 
@@ -23,6 +23,10 @@ router.post(
   applyAsTrainer
 );
 
-router.get('/pending', protect, getPendingTrainers);
+// Admin routes
+router.get('/', protect, getPendingTrainers); // Get all pending
+router.put('/accept/:pendingTrainerId', protect, acceptTrainer); // Accept
+router.delete('/reject/:pendingTrainerId', protect, rejectTrainer); // Reject
+
 
 export default router;
