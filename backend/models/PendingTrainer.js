@@ -10,7 +10,6 @@ const pendingTrainerSchema = new mongoose.Schema({
   specialties: [String],
   certificates: [String], // store file paths or URLs
   identificationDocument: String, // file path or URL
-  profilePhoto: String, // file path or URL
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   submittedDate: { type: Date, default: Date.now }
 });

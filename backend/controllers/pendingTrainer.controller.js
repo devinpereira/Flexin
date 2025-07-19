@@ -35,9 +35,6 @@ export const applyAsTrainer = async (req, res) => {
       identificationDocument: req.files.identificationDocument
         ? req.files.identificationDocument[0].path
         : "",
-      profilePhoto: req.files.profilePhoto
-        ? req.files.profilePhoto[0].path
-        : "",
         
     });
 

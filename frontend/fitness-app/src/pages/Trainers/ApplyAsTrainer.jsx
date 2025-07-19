@@ -26,7 +26,6 @@ const ApplyAsTrainer = () => {
     specialties: [],
     certificates: [],
     identificationDocument: null,
-    profilePhoto: null,
   });
 
   // Available specialties
@@ -164,8 +163,6 @@ const ApplyAsTrainer = () => {
       else if (formData.bio.trim().length < 10)
         newErrors.bio = "Bio should be at least 10 characters";
     } else if (currentStep === 3) {
-      if (!formData.profilePhoto)
-        newErrors.profilePhoto = "Profile photo is required";
       if (!formData.identificationDocument)
         newErrors.identificationDocument =
           "Identification document is required";
@@ -194,8 +191,7 @@ const ApplyAsTrainer = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (currentStep !== 3) return;
-    if (!validateStep()) return; // <-- Add this line!
+    if (!validateStep()) return;
     setSubmitting(true);
     setErrors({});
     try {
@@ -206,8 +202,6 @@ const ApplyAsTrainer = () => {
       form.append("experience", formData.experience);
       form.append("bio", formData.bio);
       form.append("specialties", JSON.stringify(formData.specialties));
-      if (formData.profilePhoto)
-        form.append("profilePhoto", formData.profilePhoto);
       if (formData.identificationDocument)
         form.append("identificationDocument", formData.identificationDocument);
       formData.certificates.forEach((cert, idx) => {
@@ -500,52 +494,6 @@ const ApplyAsTrainer = () => {
               <h2 className="text-white text-xl font-bold mb-6">
                 Upload Documents
               </h2>
-
-              {/* Profile Photo Upload */}
-              <div>
-                <label className="block text-white mb-2">Profile Photo *</label>
-                <div className="flex items-center">
-                  <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden mr-4">
-                    {formData.profilePhoto ? (
-                      <img
-                        src={URL.createObjectURL(formData.profilePhoto)}
-                        alt="Profile Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-gray-400 text-4xl">?</span>
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      type="file"
-                      id="profilePhoto"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) =>
-                        handleFileUpload("profilePhoto", e.target.files)
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current.click()}
-                      className="bg-[#1A1A2F] border border-gray-700 text-white px-4 py-2 rounded-lg flex items-center"
-                    >
-                      <FaUpload className="mr-2" />
-                      {formData.profilePhoto ? "Change Photo" : "Upload Photo"}
-                    </button>
-                    <p className="text-gray-400 text-xs mt-1">
-                      JPEG, PNG. Max 5MB.
-                    </p>
-                  </div>
-                </div>
-                {errors.profilePhoto && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.profilePhoto}
-                  </p>
-                )}
-              </div>
 
               {/* ID Document Upload */}
               <div>
