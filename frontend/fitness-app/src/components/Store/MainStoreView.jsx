@@ -7,14 +7,14 @@ import { GiClothes, GiBackpack } from 'react-icons/gi';
 import { productsApi, categoriesApi, cartApi } from '../../api/storeApi';
 import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
-const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
+const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart, onProductClick, addedToCartItems = new Set() }) => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [addedToCartItems, setAddedToCartItems] = useState(new Set());
+  // Remove local addedToCartItems since we're using the parent's state
 
   // Fetch products on component mount
   useEffect(() => {
@@ -116,18 +116,23 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
 
       if (!formattedProduct.id) {
         console.error('Product ID is missing!', formattedProduct);
-        alert('Error: Product ID is missing. Cannot navigate to product page.');
+        alert('Error: Product ID is missing. Cannot display product.');
         return;
       }
 
-      // Add to recently viewed before navigating
+      // Add to recently viewed before displaying
       recentlyViewedUtils.addToRecentlyViewed(formattedProduct);
 
-      console.log('Navigating to:', `/product/${formattedProduct.id}`);
-      navigate(`/product/${formattedProduct.id}`, { state: { product: formattedProduct } });
+      // Use parent's onProductClick if available, otherwise fallback to navigation
+      if (onProductClick) {
+        onProductClick(formattedProduct);
+      } else {
+        console.log('Navigating to:', `/product/${formattedProduct.id}`);
+        navigate(`/product/${formattedProduct.id}`, { state: { product: formattedProduct } });
+      }
     } catch (error) {
       console.error('Error in handleProductClick:', error);
-      alert('Error navigating to product page. Please try again.');
+      alert('Error displaying product. Please try again.');
     }
   };
 
@@ -143,33 +148,13 @@ const MainStoreView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
         console.log('Added to backend cart:', formattedProduct.name);
       }
 
-      // Add visual feedback - highlight the button
-      setAddedToCartItems(prev => new Set([...prev, formattedProduct.id]));
-
-      // Remove highlight after 2 seconds
-      setTimeout(() => {
-        setAddedToCartItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(formattedProduct.id);
-          return newSet;
-        });
-      }, 2000);
-
-      // Call the parent's onAddToCart function (for local state management)
-      onAddToCart(formattedProduct);
+      // Call the parent's onAddToCart function (handles visual feedback and local state management)
+      onAddToCart(formattedProduct, 1);
     } catch (error) {
       console.error('Error adding to cart:', error);
-      // Still call parent function and show visual feedback even if API fails
+      // Still call parent function even if API fails
       const formattedProduct = formatProduct(product);
-      setAddedToCartItems(prev => new Set([...prev, formattedProduct.id]));
-      setTimeout(() => {
-        setAddedToCartItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(formattedProduct.id);
-          return newSet;
-        });
-      }, 2000);
-      onAddToCart(formattedProduct);
+      onAddToCart(formattedProduct, 1);
     }
   };
 

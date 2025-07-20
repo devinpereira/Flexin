@@ -5,6 +5,7 @@ import MainStoreView from '../../components/Store/MainStoreView';
 import ShoppingCartView from '../../components/Store/ShoppingCartView';
 import OffersAndDealsView from '../../components/Store/OffersAndDealsView';
 import SubcategoryView from '../../components/Store/SubcategoryView';
+import ProductView from '../../components/Store/ProductView';
 import LeftNavigation from '../../components/Store/LeftNavigation';
 import { recentlyViewedUtils } from '../../utils/recentlyViewed';
 
@@ -13,14 +14,27 @@ const Store = () => {
   const location = useLocation();
   const [activeView, setActiveView] = useState('main');
   const [activeCategory, setActiveCategory] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [addedToCartItems, setAddedToCartItems] = useState(new Set()); // Visual feedback for Add to Cart buttons
 
   // Handle navigation state from other pages
   useEffect(() => {
     if (location.state?.activeView) {
       setActiveView(location.state.activeView);
+
+      // Handle product view with specific product
+      if (location.state.activeView === 'product') {
+        if (location.state.selectedProduct) {
+          setSelectedProduct(location.state.selectedProduct);
+        } else if (location.state.productId) {
+          // If we only have productId, we'll let ProductView component handle fetching the product data
+          setSelectedProduct({ id: location.state.productId });
+        }
+      }
+
       // Clear the state to prevent it from persisting on subsequent visits
       navigate(location.pathname, { replace: true });
     }
@@ -123,28 +137,49 @@ const Store = () => {
 
   // Handle adding product to cart
   const handleAddToCart = (product, quantity = 1) => {
-    const existingItemIndex = cartItems.findIndex(item => item.id === product.id);
+    if (!product) return;
+
+    // Normalize product ID (handle both _id and id formats)
+    const productId = product._id || product.id;
+
+    // Add visual feedback - highlight the button
+    setAddedToCartItems(prev => new Set([...prev, productId]));
+
+    // Remove highlight after 2 seconds
+    setTimeout(() => {
+      setAddedToCartItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }, 2000);
+
+    // Update cart logic with normalized product ID
+    const existingItemIndex = cartItems.findIndex(item => (item._id || item.id) === productId);
 
     if (existingItemIndex >= 0) {
       const updatedCartItems = [...cartItems];
       updatedCartItems[existingItemIndex].quantity += quantity;
       setCartItems(updatedCartItems);
     } else {
-      setCartItems([...cartItems, { ...product, quantity }]);
+      // Ensure the product added to cart has a consistent ID field
+      const normalizedProduct = { ...product, id: productId };
+      setCartItems([...cartItems, { ...normalizedProduct, quantity }]);
     }
   };
 
   // Handle updating cart item quantity
   const handleUpdateCartItem = (productId, newQuantity) => {
-    const updatedCartItems = cartItems.map(item =>
-      item.id === productId ? { ...item, quantity: newQuantity } : item
-    );
+    const updatedCartItems = cartItems.map(item => {
+      const itemId = item._id || item.id;
+      return itemId === productId ? { ...item, quantity: newQuantity } : item;
+    });
     setCartItems(updatedCartItems);
   };
 
   // Handle removing item from cart
   const handleRemoveCartItem = (productId) => {
-    setCartItems(cartItems.filter(item => item.id !== productId));
+    setCartItems(cartItems.filter(item => (item._id || item.id) !== productId));
   };
 
   // Handle checkout process
@@ -243,25 +278,41 @@ const Store = () => {
     setIsMobileNavOpen(false);
   };
 
-  // Handle product click from recently viewed
+  // Handle product click (switch to product view instead of navigate)
   const handleProductClick = (product) => {
     try {
-      console.log('Product clicked from recently viewed:', product);
+      console.log('Product clicked:', product);
 
-      if (!product || !product.id) {
+      if (!product || (!product.id && !product._id)) {
         console.error('Product is undefined or missing ID!');
         return;
       }
 
-      // Add to recently viewed again to update the timestamp/order
-      recentlyViewedUtils.addToRecentlyViewed(product);
+      // Ensure product has a consistent ID format for the ProductView component
+      const normalizedProduct = {
+        ...product,
+        id: product.id || product._id,
+        _id: product._id || product.id
+      };
 
-      console.log('Navigating to:', `/product/${product.id}`);
-      navigate(`/product/${product.id}`, { state: { product } });
+      // Add to recently viewed
+      recentlyViewedUtils.addToRecentlyViewed(normalizedProduct);
+
+      // Set the selected product and switch to product view
+      setSelectedProduct(normalizedProduct);
+      setActiveView('product');
+      console.log('Switched to product view for:', normalizedProduct.name);
     } catch (error) {
       console.error('Error in handleProductClick:', error);
-      alert('Error navigating to product page. Please try again.');
+      alert('Error displaying product. Please try again.');
     }
+  };
+
+  // Handle back from product view to main store view
+  const handleBackToStore = () => {
+    setActiveView('main');
+    setSelectedProduct(null);
+    console.log('Switched back to main store view');
   };
 
   // Render the active view
@@ -282,6 +333,8 @@ const Store = () => {
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
             onAddToCart={handleAddToCart}
+            onProductClick={handleProductClick}
+            addedToCartItems={addedToCartItems}
           />
         );
       case 'subcategory':
@@ -291,6 +344,20 @@ const Store = () => {
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
             onAddToCart={handleAddToCart}
+            onProductClick={handleProductClick}
+            addedToCartItems={addedToCartItems}
+          />
+        );
+      case 'product':
+        return (
+          <ProductView
+            productData={selectedProduct}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+            onAddToCart={handleAddToCart}
+            onBackToStore={handleBackToStore}
+            onProductClick={handleProductClick}
+            addedToCartItems={addedToCartItems}
           />
         );
       case 'main':
@@ -300,6 +367,8 @@ const Store = () => {
             favorites={favorites}
             onToggleFavorite={handleToggleFavorite}
             onAddToCart={handleAddToCart}
+            onProductClick={handleProductClick}
+            addedToCartItems={addedToCartItems}
           />
         );
     }

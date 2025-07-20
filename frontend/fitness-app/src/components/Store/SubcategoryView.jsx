@@ -7,7 +7,21 @@ import { GiClothes, GiBackpack } from 'react-icons/gi';
 import { FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import { productsApi, cartApi } from '../../api/storeApi';
 
-const SubcategoryView = ({ category, favorites = [], onToggleFavorite, onAddToCart }) => {
+const SubcategoryView = ({
+  category,
+  onBack,
+  onAddToCart,
+  sidebarItems,
+  onProductView,
+  userProfile,
+  searchQuery = '',
+  filterBy = 'all',
+  sortBy = 'name',
+  addedToCartItems = new Set(),
+  favorites = [],
+  onToggleFavorite,
+  onProductClick
+}) => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -149,14 +163,22 @@ const SubcategoryView = ({ category, favorites = [], onToggleFavorite, onAddToCa
         return;
       }
 
-      if (!product.id) {
+      if (!product.id && !product._id) {
         console.error('Product ID is missing!', product);
         alert('Error: Product ID is missing. Cannot navigate to product page.');
         return;
       }
 
-      console.log('Navigating to:', `/product/${product.id}`);
-      navigate(`/product/${product.id}`, { state: { product } });
+      // Use parent callback if available (integrated layout), otherwise fallback to direct navigation (standalone)
+      if (onProductClick) {
+        console.log('Using parent onProductClick callback to stay within Store layout');
+        onProductClick(product);
+      } else {
+        console.log('No parent callback, using direct navigation to standalone product page');
+        const productId = product.id || product._id;
+        console.log('Navigating to:', `/product/${productId}`);
+        navigate(`/product/${productId}`, { state: { product } });
+      }
     } catch (error) {
       console.error('Error in SubcategoryView handleProductClick:', error);
       alert('Error navigating to product page. Please try again.');
@@ -172,7 +194,7 @@ const SubcategoryView = ({ category, favorites = [], onToggleFavorite, onAddToCa
         console.log('Added to backend cart:', product.name);
       }
 
-      // Call parent's onAddToCart function for local state
+      // Call parent's onAddToCart function (handles visual feedback and local state)
       onAddToCart(product);
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -255,7 +277,7 @@ const SubcategoryView = ({ category, favorites = [], onToggleFavorite, onAddToCa
   const getCategoryIcon = (categoryName, categoryId) => {
     const name = categoryName?.toLowerCase() || '';
     const id = categoryId?.toLowerCase() || '';
-    
+
     if (name.includes('supplement') || id === 'supplements') {
       return <FiDroplet className="mr-2 text-[#f67a45]" />;
     } else if (name.includes('equipment') || id === 'equipment') {
@@ -471,7 +493,10 @@ const SubcategoryView = ({ category, favorites = [], onToggleFavorite, onAddToCa
                     e.stopPropagation();
                     handleAddToCart(product);
                   }}
-                  className="absolute top-1 right-1 bg-black/30 rounded-full p-1 sm:p-2 transition-colors hover:bg-black/50"
+                  className={`absolute top-1 right-1 rounded-full p-1 sm:p-2 transition-colors ${addedToCartItems.has(product.id)
+                    ? 'bg-[#f67a45]/80 hover:bg-[#f67a45]'
+                    : 'bg-black/30 hover:bg-black/50'
+                    }`}
                 >
                   <FiShoppingCart size={16} className="text-white" />
                 </button>
