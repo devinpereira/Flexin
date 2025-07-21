@@ -110,6 +110,8 @@ export const acceptTrainer = async (req, res) => {
       specialties: pendingTrainer.specialties,
       status: "active",
       title: "Certified Trainer",
+      experience: pendingTrainer.experience,
+      hourlyRate: 50, 
     });
 
     await trainer.save();

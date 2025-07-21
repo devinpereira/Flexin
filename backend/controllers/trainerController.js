@@ -1,4 +1,19 @@
 import Trainer from '../models/Trainer.js';
+import User from '../models/User.js';
+
+// Upload a trainer photo to Cloudinary and return the URL
+export const uploadTrainerPhoto = async (req, res) => {
+  try {
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    // The file path is the Cloudinary URL
+    return res.status(200).json({ success: true, url: req.file.path });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to upload photo', error: err.message });
+  }
+};
+
 
 //Create trainer profile
 export const createTrainer = async (req, res) => {
@@ -240,5 +255,75 @@ export const addFeedbackToTrainer = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to add feedback", error: err.message });
+  }
+};
+
+// Get current trainer's profile (for trainer dashboard)
+export const getMyTrainerProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    // Find trainer profile for current user
+    const trainer = await Trainer.findOne({ userId }).populate('userId', 'fullName email profileImageUrl');
+    
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found. Please contact support."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      trainer
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to get trainer profile",
+      error: err.message
+    });
+  }
+};
+
+// Update current trainer's profile (for trainer dashboard)
+export const updateMyTrainerProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const updates = req.body;
+
+    // Find and update trainer profile for current user
+    const trainer = await Trainer.findOneAndUpdate(
+      { userId },
+      updates,
+      { new: true, runValidators: true }
+    ).populate('userId', 'fullName email profileImageUrl');
+
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found"
+      });
+    }
+
+    // If updating email or name, also update in User model
+    if (updates.email || updates.name) {
+      await User.findByIdAndUpdate(userId, {
+        ...(updates.email && { email: updates.email }),
+        ...(updates.name && { fullName: updates.name })
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      trainer
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update trainer profile",
+      error: err.message
+    });
   }
 };

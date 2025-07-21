@@ -5,6 +5,7 @@ import { useNotification } from "../../../hooks/useNotification";
 import ConfirmDialog from "../../../components/ConfirmDialog";
 import { FaSave, FaArrowLeft, FaUserCircle, FaTrash } from "react-icons/fa";
 import axiosInstance from "../../../utils/axiosInstance";
+import { uploadTrainerPhoto } from "../../../api/upload"; // Adjust the import path as needed
 import Select from "react-select";
 
 const EditTrainer = () => {
@@ -259,8 +260,44 @@ const EditTrainer = () => {
     setIsSubmitting(true);
 
     try {
-      // Replace with your API call
-      await axiosInstance.put(`/api/v1/trainers/${formData.id}`, formData);
+      let profilePhotoUrl = formData.profilePhoto;
+      // Upload profile image if it's a File
+      if (formData.imageFile instanceof File) {
+        profilePhotoUrl = await uploadTrainerPhoto(formData.imageFile);
+      }
+
+      // Upload new photos (if any are data URLs)
+      let uploadedPhotos = [];
+      for (const photo of formData.photos || []) {
+        if (typeof photo === "string" && photo.startsWith("data:")) {
+          const res = await fetch(photo);
+          const blob = await res.blob();
+          const file = new File([blob], `photo_${Date.now()}.png`, {
+            type: blob.type,
+          });
+          const url = await uploadTrainerPhoto(file);
+          uploadedPhotos.push(url);
+        } else {
+          uploadedPhotos.push(photo);
+        }
+      }
+
+      // Prepare data for API
+      const submitData = {
+        ...formData,
+        profilePhoto: profilePhotoUrl,
+        photos: uploadedPhotos,
+        imageFile: undefined,
+        imagePreview: undefined,
+        _serviceName: undefined,
+        _serviceDescription: undefined,
+        _photoUrl: undefined,
+        _packageName: undefined,
+        _packagePrice: undefined,
+        _packageFeatures: undefined,
+      };
+
+      await axiosInstance.put(`/api/v1/trainers/${formData.id}`, submitData);
       showSuccess(
         `Trainer "${formData.name}" ${
           isNewTrainer ? "added" : "updated"

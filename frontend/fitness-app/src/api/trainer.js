@@ -88,4 +88,32 @@ export async function getTrainerSchedule(trainerId) {
   return data.schedule || data; // adjust if your backend returns just the schedule array/object
 }
 
+// Get current trainer's profile (for trainer dashboard)
+export async function getMyTrainerProfile() {
+  const res = await fetch(`${BASE_URL}/api/v1/trainers/my-profile`, {
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem('token')}`,
+      "Content-Type": "application/json"
+    }
+  });
+  if (!res.ok) throw new Error('Failed to fetch trainer profile');
+  const data = await res.json();
+  return data.trainer;
+}
+
+// Update current trainer's profile (for trainer dashboard)
+export async function updateMyTrainerProfile(profileData) {
+  const res = await fetch(`${BASE_URL}/api/v1/trainers/my-profile`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem('token')}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(profileData)
+  });
+  if (!res.ok) throw new Error('Failed to update trainer profile');
+  const data = await res.json();
+  return data.trainer;
+}
+
 

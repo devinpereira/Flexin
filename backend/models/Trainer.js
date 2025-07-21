@@ -68,6 +68,14 @@ const trainerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    experience: {
+      type: String,
+      default: "1-2 years",
+    },
+    hourlyRate: {
+      type: Number,
+      default: 50,
+    },
     profilePhoto: {
       type: String,
       required: true,
