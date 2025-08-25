@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import TrainerDashboardLayout from "../../layouts/TrainerDashboardLayout";
-import { FaUserFriends, FaChartLine, FaDumbbell, FaDollarSign, FaRegCalendarCheck } from "react-icons/fa";
+import {
+  FaUserFriends,
+  FaChartLine,
+  FaDumbbell,
+  FaDollarSign,
+  FaRegCalendarCheck,
+} from "react-icons/fa";
 import { Bar, Line, Pie, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -13,8 +19,9 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
-} from 'chart.js';
+  Filler,
+} from "chart.js";
+import { getMyTrainerProfile } from "../../api/trainer";
 
 ChartJS.register(
   CategoryScale,
@@ -29,91 +36,276 @@ ChartJS.register(
   Filler
 );
 
-const mockStats = {
-  totalSubscribers: 24,
-  activeSubscribers: 18,
-  totalSessions: 120,
-  completedSessions: 110,
-  totalRevenue: 3200,
-  monthlyRevenue: [500, 600, 700, 800, 600, 700],
-  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-  workoutsAssigned: [10, 12, 14, 13, 15, 16],
-  mealPlansAssigned: [8, 9, 10, 11, 10, 12],
-  subscriberGrowth: [12, 14, 16, 18, 22, 24],
-  genderDistribution: { Male: 14, Female: 10 },
-  planDistribution: { "Premium": 10, "Standard": 8, "Basic": 6 }
-};
-
 const Analytics = () => {
-  // Revenue Line Chart
-  const revenueData = {
-    labels: mockStats.months,
-    datasets: [
-      {
-        label: "Revenue ($)",
-        data: mockStats.monthlyRevenue,
-        borderColor: "#f67a45",
-        backgroundColor: "rgba(246,122,69,0.15)",
-        tension: 0.4,
-        fill: true,
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [overview, setOverview] = useState(null);
+  const [revenueData, setRevenueData] = useState(null);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [specialtiesData, setSpecialtiesData] = useState(null);
+  const [clientDistributionData, setClientDistributionData] = useState(null);
+  const [trainerId, setTrainerId] = useState(null);
+
+  // Fetch data function
+  const fetchAnalyticsData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      // Get trainer profile first to get trainer ID and followers
+      const currentTrainer = await getMyTrainerProfile();
+      setTrainerId(currentTrainer._id);
+
+      // Fetch all analytics data for this specific trainer
+      const [
+        overviewRes,
+        revenueRes,
+        subscriptionRes,
+        specialtiesRes,
+        clientDistRes,
+        trainerRevenueRes,
+      ] = await Promise.all([
+        fetch(
+          `/api/v1/reports/overview?period=month&trainerId=${currentTrainer._id}`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/revenue-trend?period=month&trainerId=${currentTrainer._id}`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/subscription-distribution?trainerId=${currentTrainer._id}`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/specialties-distribution?trainerId=${currentTrainer._id}`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/client-distribution?trainerId=${currentTrainer._id}`,
+          { headers }
+        ),
+        // Get trainer's due payment amount from subscription controller
+        fetch(`/api/v1/subscription/${currentTrainer._id}/total-revenue`, {
+          headers,
+        }),
+      ]);
+
+      // Check for errors
+      if (
+        !overviewRes.ok ||
+        !revenueRes.ok ||
+        !subscriptionRes.ok ||
+        !specialtiesRes.ok ||
+        !clientDistRes.ok ||
+        !trainerRevenueRes.ok
+      ) {
+        throw new Error("Failed to fetch analytics data");
       }
-    ]
+
+      // Parse responses
+      const [
+        overviewData,
+        revenueChartData,
+        subscriptionChartData,
+        specialtiesChartData,
+        clientDistChartData,
+        trainerRevenueData,
+      ] = await Promise.all([
+        overviewRes.json(),
+        revenueRes.json(),
+        subscriptionRes.json(),
+        specialtiesRes.json(),
+        clientDistRes.json(),
+        trainerRevenueRes.json(),
+      ]);
+
+      // Combine the data with trainer-specific metrics
+      const enhancedOverviewData = {
+        ...overviewData.data,
+        indicators: {
+          ...overviewData.data?.indicators,
+          // Override with actual trainer followers count
+          totalClients: currentTrainer.followers
+            ? currentTrainer.followers.length
+            : 0,
+          // Add due payment amount from subscription controller
+          duePayments: trainerRevenueData.success
+            ? trainerRevenueData.total
+            : 0,
+        },
+      };
+
+      // Set state
+      setOverview(enhancedOverviewData);
+      setRevenueData(revenueChartData.data);
+      setSubscriptionData(subscriptionChartData.data);
+      setSpecialtiesData(specialtiesChartData.data);
+      setClientDistributionData(clientDistChartData.data);
+    } catch (err) {
+      console.error("Error fetching analytics data:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Workouts/Meal Plans Bar Chart
-  const assignmentData = {
-    labels: mockStats.months,
-    datasets: [
-      {
-        label: "Workouts Assigned",
-        data: mockStats.workoutsAssigned,
-        backgroundColor: "#4ade80"
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, []);
+
+  if (loading) {
+    return (
+      <TrainerDashboardLayout activeSection="Analytics">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-white text-lg">Loading analytics...</div>
+        </div>
+      </TrainerDashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <TrainerDashboardLayout activeSection="Analytics">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-red-400 text-lg">Error: {error}</div>
+        </div>
+      </TrainerDashboardLayout>
+    );
+  }
+
+  if (!overview) {
+    return (
+      <TrainerDashboardLayout activeSection="Analytics">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-white text-lg">No analytics data available</div>
+        </div>
+      </TrainerDashboardLayout>
+    );
+  }
+  // Chart options from Reports.jsx
+  const lineChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+        labels: {
+          color: "#fff",
+          usePointStyle: true,
+        },
       },
-      {
-        label: "Meal Plans Assigned",
-        data: mockStats.mealPlansAssigned,
-        backgroundColor: "#3b82f6"
-      }
-    ]
+      tooltip: {
+        backgroundColor: "#121225",
+        titleColor: "#f67a45",
+        bodyColor: "#fff",
+        borderWidth: 1,
+        borderColor: "#f67a45",
+        usePointStyle: true,
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+        ticks: {
+          color: "#fff",
+        },
+      },
+      y: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+        ticks: {
+          color: "#fff",
+          callback: function (value) {
+            return "$" + value.toLocaleString();
+          },
+        },
+      },
+    },
   };
 
-  // Subscriber Growth Line Chart
-  const growthData = {
-    labels: mockStats.months,
-    datasets: [
-      {
-        label: "Subscribers",
-        data: mockStats.subscriberGrowth,
-        borderColor: "#10b981",
-        backgroundColor: "rgba(16,185,129,0.15)",
-        tension: 0.4,
-        fill: true,
-      }
-    ]
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+        labels: {
+          color: "#fff",
+        },
+      },
+      tooltip: {
+        backgroundColor: "#121225",
+        titleColor: "#f67a45",
+        bodyColor: "#fff",
+        borderWidth: 1,
+        borderColor: "#f67a45",
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+        ticks: {
+          color: "#fff",
+        },
+      },
+      y: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.1)",
+        },
+        ticks: {
+          color: "#fff",
+        },
+      },
+    },
   };
 
-  // Gender Pie Chart
-  const genderData = {
-    labels: Object.keys(mockStats.genderDistribution),
-    datasets: [
-      {
-        data: Object.values(mockStats.genderDistribution),
-        backgroundColor: ["#3b82f6", "#f67a45"],
-        borderWidth: 1
-      }
-    ]
+  const pieChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "right",
+        labels: {
+          color: "#fff",
+          padding: 20,
+        },
+      },
+      tooltip: {
+        backgroundColor: "#121225",
+        titleColor: "#f67a45",
+        bodyColor: "#fff",
+        borderWidth: 1,
+        borderColor: "#f67a45",
+      },
+    },
   };
 
-  // Plan Doughnut Chart
-  const planData = {
-    labels: Object.keys(mockStats.planDistribution),
-    datasets: [
-      {
-        data: Object.values(mockStats.planDistribution),
-        backgroundColor: ["#f67a45", "#10b981", "#3b82f6"],
-        borderWidth: 1
-      }
-    ]
+  // Revenue Line Chart
+  const revenueChartData = revenueData || { labels: [], datasets: [] };
+
+  // Subscription Distribution Chart
+  const subscriptionChartData = subscriptionData || {
+    labels: [],
+    datasets: [],
+  };
+
+  // Specialties Chart
+  const specialtiesChartData = specialtiesData || { labels: [], datasets: [] };
+
+  // Client Distribution Chart
+  const clientDistChartData = clientDistributionData || {
+    labels: [],
+    datasets: [],
   };
 
   return (
@@ -122,56 +314,156 @@ const Analytics = () => {
       {/* Top Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30 flex items-center gap-4">
-          <FaUserFriends className="text-[#f67a45] text-3xl" />
+          <FaChartLine className="text-[#f67a45] text-3xl" />
           <div>
             <div className="text-white text-lg font-semibold">Subscribers</div>
-            <div className="text-[#f67a45] text-2xl font-bold">{mockStats.totalSubscribers}</div>
+            <div className="text-[#f67a45] text-2xl font-bold">
+              {overview?.indicators?.subscriptions || 0}
+            </div>
           </div>
         </div>
         <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30 flex items-center gap-4">
-          <FaRegCalendarCheck className="text-[#10b981] text-3xl" />
+          <FaUserFriends className="text-[#10b981] text-3xl" />
           <div>
-            <div className="text-white text-lg font-semibold">Sessions</div>
-            <div className="text-[#10b981] text-2xl font-bold">{mockStats.completedSessions}/{mockStats.totalSessions}</div>
+            <div className="text-white text-lg font-semibold">Followers</div>
+            <div className="text-[#10b981] text-2xl font-bold">
+              {overview?.indicators?.totalClients || 0}
+            </div>
           </div>
         </div>
         <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30 flex items-center gap-4">
-          <FaDumbbell className="text-[#3b82f6] text-3xl" />
+          <FaRegCalendarCheck className="text-[#eab308] text-3xl" />
           <div>
-            <div className="text-white text-lg font-semibold">Active Subs</div>
-            <div className="text-[#3b82f6] text-2xl font-bold">{mockStats.activeSubscribers}</div>
+            <div className="text-white text-lg font-semibold">Due Payment</div>
+            <div className="text-[#eab308] text-2xl font-bold">
+              ${overview?.indicators?.duePayments || 0}
+            </div>
           </div>
         </div>
         <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30 flex items-center gap-4">
           <FaDollarSign className="text-[#f59e0b] text-3xl" />
           <div>
-            <div className="text-white text-lg font-semibold">Revenue</div>
-            <div className="text-[#f59e0b] text-2xl font-bold">${mockStats.totalRevenue}</div>
+            <div className="text-white text-lg font-semibold">
+              Total Revenue
+            </div>
+            <div className="text-[#f59e0b] text-2xl font-bold">
+              ${overview?.indicators?.revenue?.toLocaleString() || 0}
+            </div>
           </div>
         </div>
       </div>
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30">
-          <h2 className="text-white text-lg font-semibold mb-4">Revenue (Last 6 Months)</h2>
-          <Line data={revenueData} options={{ plugins: { legend: { labels: { color: "#fff" } } }, scales: { x: { ticks: { color: "#fff" } }, y: { ticks: { color: "#fff" } } } }} />
-        </div>
-        <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30">
-          <h2 className="text-white text-lg font-semibold mb-4">Workouts & Meal Plans Assigned</h2>
-          <Bar data={assignmentData} options={{ plugins: { legend: { labels: { color: "#fff" } } }, scales: { x: { ticks: { color: "#fff" } }, y: { ticks: { color: "#fff" } } } }} />
-        </div>
-        <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30">
-          <h2 className="text-white text-lg font-semibold mb-4">Subscriber Growth</h2>
-          <Line data={growthData} options={{ plugins: { legend: { labels: { color: "#fff" } } }, scales: { x: { ticks: { color: "#fff" } }, y: { ticks: { color: "#fff" } } } }} />
-        </div>
-        <div className="bg-[#18182f] rounded-lg p-6 border border-[#f67a45]/30 flex flex-col gap-8">
-          <div>
-            <h2 className="text-white text-lg font-semibold mb-4">Gender Distribution</h2>
-            <Pie data={genderData} options={{ plugins: { legend: { labels: { color: "#fff" } } } }} />
+      {/* Revenue Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="lg:col-span-2 bg-[#121225] border border-white/10 rounded-lg p-4">
+          <h3 className="text-white text-lg font-medium mb-4">Revenue Trend</h3>
+          <div className="w-full h-[300px] flex items-center justify-center">
+            {revenueData ? (
+              <Line data={revenueChartData} options={lineChartOptions} />
+            ) : (
+              <p className="text-white/70">No revenue data available</p>
+            )}
           </div>
-          <div>
-            <h2 className="text-white text-lg font-semibold mb-4">Plan Distribution</h2>
-            <Doughnut data={planData} options={{ plugins: { legend: { labels: { color: "#fff" } } } }} />
+        </div>
+
+        <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+          <h3 className="text-white text-lg font-medium mb-4">
+            Client Distribution
+          </h3>
+          <div className="w-full h-[250px] flex items-center justify-center">
+            {clientDistributionData ? (
+              <Doughnut data={clientDistChartData} options={pieChartOptions} />
+            ) : (
+              <p className="text-white/70">No client data available</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Subscription Distribution and Specialty Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+          <h3 className="text-white text-lg font-medium mb-4">
+            Subscription Packages
+          </h3>
+          <div className="w-full h-[300px] flex items-center justify-center">
+            {subscriptionData ? (
+              <Bar
+                data={{
+                  ...subscriptionChartData,
+                  datasets: [
+                    {
+                      ...subscriptionChartData.datasets[0],
+                      backgroundColor: "#f67a45",
+                      borderRadius: 6,
+                    },
+                  ],
+                }}
+                options={barChartOptions}
+              />
+            ) : (
+              <p className="text-white/70">No subscription data available</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+          <h3 className="text-white text-lg font-medium mb-4">
+            Trainer Specialties
+          </h3>
+          <div className="w-full h-[300px] flex items-center justify-center">
+            {specialtiesData ? (
+              <Pie data={specialtiesChartData} options={pieChartOptions} />
+            ) : (
+              <p className="text-white/70">No specialties data available</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Key Performance Metrics */}
+      <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+        <h3 className="text-white text-lg font-medium mb-4">
+          Key Performance Metrics
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="p-4 border border-white/10 rounded-lg">
+            <p className="text-white/70 text-sm">Active Subscriptions</p>
+            <p className="text-white text-xl font-bold mt-1">
+              {overview?.indicators?.subscriptions || 0}
+            </p>
+            <p className="text-green-400 text-xs flex items-center mt-2">
+              <span className="ml-1">Users subscribed to packages</span>
+            </p>
+          </div>
+
+          <div className="p-4 border border-white/10 rounded-lg">
+            <p className="text-white/70 text-sm">Total Followers</p>
+            <p className="text-white text-xl font-bold mt-1">
+              {overview?.indicators?.totalClients || 0}
+            </p>
+            <p className="text-green-400 text-xs flex items-center mt-2">
+              <span className="ml-1">Following this trainer</span>
+            </p>
+          </div>
+
+          <div className="p-4 border border-white/10 rounded-lg">
+            <p className="text-white/70 text-sm">Due Payments</p>
+            <p className="text-white text-xl font-bold mt-1">
+              ${overview?.indicators?.duePayments || 0}
+            </p>
+            <p className="text-yellow-400 text-xs flex items-center mt-2">
+              <span className="ml-1">Pending payment collection</span>
+            </p>
+          </div>
+
+          <div className="p-4 border border-white/10 rounded-lg">
+            <p className="text-white/70 text-sm">Total Revenue</p>
+            <p className="text-white text-xl font-bold mt-1">
+              ${overview?.indicators?.revenue?.toLocaleString() || "0"}
+            </p>
+            <p className="text-green-400 text-xs flex items-center mt-2">
+              <span className="ml-1">From all payments</span>
+            </p>
           </div>
         </div>
       </div>
