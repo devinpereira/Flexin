@@ -4,7 +4,7 @@ import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { FiShoppingCart, FiFilter } from 'react-icons/fi';
 import { productsApi, cartApi } from '../../api/storeApi';
 
-const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart }) => {
+const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, addedToCartItems = new Set(), onProductClick }) => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +61,7 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart }) =
         console.log('Added to backend cart:', product.name);
       }
 
-      // Call parent's onAddToCart function for local state
+      // Call parent's onAddToCart function (handles visual feedback and local state)
       onAddToCart(product);
     } catch (error) {
       console.error('Error adding to cart:', error);
@@ -77,14 +77,22 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart }) =
 
     console.log('Product clicked in OffersAndDealsView:', product);
 
-    if (!product.id) {
+    if (!product.id && !product._id) {
       console.error('Product ID is missing!', product);
       alert('Error: Product ID is missing. Cannot navigate to product page.');
       return;
     }
 
-    console.log('Navigating to:', `/product/${product.id}`);
-    navigate(`/product/${product.id}`, { state: { product } });
+    // Use parent callback if available (integrated layout), otherwise fallback to direct navigation (standalone)
+    if (onProductClick) {
+      console.log('Using parent onProductClick callback to stay within Store layout');
+      onProductClick(product);
+    } else {
+      console.log('No parent callback, using direct navigation to standalone product page');
+      const productId = product.id || product._id;
+      console.log('Navigating to:', `/product/${productId}`);
+      navigate(`/product/${productId}`, { state: { product } });
+    }
   };
 
   // Handle price range change
@@ -133,18 +141,32 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart }) =
           const dealsProducts = response.products
             .filter(product => product.discountPercentage > 0 || product.originalPrice > product.price)
             .map(product => ({
+              // Keep original structure for ProductView compatibility
+              _id: product._id,
               id: product._id || product.id,
               name: product.productName || product.name,
+              productName: product.productName || product.name,
               category: product.categoryId?.name || 'General',
+              categoryId: product.categoryId,
+              subcategoryId: product.subcategoryId,
               brand: product.brand || 'Unknown Brand',
               price: product.price,
               originalPrice: product.originalPrice || product.price,
-              discount: product.discountPercentage || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100),
+              discountPercentage: product.discountPercentage || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100),
               rating: product.averageRating || 0,
+              averageRating: product.averageRating || 0,
               reviewCount: product.reviewCount || 0,
-              image: product.images?.[0] || '/public/default.jpg',
+              image: product.images?.[0] || '/public/default.jpg', // Compatibility
+              images: product.images || [product.images?.[0] || '/public/default.jpg'], // Full array for ProductView
               description: product.description,
-              inStock: product.quantity > 0
+              shortDescription: product.shortDescription,
+              quantity: product.quantity || 0,
+              specifications: product.specifications || [],
+              tags: product.tags || [],
+              inStock: product.quantity > 0,
+              isFeatured: product.isFeatured,
+              // Keep any other fields that might be needed
+              ...product
             }));
 
           setProducts(dealsProducts);
@@ -504,7 +526,10 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart }) =
                           e.stopPropagation();
                           handleAddToCart(product);
                         }}
-                        className="bg-black/30 rounded-full p-2 transition-colors hover:bg-black/50"
+                        className={`rounded-full p-2 transition-colors ${addedToCartItems.has(product.id)
+                          ? 'bg-[#f67a45]/80 hover:bg-[#f67a45]'
+                          : 'bg-black/30 hover:bg-black/50'
+                          }`}
                         title="Add to cart"
                         aria-label="Add to cart"
                       >

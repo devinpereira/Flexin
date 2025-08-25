@@ -10,10 +10,22 @@ import {
   addFollower,
   removeFollower,
   addFeedbackToTrainer,
+  getMyTrainerProfile,
+  updateMyTrainerProfile,
+  uploadTrainerPhoto,
 } from '../controllers/trainerController.js';
-
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
+
+
+// Upload trainer photo to Cloudinary
+router.post('/upload-photo', protect, upload.single('photo'), uploadTrainerPhoto);
+
+
+// Routes for current trainer's profile management
+router.get('/my-profile', protect, getMyTrainerProfile);
+router.put('/my-profile', protect, updateMyTrainerProfile);
 
 router.get('/my-trainers', protect, getTrainersForUser);
 router.post('/add-follower', protect, addFollower);

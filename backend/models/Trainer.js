@@ -55,11 +55,11 @@ const trainerSchema = new mongoose.Schema(
       default: "Certified Trainer",
     },
     phone: {
-      type: Number,
+      type: String,
       required: true,
       validate: {
         validator: function (v) {
-          return /\d{10}/.test(v); // Validates a 10-digit phone number
+          return /\d{9}/.test(v); // Validates a 9-digit phone number
         },
         message: (props) => `${props.value} is not a valid phone number!`,
       },
@@ -67,6 +67,14 @@ const trainerSchema = new mongoose.Schema(
     bio: {
       type: String,
       required: true,
+    },
+    experience: {
+      type: String,
+      default: "1-2 years",
+    },
+    hourlyRate: {
+      type: Number,
+      default: 50,
     },
     profilePhoto: {
       type: String,

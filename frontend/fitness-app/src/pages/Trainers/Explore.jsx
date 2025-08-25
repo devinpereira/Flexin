@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getUserInfo } from "../../api/user";
 import { useNavigate } from "react-router-dom";
 import TrainerLayout from "../../components/Trainers/TrainerLayout";
 import { FaSearch, FaPlus, FaUserTie } from "react-icons/fa";
@@ -17,13 +18,13 @@ const Explore = () => {
   const [trainers, setTrainers] = useState([]);
   const [myTrainers, setMyTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState("");
 
   // Fetch all trainers from backend
   useEffect(() => {
     async function fetchTrainers() {
       try {
         const data = await getAllTrainers();
-        console.log("Fetched trainers:", data);
         setTrainers(data || []);
       } catch (err) {
         setTrainers([]);
@@ -32,6 +33,19 @@ const Explore = () => {
       }
     }
     fetchTrainers();
+  }, []);
+
+  // Fetch user info to determine role
+  useEffect(() => {
+    async function fetchUserRole() {
+      try {
+        const user = await getUserInfo();
+        setUserRole(user.role || "user");
+      } catch {
+        setUserRole("");
+      }
+    }
+    fetchUserRole();
   }, []);
 
   // Fetch user's added trainers
@@ -118,25 +132,27 @@ const Explore = () => {
 
   return (
     <TrainerLayout pageTitle="Discover New Trainers">
-      {/* Banner for trainer applications */}
-      <div className="bg-gradient-to-r from-[#1A1A2F] to-[#f67a45]/30 rounded-lg p-5 mb-6 flex flex-col md:flex-row items-center justify-between">
-        <div className="mb-4 md:mb-0">
-          <h3 className="text-white text-xl font-bold mb-2">
-            Are You a Professional Trainer?
-          </h3>
-          <p className="text-white/80">
-            Join our platform and connect with clients looking for your
-            expertise.
-          </p>
+      {/* Banner for trainer applications (only for non-trainers) */}
+      {userRole !== "trainer" && (
+        <div className="bg-gradient-to-r from-[#1A1A2F] to-[#f67a45]/30 rounded-lg p-5 mb-6 flex flex-col md:flex-row items-center justify-between">
+          <div className="mb-4 md:mb-0">
+            <h3 className="text-white text-xl font-bold mb-2">
+              Are You a Professional Trainer?
+            </h3>
+            <p className="text-white/80">
+              Join our platform and connect with clients looking for your
+              expertise.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate("/apply-as-trainer")}
+            className="bg-[#f67a45] text-white px-5 py-3 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center"
+          >
+            <FaUserTie className="mr-2" />
+            Apply as a Trainer
+          </button>
         </div>
-        <button
-          onClick={() => navigate("/apply-as-trainer")}
-          className="bg-[#f67a45] text-white px-5 py-3 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center"
-        >
-          <FaUserTie className="mr-2" />
-          Apply as a Trainer
-        </button>
-      </div>
+      )}
 
       {/* Search and Filter - Responsive version */}
       <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-3 sm:p-6 mb-6">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   FaUserFriends,
   FaDollarSign,
@@ -6,9 +6,9 @@ import {
   FaStar,
   FaArrowUp,
   FaArrowDown,
-  FaDownload
-} from 'react-icons/fa';
-import AdminLayout from '../../../components/Admin/AdminLayout';
+  FaDownload,
+} from "react-icons/fa";
+import AdminLayout from "../../../components/Admin/AdminLayout";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -20,9 +20,9 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
-} from 'chart.js';
-import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
+  Filler,
+} from "chart.js";
+import { Line, Bar, Pie, Doughnut } from "react-chartjs-2";
 
 // Register ChartJS components
 ChartJS.register(
@@ -39,366 +39,579 @@ ChartJS.register(
 );
 
 const Reports = () => {
-  const [reportPeriod, setReportPeriod] = useState('month');
-  const [selectedTrainer, setSelectedTrainer] = useState('all');
+  const [reportPeriod, setReportPeriod] = useState("month");
+  const [selectedTrainer, setSelectedTrainer] = useState("all");
 
-  // Mock data for trainers
-  const trainers = [
-    { id: 1, name: 'John Smith' },
-    { id: 2, name: 'Sarah Johnson' },
-    { id: 3, name: 'Michael Williams' },
-    { id: 4, name: 'Emily Davis' },
-    { id: 5, name: 'David Brown' },
-    { id: 6, name: 'Jessica Wilson' }
-  ];
+  // State for real data
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState(null);
+  const [revenueData, setRevenueData] = useState(null);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [specialtiesData, setSpecialtiesData] = useState(null);
+  const [clientDistributionData, setClientDistributionData] = useState(null);
+  const [topTrainers, setTopTrainers] = useState([]);
+  const [trainers, setTrainers] = useState([]);
+  const [error, setError] = useState(null);
 
-  // Revenue Chart Data
-  const revenueData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        label: 'Revenue',
-        data: [4500, 5200, 4800, 5700, 6200, 7000, 6500, 7200, 8100, 9500, 9800, 10500],
-        borderColor: '#f67a45',
-        backgroundColor: 'rgba(246, 122, 69, 0.2)',
-        tension: 0.4,
-        fill: true
+  // Fetch data function
+  const fetchReportsData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      // Build query parameters
+      const trainerParam =
+        selectedTrainer !== "all" ? `trainerId=${selectedTrainer}` : "";
+
+      // Fetch all data concurrently
+      const [
+        overviewRes,
+        revenueRes,
+        subscriptionRes,
+        specialtiesRes,
+        clientDistRes,
+        topTrainersRes,
+        trainersRes,
+      ] = await Promise.all([
+        fetch(
+          `/api/v1/reports/overview?period=${reportPeriod}${
+            trainerParam ? `&${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/revenue-trend?period=${reportPeriod}${
+            trainerParam ? `&${trainerParam}` : ""
+          }`,
+          {
+            headers,
+          }
+        ),
+        fetch(
+          `/api/v1/reports/subscription-distribution${
+            trainerParam ? `?${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/specialties-distribution${
+            trainerParam ? `?${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/client-distribution${
+            trainerParam ? `?${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/top-trainers?period=${reportPeriod}${
+            trainerParam ? `&${trainerParam}` : ""
+          }`,
+          {
+            headers,
+          }
+        ),
+        fetch(`/api/v1/reports/trainers`, { headers }),
+      ]);
+
+      // Check for errors
+      if (
+        !overviewRes.ok ||
+        !revenueRes.ok ||
+        !subscriptionRes.ok ||
+        !specialtiesRes.ok ||
+        !clientDistRes.ok ||
+        !topTrainersRes.ok ||
+        !trainersRes.ok
+      ) {
+        throw new Error("Failed to fetch reports data");
       }
-    ]
+
+      // Parse responses
+      const [
+        overviewData,
+        revenueChartData,
+        subscriptionChartData,
+        specialtiesChartData,
+        clientDistChartData,
+        topTrainersData,
+        trainersData,
+      ] = await Promise.all([
+        overviewRes.json(),
+        revenueRes.json(),
+        subscriptionRes.json(),
+        specialtiesRes.json(),
+        clientDistRes.json(),
+        topTrainersRes.json(),
+        trainersRes.json(),
+      ]);
+
+      // Set state
+      setOverview(overviewData.data);
+      setRevenueData(revenueChartData.data);
+      setSubscriptionData(subscriptionChartData.data);
+      setSpecialtiesData(specialtiesChartData.data);
+      setClientDistributionData(clientDistChartData.data);
+      setTopTrainers(topTrainersData.data);
+      setTrainers(trainersData.data);
+    } catch (err) {
+      console.error("Error fetching reports data:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Sessions Chart Data
-  const sessionsData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        label: 'Sessions',
-        data: [120, 142, 138, 156, 170, 195, 182, 204, 228, 245, 256, 270],
-        backgroundColor: '#f67a45',
-        borderRadius: 6
-      }
-    ]
-  };
+  // Fetch data on component mount and when period or trainer changes
+  useEffect(() => {
+    fetchReportsData();
+  }, [reportPeriod, selectedTrainer]);
 
-  // Specialties Distribution Data
-  const specialtiesData = {
-    labels: ['Strength & Conditioning', 'Yoga & Flexibility', 'Weight Loss', 'Nutrition', 'Cardio & HIIT', 'Pilates'],
-    datasets: [
-      {
-        data: [24, 18, 16, 15, 14, 13],
-        backgroundColor: ['#f67a45', '#3b82f6', '#8b5cf6', '#10b981', '#f97316', '#a855f7'],
-        borderWidth: 0
-      }
-    ]
-  };
-
-  // Client Distribution Data
-  const clientDistributionData = {
-    labels: ['New Clients', 'Returning Clients'],
-    datasets: [
-      {
-        data: [35, 65],
-        backgroundColor: ['#3b82f6', '#f67a45'],
-        borderWidth: 0
-      }
-    ]
-  };
-
-  // Top Performing Trainers
-  const topTrainers = [
-    { id: 1, name: 'John Smith', clients: 24, revenue: 8500, rating: 4.8 },
-    { id: 2, name: 'Sarah Johnson', clients: 18, revenue: 6050, rating: 4.5 },
-    { id: 3, name: 'Jessica Wilson', clients: 20, revenue: 5800, rating: 4.9 },
-    { id: 4, name: 'Michael Williams', clients: 12, revenue: 3200, rating: 4.2 },
-    { id: 5, name: 'Emily Davis', clients: 15, revenue: 4700, rating: 4.7 }
-  ];
-
-  // Performance Indicators
-  const indicators = [
-    { title: 'Total Trainers', value: '28', icon: <FaUserFriends size={24} />, color: '#3b82f6', change: '+3', isPositive: true },
-    { title: 'Revenue', value: '$32,450', icon: <FaDollarSign size={24} />, color: '#10b981', change: '+12%', isPositive: true },
-    { title: 'Sessions', value: '1,254', icon: <FaChartBar size={24} />, color: '#f67a45', change: '+8%', isPositive: true },
-    { title: 'Avg. Rating', value: '4.6', icon: <FaStar size={24} />, color: '#f59e0b', change: '+0.2', isPositive: true }
-  ];
+  // Performance Indicators - using real data
+  const indicators = overview
+    ? [
+        {
+          title: "Total Trainers",
+          value: overview.indicators.totalTrainers.toString(),
+          icon: <FaUserFriends size={24} />,
+          color: "#3b82f6",
+          change:
+            overview.indicators.changes.trainers > 0
+              ? `+${overview.indicators.changes.trainers}`
+              : overview.indicators.changes.trainers.toString(),
+          isPositive: overview.indicators.changes.trainers >= 0,
+        },
+        {
+          title: "Revenue",
+          value: `$${overview.indicators.revenue.toLocaleString()}`,
+          icon: <FaDollarSign size={24} />,
+          color: "#10b981",
+          change: `${
+            overview.indicators.changes.revenue > 0 ? "+" : ""
+          }${overview.indicators.changes.revenue.toFixed(1)}%`,
+          isPositive: overview.indicators.changes.revenue >= 0,
+        },
+        {
+          title: "Subscriptions",
+          value: overview.indicators.subscriptions.toString(),
+          icon: <FaChartBar size={24} />,
+          color: "#f67a45",
+          change: `${overview.indicators.changes.subscriptions > 0 ? "+" : ""}${
+            overview.indicators.changes.subscriptions
+          }%`,
+          isPositive: overview.indicators.changes.subscriptions >= 0,
+        },
+        {
+          title: "Avg. Rating",
+          value: overview.indicators.avgRating.toString(),
+          icon: <FaStar size={24} />,
+          color: "#f59e0b",
+          change: `${overview.indicators.changes.rating > 0 ? "+" : ""}${
+            overview.indicators.changes.rating
+          }`,
+          isPositive: overview.indicators.changes.rating >= 0,
+        },
+      ]
+    : [];
 
   // Chart options
   const lineChartOptions = {
     responsive: true,
     plugins: {
       legend: {
-        position: 'top',
+        position: "top",
         labels: {
-          color: '#fff',
-          usePointStyle: true
-        }
+          color: "#fff",
+          usePointStyle: true,
+        },
       },
       tooltip: {
-        backgroundColor: '#121225',
-        titleColor: '#f67a45',
-        bodyColor: '#fff',
+        backgroundColor: "#121225",
+        titleColor: "#f67a45",
+        bodyColor: "#fff",
         borderWidth: 1,
-        borderColor: '#f67a45',
-        usePointStyle: true
-      }
+        borderColor: "#f67a45",
+        usePointStyle: true,
+      },
     },
     scales: {
       x: {
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: "rgba(255, 255, 255, 0.1)",
         },
         ticks: {
-          color: '#fff',
-        }
+          color: "#fff",
+        },
       },
       y: {
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: "rgba(255, 255, 255, 0.1)",
         },
         ticks: {
-          color: '#fff',
+          color: "#fff",
           callback: function (value) {
-            return '$' + value.toLocaleString();
-          }
-        }
-      }
-    }
+            return "$" + value.toLocaleString();
+          },
+        },
+      },
+    },
   };
 
   const barChartOptions = {
     responsive: true,
     plugins: {
       legend: {
-        position: 'top',
+        position: "top",
         labels: {
-          color: '#fff'
-        }
+          color: "#fff",
+        },
       },
       tooltip: {
-        backgroundColor: '#121225',
-        titleColor: '#f67a45',
-        bodyColor: '#fff',
+        backgroundColor: "#121225",
+        titleColor: "#f67a45",
+        bodyColor: "#fff",
         borderWidth: 1,
-        borderColor: '#f67a45'
-      }
+        borderColor: "#f67a45",
+      },
     },
     scales: {
       x: {
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: "rgba(255, 255, 255, 0.1)",
         },
         ticks: {
-          color: '#fff',
-        }
+          color: "#fff",
+        },
       },
       y: {
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
+          color: "rgba(255, 255, 255, 0.1)",
         },
         ticks: {
-          color: '#fff'
-        }
-      }
-    }
+          color: "#fff",
+        },
+      },
+    },
   };
 
   const pieChartOptions = {
     responsive: true,
     plugins: {
       legend: {
-        position: 'right',
+        position: "right",
         labels: {
-          color: '#fff',
-          padding: 20
-        }
+          color: "#fff",
+          padding: 20,
+        },
       },
       tooltip: {
-        backgroundColor: '#121225',
-        titleColor: '#f67a45',
-        bodyColor: '#fff',
+        backgroundColor: "#121225",
+        titleColor: "#f67a45",
+        bodyColor: "#fff",
         borderWidth: 1,
-        borderColor: '#f67a45'
-      }
-    }
+        borderColor: "#f67a45",
+      },
+    },
   };
 
   return (
     <AdminLayout pageTitle="Trainer Performance Reports">
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-4 justify-between">
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={reportPeriod}
-              onChange={(e) => setReportPeriod(e.target.value)}
-              className="bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-            >
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
-              <option value="all">All Time</option>
-            </select>
-
-            <select
-              value={selectedTrainer}
-              onChange={(e) => setSelectedTrainer(e.target.value)}
-              className="bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
-            >
-              <option value="all">All Trainers</option>
-              {trainers.map(trainer => (
-                <option key={trainer.id} value={trainer.id}>{trainer.name}</option>
-              ))}
-            </select>
-          </div>
-
+      {loading ? (
+        <div className="bg-[#121225] rounded-lg p-8 text-center">
+          <p className="text-white/70 text-lg">Loading reports...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-[#121225] rounded-lg p-8 text-center">
+          <p className="text-red-400 text-lg">Error: {error}</p>
           <button
-            className="px-4 py-2 bg-[#1A1A2F] text-white rounded-lg flex items-center gap-2 hover:bg-[#232342] transition-colors"
+            onClick={fetchReportsData}
+            className="mt-4 px-4 py-2 bg-[#f67a45] text-white rounded-lg hover:bg-[#e56935]"
           >
-            <FaDownload size={14} /> Export Report
+            Retry
           </button>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-4 justify-between">
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={reportPeriod}
+                  onChange={(e) => setReportPeriod(e.target.value)}
+                  className="bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                >
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                  <option value="all">All Time</option>
+                </select>
 
-      {/* Performance Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {indicators.map((indicator, index) => (
-          <div key={index} className="bg-[#121225] border border-white/10 rounded-lg p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-white/70 text-sm">{indicator.title}</p>
-                <p className="text-white text-2xl font-bold mt-1">{indicator.value}</p>
+                <select
+                  value={selectedTrainer}
+                  onChange={(e) => setSelectedTrainer(e.target.value)}
+                  className="bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
+                >
+                  <option value="all">All Trainers</option>
+                  {trainers.map((trainer) => (
+                    <option key={trainer.id} value={trainer.id}>
+                      {trainer.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="p-3 rounded-lg" style={{ backgroundColor: `${indicator.color}20` }}>
-                <div style={{ color: indicator.color }}>{indicator.icon}</div>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center">
-              <span
-                className={`text-sm ${indicator.isPositive ? 'text-green-400' : 'text-red-400'} flex items-center`}
+
+              <button
+                className="px-4 py-2 bg-[#1A1A2F] text-white rounded-lg flex items-center gap-2 hover:bg-[#232342] transition-colors"
+                onClick={() => window.print()}
               >
-                {indicator.isPositive ? <FaArrowUp size={12} /> : <FaArrowDown size={12} />}
-                <span className="ml-1">{indicator.change}</span>
-              </span>
-              <span className="text-white/50 text-xs ml-2">vs previous {reportPeriod}</span>
+                <FaDownload size={14} /> Export Report
+              </button>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Revenue Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 bg-[#121225] border border-white/10 rounded-lg p-4">
-          <h3 className="text-white text-lg font-medium mb-4">Revenue Trend</h3>
-          <div className="w-full h-[300px] flex items-center justify-center">
-            <Line data={revenueData} options={lineChartOptions} />
-          </div>
-        </div>
-
-        <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
-          <h3 className="text-white text-lg font-medium mb-4">Client Distribution</h3>
-          <div className="w-full h-[250px] flex items-center justify-center">
-            <Doughnut data={clientDistributionData} options={pieChartOptions} />
-          </div>
-        </div>
-      </div>
-
-      {/* Sessions Chart and Specialty Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
-          <h3 className="text-white text-lg font-medium mb-4">Training Sessions</h3>
-          <div className="w-full h-[300px] flex items-center justify-center">
-            <Bar data={sessionsData} options={barChartOptions} />
-          </div>
-        </div>
-
-        <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
-          <h3 className="text-white text-lg font-medium mb-4">Trainer Specialties</h3>
-          <div className="w-full h-[300px] flex items-center justify-center">
-            <Pie data={specialtiesData} options={pieChartOptions} />
-          </div>
-        </div>
-      </div>
-
-      {/* Top Performers Table */}
-      <div className="bg-[#121225] border border-white/10 rounded-lg p-4 mb-6">
-        <h3 className="text-white text-lg font-medium mb-4">Top Performing Trainers</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-[#1A1A2F] text-white/70">
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Trainer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Active Clients</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Revenue</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Rating</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/10">
-              {topTrainers.map((trainer) => (
-                <tr key={trainer.id} className="hover:bg-[#1A1A2F]">
-                  <td className="px-6 py-4 whitespace-nowrap text-white">
-                    {trainer.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-white">
-                    {trainer.clients}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-white">
-                    ${trainer.revenue.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-white">
-                    <div className="flex items-center">
-                      <span className="text-yellow-400 mr-1">
-                        <FaStar size={14} />
-                      </span>
-                      {trainer.rating}
+          {/* Performance Indicators */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {indicators.map((indicator, index) => (
+              <div
+                key={index}
+                className="bg-[#121225] border border-white/10 rounded-lg p-4"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-white/70 text-sm">{indicator.title}</p>
+                    <p className="text-white text-2xl font-bold mt-1">
+                      {indicator.value}
+                    </p>
+                  </div>
+                  <div
+                    className="p-3 rounded-lg"
+                    style={{ backgroundColor: `${indicator.color}20` }}
+                  >
+                    <div style={{ color: indicator.color }}>
+                      {indicator.icon}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Key Performance Metrics */}
-      <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
-        <h3 className="text-white text-lg font-medium mb-4">Key Performance Metrics</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="p-4 border border-white/10 rounded-lg">
-            <p className="text-white/70 text-sm">Client Retention Rate</p>
-            <p className="text-white text-xl font-bold mt-1">84%</p>
-            <p className="text-green-400 text-xs flex items-center mt-2">
-              <FaArrowUp size={10} />
-              <span className="ml-1">2% vs prev. {reportPeriod}</span>
-            </p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center">
+                  <span
+                    className={`text-sm ${
+                      indicator.isPositive ? "text-green-400" : "text-red-400"
+                    } flex items-center`}
+                  >
+                    {indicator.isPositive ? (
+                      <FaArrowUp size={12} />
+                    ) : (
+                      <FaArrowDown size={12} />
+                    )}
+                    <span className="ml-1">{indicator.change}</span>
+                  </span>
+                  <span className="text-white/50 text-xs ml-2">
+                    vs previous {reportPeriod}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="p-4 border border-white/10 rounded-lg">
-            <p className="text-white/70 text-sm">Avg. Session Duration</p>
-            <p className="text-white text-xl font-bold mt-1">58 min</p>
-            <p className="text-green-400 text-xs flex items-center mt-2">
-              <FaArrowUp size={10} />
-              <span className="ml-1">5 min vs prev. {reportPeriod}</span>
-            </p>
+          {/* Revenue Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2 bg-[#121225] border border-white/10 rounded-lg p-4">
+              <h3 className="text-white text-lg font-medium mb-4">
+                Revenue Trend
+              </h3>
+              <div className="w-full h-[300px] flex items-center justify-center">
+                {revenueData ? (
+                  <Line data={revenueData} options={lineChartOptions} />
+                ) : (
+                  <p className="text-white/70">No revenue data available</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+              <h3 className="text-white text-lg font-medium mb-4">
+                Client Distribution
+              </h3>
+              <div className="w-full h-[250px] flex items-center justify-center">
+                {clientDistributionData ? (
+                  <Doughnut
+                    data={clientDistributionData}
+                    options={pieChartOptions}
+                  />
+                ) : (
+                  <p className="text-white/70">No client data available</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="p-4 border border-white/10 rounded-lg">
-            <p className="text-white/70 text-sm">Client Satisfaction</p>
-            <p className="text-white text-xl font-bold mt-1">92%</p>
-            <p className="text-green-400 text-xs flex items-center mt-2">
-              <FaArrowUp size={10} />
-              <span className="ml-1">3% vs prev. {reportPeriod}</span>
-            </p>
+          {/* Subscription Distribution and Specialty Distribution */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+              <h3 className="text-white text-lg font-medium mb-4">
+                Subscription Packages
+              </h3>
+              <div className="w-full h-[300px] flex items-center justify-center">
+                {subscriptionData ? (
+                  <Bar
+                    data={{
+                      ...subscriptionData,
+                      datasets: [
+                        {
+                          ...subscriptionData.datasets[0],
+                          backgroundColor: "#f67a45",
+                          borderRadius: 6,
+                        },
+                      ],
+                    }}
+                    options={barChartOptions}
+                  />
+                ) : (
+                  <p className="text-white/70">
+                    No subscription data available
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+              <h3 className="text-white text-lg font-medium mb-4">
+                Trainer Specialties
+              </h3>
+              <div className="w-full h-[300px] flex items-center justify-center">
+                {specialtiesData ? (
+                  <Pie data={specialtiesData} options={pieChartOptions} />
+                ) : (
+                  <p className="text-white/70">No specialties data available</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="p-4 border border-white/10 rounded-lg">
-            <p className="text-white/70 text-sm">Revenue Per Trainer</p>
-            <p className="text-white text-xl font-bold mt-1">$1,158</p>
-            <p className="text-green-400 text-xs flex items-center mt-2">
-              <FaArrowUp size={10} />
-              <span className="ml-1">$86 vs prev. {reportPeriod}</span>
-            </p>
+          {/* Top Performers Table */}
+          <div className="bg-[#121225] border border-white/10 rounded-lg p-4 mb-6">
+            <h3 className="text-white text-lg font-medium mb-4">
+              Top Performing Trainers
+            </h3>
+            <div className="overflow-x-auto">
+              {topTrainers && topTrainers.length > 0 ? (
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-[#1A1A2F] text-white/70">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                        Trainer
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                        Active Clients
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                        Revenue
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
+                        Rating
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10">
+                    {topTrainers.map((trainer, index) => (
+                      <tr
+                        key={trainer._id || index}
+                        className="hover:bg-[#1A1A2F]"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-white">
+                          {trainer.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-white">
+                          {trainer.clients}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-white">
+                          $
+                          {trainer.revenue
+                            ? trainer.revenue.toLocaleString()
+                            : "0"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-white">
+                          <div className="flex items-center">
+                            <span className="text-yellow-400 mr-1">
+                              <FaStar size={14} />
+                            </span>
+                            {trainer.rating ? trainer.rating.toFixed(1) : "0.0"}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-white/70 text-center py-8">
+                  No trainer data available
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* Key Performance Metrics */}
+          <div className="bg-[#121225] border border-white/10 rounded-lg p-4">
+            <h3 className="text-white text-lg font-medium mb-4">
+              Key Performance Metrics
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="p-4 border border-white/10 rounded-lg">
+                <p className="text-white/70 text-sm">Active Subscriptions</p>
+                <p className="text-white text-xl font-bold mt-1">
+                  {overview?.indicators.subscriptions || 0}
+                </p>
+                <p className="text-green-400 text-xs flex items-center mt-2">
+                  <FaArrowUp size={10} />
+                  <span className="ml-1">Based on current data</span>
+                </p>
+              </div>
+
+              <div className="p-4 border border-white/10 rounded-lg">
+                <p className="text-white/70 text-sm">Total Revenue</p>
+                <p className="text-white text-xl font-bold mt-1">
+                  ${overview?.indicators.revenue.toLocaleString() || "0"}
+                </p>
+                <p className="text-green-400 text-xs flex items-center mt-2">
+                  <FaArrowUp size={10} />
+                  <span className="ml-1">From payment records</span>
+                </p>
+              </div>
+
+              <div className="p-4 border border-white/10 rounded-lg">
+                <p className="text-white/70 text-sm">Average Rating</p>
+                <p className="text-white text-xl font-bold mt-1">
+                  {overview?.indicators.avgRating || "0.0"}
+                </p>
+                <p className="text-green-400 text-xs flex items-center mt-2">
+                  <FaArrowUp size={10} />
+                  <span className="ml-1">From reviews</span>
+                </p>
+              </div>
+
+              <div className="p-4 border border-white/10 rounded-lg">
+                <p className="text-white/70 text-sm">Active Trainers</p>
+                <p className="text-white text-xl font-bold mt-1">
+                  {overview?.indicators.totalTrainers || "0"}
+                </p>
+                <p className="text-green-400 text-xs flex items-center mt-2">
+                  <FaArrowUp size={10} />
+                  <span className="ml-1">Currently active</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </AdminLayout>
   );
 };

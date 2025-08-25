@@ -138,7 +138,7 @@ const TrainerProfile = () => {
     <TrainerLayout pageTitle={`Trainer: ${trainer.name}`}>
       {/* Back Button */}
       <button
-        onClick={() => navigate("/explore")} 
+        onClick={() => navigate("/explore")}
         className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
       >
         <MdArrowBack size={20} />
@@ -242,7 +242,9 @@ const TrainerProfile = () => {
                 </span>
               </div>
 
-              <div className="text-white text-xl font-bold mb-4">{price}</div>
+              <div className="text-white text-xl font-bold mb-4">
+                Rs. {trainer.hourlyRate}
+              </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-1 gap-2 sm:space-y-3">
                 {!isTrainerAdded ? (
@@ -393,10 +395,11 @@ const TrainerProfile = () => {
             trainer.packages.map((pkg, idx) => (
               <div
                 key={idx}
-                className={`border ${idx === 1
+                className={`border ${
+                  idx === 1
                     ? "border-2 border-[#f67a45] bg-[#1A1A2F]"
                     : "border-gray-700 bg-[#121225]"
-                  } rounded-lg p-4 sm:p-6 hover:border-[#f67a45]/50 transition-all relative`}
+                } rounded-lg p-4 sm:p-6 hover:border-[#f67a45]/50 transition-all relative`}
               >
                 {idx === 1 && (
                   <div className="absolute top-0 right-4 sm:right-6 translate-y-[-50%] bg-[#f67a45] text-white px-3 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-medium">
@@ -411,8 +414,8 @@ const TrainerProfile = () => {
                     {idx === 0
                       ? "Basic"
                       : idx === 1
-                        ? "Recommended"
-                        : "Premium"}
+                      ? "Recommended"
+                      : "Premium"}
                   </span>
                 </div>
                 <div className="text-[#f67a45] text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
@@ -581,10 +584,11 @@ const TrainerProfile = () => {
                       key={star}
                       type="button"
                       onClick={() => setFeedbackRating(star)}
-                      className={`${feedbackRating >= star
+                      className={`${
+                        feedbackRating >= star
                           ? "text-[#f67a45]"
                           : "text-gray-400 dark:text-white/50"
-                        } transition-colors flex items-center`}
+                      } transition-colors flex items-center`}
                     >
                       <FaStar className="w-5 h-5" />
                     </button>
