@@ -100,6 +100,7 @@ const CommunityNotifications = () => {
       if (socket) {
         socket.off("likePostNotify");
         socket.off("commentPostNotify");
+        socket.off("followPostNotify");
       }
     };
   }, [socket]);
