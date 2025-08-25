@@ -289,7 +289,7 @@ const Payments = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search trainers by name, trainer ID, or payment ID..."
+                  placeholder="Search trainers..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full md:w-80 bg-[#121225] border border-white/20 rounded-lg py-2 px-4 text-white focus:outline-none focus:border-[#f67a45]"
