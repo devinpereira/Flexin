@@ -65,6 +65,10 @@ const Reports = () => {
         "Content-Type": "application/json",
       };
 
+      // Build query parameters
+      const trainerParam =
+        selectedTrainer !== "all" ? `trainerId=${selectedTrainer}` : "";
+
       // Fetch all data concurrently
       const [
         overviewRes,
@@ -75,16 +79,46 @@ const Reports = () => {
         topTrainersRes,
         trainersRes,
       ] = await Promise.all([
-        fetch(`/api/v1/reports/overview?period=${reportPeriod}`, { headers }),
-        fetch(`/api/v1/reports/revenue-trend?period=${reportPeriod}`, {
-          headers,
-        }),
-        fetch(`/api/v1/reports/subscription-distribution`, { headers }),
-        fetch(`/api/v1/reports/specialties-distribution`, { headers }),
-        fetch(`/api/v1/reports/client-distribution`, { headers }),
-        fetch(`/api/v1/reports/top-trainers?period=${reportPeriod}`, {
-          headers,
-        }),
+        fetch(
+          `/api/v1/reports/overview?period=${reportPeriod}${
+            trainerParam ? `&${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/revenue-trend?period=${reportPeriod}${
+            trainerParam ? `&${trainerParam}` : ""
+          }`,
+          {
+            headers,
+          }
+        ),
+        fetch(
+          `/api/v1/reports/subscription-distribution${
+            trainerParam ? `?${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/specialties-distribution${
+            trainerParam ? `?${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/client-distribution${
+            trainerParam ? `?${trainerParam}` : ""
+          }`,
+          { headers }
+        ),
+        fetch(
+          `/api/v1/reports/top-trainers?period=${reportPeriod}${
+            trainerParam ? `&${trainerParam}` : ""
+          }`,
+          {
+            headers,
+          }
+        ),
         fetch(`/api/v1/reports/trainers`, { headers }),
       ]);
 
@@ -136,10 +170,10 @@ const Reports = () => {
     }
   };
 
-  // Fetch data on component mount and when period changes
+  // Fetch data on component mount and when period or trainer changes
   useEffect(() => {
     fetchReportsData();
-  }, [reportPeriod]);
+  }, [reportPeriod, selectedTrainer]);
 
   // Performance Indicators - using real data
   const indicators = overview

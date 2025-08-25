@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Trainer from '../models/Trainer.js';
 import User from '../models/User.js';
 import Subscription from '../models/Subscription.js';
@@ -6,7 +7,7 @@ import Payment from '../models/Payment.js';
 // GET /api/v1/reports/overview
 export const getReportsOverview = async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
+    const { period = 'month', trainerId } = req.query;
     
     // Calculate date range based on period
     const now = new Date();
@@ -30,13 +31,34 @@ export const getReportsOverview = async (req, res) => {
         startDate = new Date(2020, 0, 1); // All time
     }
 
+    // Build trainer filter
+    const trainerFilter = { status: 'active' };
+    if (trainerId && trainerId !== 'all') {
+      trainerFilter._id = new mongoose.Types.ObjectId(trainerId);
+    }
+
     // Get basic counts
-    const totalTrainers = await Trainer.countDocuments({ status: 'active' });
+    const totalTrainers = await Trainer.countDocuments(trainerFilter);
     const totalUsers = await User.countDocuments();
-    const totalSubscriptions = await Subscription.countDocuments({
+    
+    // Build subscription filter
+    const subscriptionFilter = {
       startDate: { $gte: startDate },
       $or: [{ endDate: { $exists: false } }, { endDate: null }, { endDate: { $gte: startDate } }]
-    });
+    };
+    if (trainerId && trainerId !== 'all') {
+      subscriptionFilter.trainerId = new mongoose.Types.ObjectId(trainerId);
+    }
+    
+    const totalSubscriptions = await Subscription.countDocuments(subscriptionFilter);
+
+    // Build payment filter
+    const paymentMatchStage = {
+      'payments.datePaid': { $gte: startDate }
+    };
+    if (trainerId && trainerId !== 'all') {
+      paymentMatchStage.trainerId = new mongoose.Types.ObjectId(trainerId);
+    }
 
     // Calculate total revenue from payments
     const paymentStats = await Payment.aggregate([
@@ -44,9 +66,7 @@ export const getReportsOverview = async (req, res) => {
         $unwind: '$payments'
       },
       {
-        $match: {
-          'payments.datePaid': { $gte: startDate }
-        }
+        $match: paymentMatchStage
       },
       {
         $group: {
@@ -63,7 +83,7 @@ export const getReportsOverview = async (req, res) => {
     // Calculate average rating from trainer model
     const ratingStats = await Trainer.aggregate([
       {
-        $match: { status: 'active', rating: { $gt: 0 } }
+        $match: { ...trainerFilter, rating: { $gt: 0 } }
       },
       {
         $group: {
@@ -83,14 +103,19 @@ export const getReportsOverview = async (req, res) => {
     prevStartDate = new Date(prevPeriodEnd.getTime() - periodLength);
 
     // Get previous period stats for comparison
+    const prevPaymentMatchStage = {
+      'payments.datePaid': { $gte: prevStartDate, $lte: prevPeriodEnd }
+    };
+    if (trainerId && trainerId !== 'all') {
+      prevPaymentMatchStage.trainerId = new mongoose.Types.ObjectId(trainerId);
+    }
+
     const prevPaymentStats = await Payment.aggregate([
       {
         $unwind: '$payments'
       },
       {
-        $match: {
-          'payments.datePaid': { $gte: prevStartDate, $lte: prevPeriodEnd }
-        }
+        $match: prevPaymentMatchStage
       },
       {
         $group: {
@@ -104,7 +129,7 @@ export const getReportsOverview = async (req, res) => {
     const revenueChange = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue * 100) : 0;
 
     const prevTrainerCount = await Trainer.countDocuments({
-      status: 'active',
+      ...trainerFilter,
       createdAt: { $lt: startDate }
     });
     const trainerChange = prevTrainerCount > 0 ? totalTrainers - prevTrainerCount : totalTrainers;
@@ -135,7 +160,7 @@ export const getReportsOverview = async (req, res) => {
 // GET /api/v1/reports/revenue-trend
 export const getRevenueTrend = async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
+    const { period = 'month', trainerId } = req.query;
     const now = new Date();
     let months = 12;
     let groupBy;
@@ -149,12 +174,18 @@ export const getRevenueTrend = async (req, res) => {
 
     const startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
 
+    // Build match stage with trainer filter
+    const matchStage = {
+      'payments.datePaid': { $gte: startDate }
+    };
+    if (trainerId && trainerId !== 'all') {
+      matchStage.trainerId = new mongoose.Types.ObjectId(trainerId);
+    }
+
     const revenueData = await Payment.aggregate([
       { $unwind: '$payments' },
       {
-        $match: {
-          'payments.datePaid': { $gte: startDate }
-        }
+        $match: matchStage
       },
       {
         $group: {
@@ -205,11 +236,19 @@ export const getRevenueTrend = async (req, res) => {
 // GET /api/v1/reports/subscription-distribution
 export const getSubscriptionDistribution = async (req, res) => {
   try {
+    const { trainerId } = req.query;
+    
+    // Build match stage with trainer filter
+    const matchStage = {
+      $or: [{ endDate: { $exists: false } }, { endDate: null }]
+    };
+    if (trainerId && trainerId !== 'all') {
+      matchStage.trainerId = new mongoose.Types.ObjectId(trainerId);
+    }
+
     const subscriptionStats = await Subscription.aggregate([
       {
-        $match: {
-          $or: [{ endDate: { $exists: false } }, { endDate: null }]
-        }
+        $match: matchStage
       },
       {
         $group: {
@@ -248,8 +287,16 @@ export const getSubscriptionDistribution = async (req, res) => {
 // GET /api/v1/reports/specialties-distribution
 export const getSpecialtiesDistribution = async (req, res) => {
   try {
+    const { trainerId } = req.query;
+    
+    // Build match stage with trainer filter
+    const matchStage = { status: 'active' };
+    if (trainerId && trainerId !== 'all') {
+      matchStage._id = new mongoose.Types.ObjectId(trainerId);
+    }
+
     const specialtyStats = await Trainer.aggregate([
-      { $match: { status: 'active' } },
+      { $match: matchStage },
       { $unwind: '$specialties' },
       {
         $group: {
@@ -284,7 +331,7 @@ export const getSpecialtiesDistribution = async (req, res) => {
 // GET /api/v1/reports/top-trainers
 export const getTopTrainers = async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
+    const { period = 'month', trainerId } = req.query;
     const now = new Date();
     let startDate;
     
@@ -306,15 +353,21 @@ export const getTopTrainers = async (req, res) => {
         startDate = new Date(2020, 0, 1);
     }
 
+    // Build match stage with trainer filter
+    const matchStage = {
+      'payments.datePaid': { $gte: startDate }
+    };
+    if (trainerId && trainerId !== 'all') {
+      matchStage.trainerId = new mongoose.Types.ObjectId(trainerId);
+    }
+
     // Get top trainers by revenue
     const topTrainers = await Payment.aggregate([
       {
         $unwind: '$payments'
       },
       {
-        $match: {
-          'payments.datePaid': { $gte: startDate }
-        }
+        $match: matchStage
       },
       {
         $group: {
@@ -380,12 +433,20 @@ export const getTopTrainers = async (req, res) => {
 // GET /api/v1/reports/client-distribution
 export const getClientDistribution = async (req, res) => {
   try {
+    const { trainerId } = req.query;
     // Get subscription stats to determine new vs returning clients
     const now = new Date();
     const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
 
+    // Build match stage with trainer filter
+    const matchStage = {};
+    if (trainerId && trainerId !== 'all') {
+      matchStage.trainerId = new mongoose.Types.ObjectId(trainerId);
+    }
+
     // Count new subscriptions (first-time subscribers)
-    const newSubscriptions = await Subscription.aggregate([
+    const pipeline = [
+      ...(Object.keys(matchStage).length > 0 ? [{ $match: matchStage }] : []),
       {
         $group: {
           _id: '$userId',
@@ -419,7 +480,9 @@ export const getClientDistribution = async (req, res) => {
           }
         }
       }
-    ]);
+    ];
+
+    const newSubscriptions = await Subscription.aggregate(pipeline);
 
     const stats = newSubscriptions[0] || { newClients: 0, returningClients: 0 };
 
