@@ -265,12 +265,12 @@ const ApproveTrainers = () => {
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button
+                    {/* <button
                       onClick={() => handleViewTrainer(trainer)}
                       className="px-4 py-2 bg-[#1A1A2F] text-white hover:bg-[#232342] rounded-lg transition-colors flex items-center gap-2"
                     >
                       <FaEye /> View Details
-                    </button>
+                    </button> */}
                     <button
                       onClick={() => handleApprove(trainer)}
                       className={`px-4 py-2 bg-green-500 text-white hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2
