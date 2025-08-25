@@ -25,6 +25,7 @@ const Profile = () => {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [showPopup, setShowPopup] = useState(false);
   const [packageEditIdx, setPackageEditIdx] = useState(null);
   const [newPackage, setNewPackage] = useState({
     name: "",
@@ -246,21 +247,43 @@ const Profile = () => {
         profilePhoto,
       };
 
-      await updateMyTrainerProfile(updateData);
-      setEditing(false);
-      setMessage({ type: "success", text: "Profile updated successfully!" });
-
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setMessage({ type: "", text: "" });
-      }, 3000);
-    } catch (err) {
-      console.error("Error updating profile:", err);
-      setError("Failed to update profile. Please try again.");
-      setMessage({
-        type: "error",
-        text: "Failed to update profile. Please try again.",
-      });
+      try {
+        await updateMyTrainerProfile(updateData);
+        setEditing(false);
+        setMessage({ type: "success", text: "Profile updated successfully!" });
+        setShowPopup(true);
+        setError("");
+        setTimeout(() => {
+          setShowPopup(false);
+          setMessage({ type: "", text: "" });
+        }, 3000);
+      } catch (err) {
+        // Always show a notification, even for unexpected errors
+        let errorMsg = "Failed to update profile. Please try again.";
+        let details = "";
+        if (err?.response?.data) {
+          if (err.response.data.message) {
+            errorMsg = err.response.data.message;
+          }
+          if (err.response.data.errors) {
+            details = err.response.data.errors.join("\n");
+          }
+        } else if (err?.message) {
+          errorMsg = err.message;
+        }
+        // Fallback for any other error type
+        if (!errorMsg) errorMsg = "Unknown error occurred.";
+        setError(""); // Always clear error so only notification is shown
+        setMessage({
+          type: "error",
+          text: errorMsg + (details ? "\n" + details : ""),
+        });
+        setShowPopup(true);
+        setTimeout(() => {
+          setShowPopup(false);
+          setMessage({ type: "", text: "" });
+        }, 4000);
+      }
     } finally {
       setSaving(false);
     }
@@ -362,16 +385,28 @@ const Profile = () => {
           className="bg-[#121225] rounded-lg p-6 border border-[#f67a45]/30 max-w-3xl mx-auto"
           onSubmit={handleSave}
         >
-          {/* Success/Error Message */}
-          {message.text && (
+          {/* Popup Notification */}
+          {showPopup && message.text && (
             <div
-              className={`mb-4 p-3 rounded-lg ${
+              style={{
+                position: "fixed",
+                top: "32px",
+                right: "32px",
+                zIndex: 9999,
+                minWidth: "280px",
+                maxWidth: "400px",
+                boxShadow: "0 4px 24px 0 rgba(0,0,0,0.25)",
+                animation: "fadeIn 0.3s",
+              }}
+              className={`p-4 rounded-lg font-semibold text-base transition-all duration-300 ${
                 message.type === "success"
-                  ? "bg-green-500/20 border border-green-500/50 text-green-400"
-                  : "bg-red-500/20 border border-red-500/50 text-red-400"
+                  ? "bg-green-500/90 border border-green-500/80 text-white"
+                  : "bg-red-500/90 border border-red-500/80 text-white"
               }`}
             >
-              {message.text}
+              {message.text.split("\n").map((line, idx) => (
+                <div key={idx}>{line}</div>
+              ))}
             </div>
           )}
           <div className="flex flex-col items-center mb-8">
