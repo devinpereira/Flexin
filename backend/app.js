@@ -45,6 +45,7 @@ import storeMediaRoutes from "./routes/adminstore/storeMediaRoutes.js";
 
 // Admin Dashboard Routes
 import adminStatisticRoutes from "./routes/adminStatisticRoutes.js";
+import reportsRoutes from "./routes/reportsRoutes.js";
 
 const app = express();
 
@@ -108,6 +109,7 @@ app.use("/api/v1/admin/store/media", storeMediaRoutes);
 
 // Admin Dashboard Routes
 app.use("/api/v1/admin/statistics", adminStatisticRoutes);
+app.use("/api/v1/reports", reportsRoutes);
 
 // Static folder
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
