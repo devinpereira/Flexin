@@ -133,6 +133,7 @@ function App() {
                     <Route path="/trainer/subscribers" element={<TrainerSubscribers />} />
                     <Route path="/trainer/requests" element={<TrainerRequests />} />
                     <Route path="/trainer/messages" element={<TrainerMessages />} />
+                    <Route path="/trainer/messages/:subscriberId" element={<TrainerMessages />} />
                     <Route path="/trainer/analytics" element={<TrainerAnalytics />} />
                     <Route path="/trainer/profile" element={<TrainerProfilePage />} />
                     <Route path="/trainer/feedbacks" element={<TrainerFeedbacks />} />
