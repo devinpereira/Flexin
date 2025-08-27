@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import TrainerDashboardLayout from "../../layouts/TrainerDashboardLayout";
 import { MdArrowBack } from 'react-icons/md';
-import { getSocket, connectSocket } from "../../utils/socket";
+import { getSocket, connectSocket, validateTextMessage, emitTextMessage, emitTypingStatus } from "../../utils/socket";
 import { API_PATHS } from "../../utils/apiPaths";
 import axiosInstance from "../../utils/axiosInstance";
 import ChatSidebar from '../../components/TrainerDashboard/ChatSidebar';
@@ -35,6 +35,8 @@ const Chat = () => {
   const [subscribers, setSubscribers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
+  const [isTyping, setIsTyping] = useState(false);
+  const [userTyping, setUserTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const messageAreaRef = useRef(null);
   const inputTimeoutRef = useRef(null);
@@ -153,37 +155,55 @@ const Chat = () => {
 
   useEffect(() => {
     if (socket) {
-      // Listen for incoming messages
-      socket.on("receiveMessage", (msg) => {
-        const newMessage = {
-          id: Date.now(),
-          sender: user._id && (String(msg.from) === String(user._id)) ? "trainer" : "user",
-          text: msg.message,
-          time: msg.time || new Date().toISOString(),
-        };
+      // Listen for incoming text messages
+      socket.on("receiveTextMessage", (msg) => {
+        if (msg.chatType === "text" && msg.from !== user._id) {
+          const newMessage = {
+            id: msg.messageId || `temp-${Date.now()}-${Math.random()}`,
+            sender: user._id && (String(msg.from) === String(user._id)) ? "trainer" : "user",
+            text: msg.message,
+            time: msg.time || new Date().toISOString(),
+            isRead: false
+          };
 
-        setMessages(prev => [...prev, newMessage]);
+          // Check if message already exists to prevent duplicates
+          setMessages(prev => {
+            const exists = prev.some(existingMsg => 
+              existingMsg.text === newMessage.text && 
+              existingMsg.sender === newMessage.sender &&
+              Math.abs(new Date(existingMsg.time) - new Date(newMessage.time)) < 5000 // within 5 seconds
+            );
+            
+            if (exists) {
+              return prev;
+            }
+            
+            return [...prev, newMessage];
+          });
 
-        // Update last message for the subscriber only if it's from the user
-        if (String(msg.from) !== String(user._id)) {
-          setSubscribers(prev =>
-            prev.map(sub =>
-              sub.id === msg.from
-                ? {
-                  ...sub,
-                  lastMessage: {
-                    text: msg.message,
-                    time: msg.time || new Date().toISOString()
+          // Update last message for the subscriber
+          if (String(msg.from) !== String(user._id)) {
+            setSubscribers(prev =>
+              prev.map(sub =>
+                sub.id === msg.from
+                  ? {
+                    ...sub,
+                    lastMessage: {
+                      text: msg.message,
+                      time: msg.time || new Date().toISOString()
+                    }
                   }
-                }
-                : sub
-            )
-          );
+                  : sub
+              )
+            );
+          }
         }
       });
 
-      socket.on("userTyping", ({ userId, isTyping }) => {
-        if (userId === subscriberId) {
+      // Handle typing indicators
+      socket.on("userTyping", ({ from, isTyping }) => {
+        if (from === subscriberId) {
+          setUserTyping(isTyping);
           setSubscribers(prev =>
             prev.map(sub =>
               sub.id === subscriberId
@@ -192,6 +212,18 @@ const Chat = () => {
             )
           );
         }
+      });
+
+      // Handle message read status
+      socket.on("messageRead", (data) => {
+        setMessages(prev => prev.map(msg => 
+          msg.id === data.messageId ? { ...msg, isRead: true } : msg
+        ));
+      });
+
+      // Handle websocket errors
+      socket.on("error", (error) => {
+        console.error("Socket error:", error.message);
       });
 
       socket.on("userStatusChange", ({ userId, status }) => {
@@ -203,12 +235,14 @@ const Chat = () => {
       });
 
       return () => {
-        socket.off("receiveMessage");
+        socket.off("receiveTextMessage");
         socket.off("userTyping");
+        socket.off("messageRead");
+        socket.off("error");
         socket.off("userStatusChange");
       };
     }
-  }, [socket, trainerId, subscriberId]);
+  }, [socket, trainerId, subscriberId, user._id]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -223,12 +257,12 @@ const Chat = () => {
 
       if (!typing) {
         setTyping(true);
-        socket.emit("typing", { to: subscriberId, isTyping: true });
+        emitTypingStatus(subscriberId, true);
       }
 
       const timeout = setTimeout(() => {
         setTyping(false);
-        socket.emit("typing", { to: subscriberId, isTyping: false });
+        emitTypingStatus(subscriberId, false);
       }, 3000);
 
       setTypingTimeout(timeout);
@@ -238,7 +272,15 @@ const Chat = () => {
   const handleSendMessage = async () => {
     if (!message.trim() || !isValidSubscriberId(subscriberId)) return;
 
-    const messageContent = message;
+    const messageContent = message.trim();
+    
+    // Validate text message
+    const validation = validateTextMessage(messageContent);
+    if (!validation.isValid) {
+      console.error("Message validation failed:", validation.error);
+      return;
+    }
+
     setMessage('');
 
     try {
@@ -273,11 +315,16 @@ const Chat = () => {
       );
 
       if (socket && subscriberId) {
-        socket.emit("sendMessage", { to: subscriberId, message: messageContent, from: user._id });
+        // Send text message via websocket for real-time delivery
+        try {
+          emitTextMessage(subscriberId, messageContent);
+        } catch (socketError) {
+          console.error("Socket error:", socketError.message);
+        }
 
         if (typing) {
           setTyping(false);
-          socket.emit("typing", { to: subscriberId, isTyping: false });
+          emitTypingStatus(subscriberId, false);
           if (typingTimeout) {
             clearTimeout(typingTimeout);
             setTypingTimeout(null);
@@ -477,12 +524,12 @@ const Chat = () => {
                 ))}
               </div>
 
-              {subscriber?.isTyping && (
+              {userTyping && (
                 <div className="flex justify-start mb-2">
                   <div className="bg-[#1A1A2F]/50 text-white rounded-lg py-2 px-3 flex items-center space-x-1 max-w-[100px]">
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing-dot1"></div>
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing-dot2"></div>
-                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing-dot3"></div>
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{animationDelay: '0.2s'}}></div>
                   </div>
                 </div>
               )}

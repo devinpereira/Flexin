@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
 import { FaUserFriends, FaPaperclip, FaImage, FaFile, FaMicrophone, FaPhoneAlt, FaStopCircle, FaBars, FaPlay } from 'react-icons/fa';
@@ -7,13 +7,15 @@ import { BsCalendarWeek, BsEmojiSmile } from 'react-icons/bs';
 import { GiMeal } from 'react-icons/gi';
 import { BiChat } from 'react-icons/bi';
 import { RiVipDiamondLine } from 'react-icons/ri';
-import { io } from "socket.io-client";
 import { API_PATHS } from '../../utils/apiPaths';
 import axiosInstance from '../../utils/axiosInstance';
+import { connectSocket, validateTextMessage, emitTextMessage, emitTypingStatus } from '../../utils/socket';
+import { UserContext } from '../../context/UserContext';
 
 const Chat = () => {
   const { trainerId } = useParams();
   const navigate = useNavigate();
+  const { user, loading: userLoading } = useContext(UserContext);
   const [activeSection, setActiveSection] = useState('My Trainers');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -28,12 +30,16 @@ const Chat = () => {
 
   const [trainer, setTrainer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [trainerTyping, setTrainerTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
 
-  const userId = localStorage.getItem("userId") || "demoUserId";
+  const userId = user?._id;
 
-  const socket = useMemo(() => io("http://localhost:8000", {
-    auth: { token: localStorage.getItem("token") }
-  }), []);
+  const socket = useMemo(() => {
+    const token = localStorage.getItem("token");
+    return token ? connectSocket(token) : null;
+  }, []);
 
   useEffect(() => {
     const fetchTrainerData = async () => {
@@ -70,7 +76,16 @@ const Chat = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, trainerTyping]);
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -109,18 +124,59 @@ const Chat = () => {
   }, [trainerId, userId]);
 
   useEffect(() => {
-    socket.on("receiveMessage", (msg) => {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: prev.length + 1,
+    // Handle receiving text messages via websocket
+    socket.on("receiveTextMessage", (msg) => {
+      if (msg.chatType === "text" && msg.from !== userId) {
+        const newMessage = {
+          id: msg.messageId || `temp-${Date.now()}-${Math.random()}`,
           sender: msg.from === userId ? "user" : "trainer",
           text: msg.message,
           time: new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        }
-      ]);
+          isRead: false
+        };
+
+        // Check for duplicates
+        setMessages(prev => {
+          const exists = prev.some(existingMsg => 
+            existingMsg.text === newMessage.text && 
+            existingMsg.sender === newMessage.sender &&
+            Math.abs(new Date(existingMsg.time) - new Date(newMessage.time)) < 5000
+          );
+          
+          if (exists) {
+            return prev;
+          }
+          
+          return [...prev, newMessage];
+        });
+      }
     });
-    return () => socket.off("receiveMessage");
+
+    // Handle typing indicators
+    socket.on("userTyping", (data) => {
+      if (data.from !== userId) {
+        setTrainerTyping(data.isTyping);
+      }
+    });
+
+    // Handle message read status
+    socket.on("messageRead", (data) => {
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.messageId ? { ...msg, isRead: true } : msg
+      ));
+    });
+
+    // Handle websocket errors
+    socket.on("error", (error) => {
+      console.error("Socket error:", error.message);
+    });
+
+    return () => {
+      socket.off("receiveTextMessage");
+      socket.off("userTyping");
+      socket.off("messageRead");
+      socket.off("error");
+    };
   }, [socket, userId]);
 
   const scrollToBottom = () => {
@@ -130,11 +186,30 @@ const Chat = () => {
   const handleSendMessage = async () => {
     if (message.trim() === '') return;
 
-    const messageContent = message;
+    const messageContent = message.trim();
+    
+    // Validate text message
+    const validation = validateTextMessage(messageContent);
+    if (!validation.isValid) {
+      console.error("Message validation failed:", validation.error);
+      return;
+    }
+
     setMessage('');
 
+    // Clear typing indicator
+    if (isTyping) {
+      setIsTyping(false);
+      emitTypingStatus(trainerId, false);
+    }
+
     try {
-      const response = await axiosInstance.post(API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE, { trainerId, userId, content: messageContent });
+      // Send message to backend for persistence
+      const response = await axiosInstance.post(API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE, { 
+        trainerId, 
+        userId, 
+        content: messageContent 
+      });
       
       const newMessage = {
         id: response.data._id || Date.now(),
@@ -146,10 +221,38 @@ const Chat = () => {
 
       setMessages(prev => [...prev, newMessage]);
 
-      socket.emit("sendMessage", { to: trainerId, message: messageContent });
+      // Send text message via websocket for real-time delivery
+      try {
+        emitTextMessage(trainerId, messageContent);
+      } catch (socketError) {
+        console.error("Socket error:", socketError.message);
+      }
     } catch (error) {
+      console.error("Error sending message:", error);
+      // Restore message if sending fails
       setMessage(messageContent);
     }
+  };
+
+  // Handle typing indicators
+  const handleTyping = (value) => {
+    setMessage(value);
+    
+    if (value.trim() !== '' && !isTyping) {
+      setIsTyping(true);
+      emitTypingStatus(trainerId, true);
+    }
+    
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+      emitTypingStatus(trainerId, false);
+    }, 1000);
   };
 
   const handleFileUpload = (e) => {
@@ -451,6 +554,25 @@ const Chat = () => {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Typing Indicator */}
+                  {trainerTyping && (
+                    <div className="flex items-start gap-3 mb-4 animate-pulse">
+                      <img
+                        src={trainer?.image || "/src/assets/trainer.png"}
+                        alt="Trainer"
+                        className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      />
+                      <div className="bg-[#2A2A3D] text-white p-3 rounded-lg max-w-xs">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div ref={messagesEndRef} />
                 </div>
 
@@ -514,9 +636,14 @@ const Chat = () => {
                         <input
                           type="text"
                           value={message}
-                          onChange={(e) => setMessage(e.target.value)}
+                          onChange={(e) => handleTyping(e.target.value)}
                           placeholder="Type a message..."
                           className="bg-transparent text-white w-full focus:outline-none"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSendMessage();
+                            }
+                          }}
                         />
 
                         <div className="flex items-center gap-2">
