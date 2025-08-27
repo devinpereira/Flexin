@@ -167,7 +167,7 @@ const SubscriberProfile = () => {
 
         // Format subscriber data
         const formattedSubscriber = {
-          id: userData.user.id || subscriberId, // Fixed: use userData.user.id instead of userData.user._id
+          id: userData.user.id || subscriberId,
           name: userData.user.fullName || userData.user.name,
           avatar: userData.user.profileImageUrl || "/src/assets/profile1.png",
           userType: fitnessProfile?.experienceLevel || "Beginner",

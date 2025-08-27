@@ -400,3 +400,25 @@ export const deleteFitnessStatsEntry = async (req, res) => {
         });
     }
 };
+
+// Get fitness profile by user ID
+export const getFitnessProfileById = async (req, res) => {
+    const { userId } = req.params;
+    
+    // Add validation
+    if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+    }
+    
+    try {
+        const existingProfile = await FitnessProfile.findOne({ userId });
+        if (existingProfile) {
+            return res.status(200).json({ exists: true, profile: existingProfile });
+        } else {
+            return res.status(404).json({ exists: false, message: "No fitness profile found" });
+        }
+    } catch (error) {
+        console.error("Error fetching fitness profile by ID:", error);
+        return res.status(500).json({ message: "Error fetching fitness profile", error: error.message });
+    }
+};
