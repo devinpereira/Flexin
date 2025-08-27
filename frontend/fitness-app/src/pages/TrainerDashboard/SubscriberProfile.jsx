@@ -438,7 +438,7 @@ const SubscriberProfile = () => {
                 Health Conditions:
               </span>
               <span className="text-white font-medium">
-                {displaySubscriber.healthConditions}
+                {"None" || displaySubscriber.healthConditions}
               </span>
             </div>
           </div>
