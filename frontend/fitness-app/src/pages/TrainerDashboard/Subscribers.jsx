@@ -1,44 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TrainerDashboardLayout from "../../layouts/TrainerDashboardLayout";
-import { FaUserFriends, FaEnvelopeOpenText, FaSearch, FaEnvelope, FaEye, FaTrash } from "react-icons/fa";
+import {
+  FaUserFriends,
+  FaEnvelopeOpenText,
+  FaSearch,
+  FaEnvelope,
+  FaEye,
+  FaTrash,
+} from "react-icons/fa";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Notification from "../../components/Admin/Notification";
-
-const mockSubscribers = [
-  {
-    id: "u1",
-    name: "Alex Johnson",
-    avatar: "/src/assets/profile1.png",
-    userType: "Beginner",
-    unreadMessages: 2,
-  },
-  {
-    id: "u2",
-    name: "Sarah Miller",
-    avatar: "/src/assets/profile1.png",
-    userType: "Intermediate",
-    unreadMessages: 0,
-  },
-  {
-    id: "u3",
-    name: "Michael Lee",
-    avatar: "/src/assets/profile1.png",
-    userType: "Advanced",
-    unreadMessages: 1,
-  },
-  {
-    id: "u4",
-    name: "Emily Davis",
-    avatar: "/src/assets/profile1.png",
-    userType: "Beginner",
-    unreadMessages: 0,
-  },
-];
+import { getMyTrainerProfile } from "../../api/trainer";
 
 const Subscribers = () => {
   const [search, setSearch] = useState("");
-  const [subscribers, setSubscribers] = useState(mockSubscribers);
+  const [subscribers, setSubscribers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [subscriberToRemove, setSubscriberToRemove] = useState(null);
   const [notification, setNotification] = useState({
@@ -49,6 +28,52 @@ const Subscribers = () => {
     duration: 3000,
   });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchSubscribers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const trainerProfile = await getMyTrainerProfile();
+        if (!trainerProfile?._id) {
+          throw new Error("Could not fetch trainer profile.");
+        }
+
+        const res = await fetch(
+          `/api/v1/subscription/trainer/${trainerProfile._id}`,
+          { headers }
+        );
+        if (!res.ok) {
+          throw new Error("Failed to fetch subscribers.");
+        }
+        const data = await res.json();
+        const subscriberArray = Array.isArray(data.data) ? data.data : [];
+        const formattedSubscribers = subscriberArray.map((sub) => ({
+          id: sub.userId?._id || sub.userId,
+          name: sub.userId?.fullName || "Unknown",
+          avatar: sub.userId?.profileImageUrl || "/src/assets/profile1.png",
+          userType:
+            (sub.package &&
+              sub.package.charAt(0).toUpperCase() + sub.package.slice(1)) ||
+            "Unknown",
+          subscriptionId: sub._id,
+          unreadMessages: 0,
+        }));
+
+        setSubscribers(formattedSubscribers);
+      } catch (err) {
+        setError(err.message);
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubscribers();
+  }, []);
 
   // Filter subscribers by search
   const filteredSubscribers = subscribers.filter(
@@ -62,6 +87,7 @@ const Subscribers = () => {
     navigate(`/trainer/messages?user=${user.id}`);
   };
   const handleViewDetails = (user) => {
+    console.log("Viewing details for user:", user);
     navigate(`/trainer/subscriber-profile/${user.id}`);
   };
 
@@ -71,18 +97,66 @@ const Subscribers = () => {
     setShowConfirm(true);
   };
 
-  const confirmRemoveSubscription = () => {
-    setSubscribers((prev) => prev.filter((s) => s.id !== subscriberToRemove.id));
-    setShowConfirm(false);
-    setNotification({
-      isVisible: true,
-      type: "success",
-      message: `Removed subscription for ${subscriberToRemove.name}`,
-      autoClose: true,
-      duration: 3000,
-    });
-    setSubscriberToRemove(null);
+  const confirmRemoveSubscription = async () => {
+    if (!subscriberToRemove) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `/api/v1/subscription/${subscriberToRemove.subscriptionId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to remove subscription.");
+      }
+
+      setSubscribers((prev) =>
+        prev.filter((s) => s.id !== subscriberToRemove.id)
+      );
+      setNotification({
+        isVisible: true,
+        type: "success",
+        message: `Removed subscription for ${subscriberToRemove.name}`,
+        autoClose: true,
+        duration: 3000,
+      });
+    } catch (err) {
+      setNotification({
+        isVisible: true,
+        type: "error",
+        message: err.message,
+        autoClose: false,
+      });
+    } finally {
+      setShowConfirm(false);
+      setSubscriberToRemove(null);
+    }
   };
+
+  if (loading) {
+    return (
+      <TrainerDashboardLayout activeSection="Subscribers">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-white text-lg">Loading subscribers...</div>
+        </div>
+      </TrainerDashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <TrainerDashboardLayout activeSection="Subscribers">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-red-400 text-lg">Error: {error}</div>
+        </div>
+      </TrainerDashboardLayout>
+    );
+  }
 
   return (
     <TrainerDashboardLayout activeSection="Subscribers">

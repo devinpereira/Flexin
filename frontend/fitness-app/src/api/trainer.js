@@ -116,4 +116,31 @@ export async function updateMyTrainerProfile(profileData) {
   return data.trainer;
 }
 
+// Get current trainer's feedbacks (for trainer dashboard)
+export async function getMyTrainerFeedbacks() {
+  const res = await fetch(`${BASE_URL}/api/v1/trainers/my-feedbacks`, {
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem('token')}`,
+      "Content-Type": "application/json"
+    }
+  });
+  if (!res.ok) throw new Error('Failed to fetch trainer feedbacks');
+  const data = await res.json();
+  return data.feedbacks;
+}
+
+// Remove a specific feedback (for trainer dashboard)
+export async function removeFeedback(feedbackId) {
+  const res = await fetch(`${BASE_URL}/api/v1/trainers/feedbacks/${feedbackId}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem('token')}`,
+      "Content-Type": "application/json"
+    }
+  });
+  if (!res.ok) throw new Error('Failed to remove feedback');
+  const data = await res.json();
+  return data;
+}
+
 

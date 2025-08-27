@@ -57,14 +57,52 @@ const Schedule = () => {
   if (loading) return <div className="text-white p-8">Loading...</div>;
   if (error)
     return (
-      <div className="text-yellow-400 bg-[#23233a] rounded-lg p-8 text-center">
-        <h2 className="text-2xl font-bold mb-2">No Schedule Found</h2>
-        <p>
-          You don't have a schedule with this trainer yet.
-          <br />
-          Please contact your trainer to get started!
-        </p>
-      </div>
+      <TrainerLayout pageTitle="Schedule Not Available">
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-[#121225] border border-[#f67a45]/30 rounded-2xl p-8 text-center">
+            <div className="mb-6">
+              <div className="w-20 h-20 bg-[#f67a45]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BsCalendarWeek className="text-[#f67a45] text-2xl" />
+              </div>
+              <h2 className="text-white text-2xl font-bold mb-2">
+                No Schedule Found
+              </h2>
+              <p className="text-white/70 text-lg">
+                You don't have a workout schedule with this trainer yet.
+              </p>
+            </div>
+
+            <div className="bg-[#18182f] rounded-xl p-6 mb-6">
+              <h3 className="text-white font-semibold mb-3">What's next?</h3>
+              <ul className="text-white/60 text-left space-y-2">
+                <li>
+                  • Contact your trainer to request a personalized schedule
+                </li>
+                <li>
+                  • Your trainer will create a custom workout plan for you
+                </li>
+                <li>• Once assigned, you can start your fitness journey!</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={() => navigate(`/trainers/${trainerId}`)}
+                className="bg-[#f67a45] text-white px-6 py-3 rounded-full hover:bg-[#e56d3d] transition-colors font-medium"
+              >
+                Back to Trainer Profile
+              </button>
+              <button
+                onClick={() => navigate(`/chat/${trainerId}`)}
+                className="bg-gray-700/50 text-white px-6 py-3 rounded-full hover:bg-gray-700 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <BiChat size={16} />
+                Contact Trainer
+              </button>
+            </div>
+          </div>
+        </div>
+      </TrainerLayout>
     );
   if (!trainer) return <div className="text-white p-8">Trainer not found.</div>;
 

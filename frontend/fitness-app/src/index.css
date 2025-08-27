@@ -20,3 +20,78 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Chat message animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Typing indicator animations */
+@keyframes typingDot1 {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes typingDot2 {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+
+  25%,
+  75% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes typingDot3 {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-typing-dot1 {
+  animation: typingDot1 1s infinite;
+}
+
+.animate-typing-dot2 {
+  animation: typingDot2 1s infinite;
+  animation-delay: 0.2s;
+}
+
+.animate-typing-dot3 {
+  animation: typingDot3 1s infinite;
+  animation-delay: 0.4s;
+}

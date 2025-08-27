@@ -13,6 +13,8 @@ import {
   getMyTrainerProfile,
   updateMyTrainerProfile,
   uploadTrainerPhoto,
+  getMyTrainerFeedbacks,
+  removeFeedback,
 } from '../controllers/trainerController.js';
 import upload from '../middleware/uploadMiddleware.js';
 
@@ -26,6 +28,10 @@ router.post('/upload-photo', protect, upload.single('photo'), uploadTrainerPhoto
 // Routes for current trainer's profile management
 router.get('/my-profile', protect, getMyTrainerProfile);
 router.put('/my-profile', protect, updateMyTrainerProfile);
+
+// Routes for current trainer's feedbacks management
+router.get('/my-feedbacks', protect, getMyTrainerFeedbacks);
+router.delete('/feedbacks/:feedbackId', protect, removeFeedback);
 
 router.get('/my-trainers', protect, getTrainersForUser);
 router.post('/add-follower', protect, addFollower);

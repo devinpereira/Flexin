@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import ProfileData from "../models/ProfileData.js";
+import Trainer from "../models/Trainer.js";
 import jwt from "jsonwebtoken";
 import { EMAIL_VERIFY_TEMPLATE, PASSWORD_RESET_TEMPLATE } from "../utils/emailTemplates.js";
 import transporter from "../config/nodemailer.js";
@@ -63,11 +64,18 @@ export const loginUser = async (req, res) => {
         // Check for existing profile data
         const profile = await ProfileData.findOne({ userId: user._id });
 
+        // Check if user is a trainer
+        const trainer = await Trainer.findOne({ userId: user._id }).select("_id");
+
         res.status(200).json({
             id: user._id,
             user: {
                 ...user.toObject(),
                 username: profile?.username || null, // add username if exists
+                ...(trainer && {
+                    trainerId: trainer._id,
+                    isTrainer: true,
+                }),
             },
             token: generateToken(user._id),
         });
@@ -111,10 +119,17 @@ export const getUserInfo = async (req, res) => {
 
     const profile = await ProfileData.findOne({ userId: req.user.id }).select("username bio noOfPosts followers following");
 
+    // Check if user is a trainer
+    const trainer = await Trainer.findOne({ userId: req.user.id }).select("_id");
+
     res.status(200).json({
       ...user.toObject(),
       ...(profile && {
         username: profile.username,
+      }),
+      ...(trainer && {
+        trainerId: trainer._id,
+        isTrainer: true,
       }),
     });
   } catch (err) {

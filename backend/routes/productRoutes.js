@@ -7,15 +7,13 @@ import {
   editProduct,
   deleteProduct,
   addProductReview,
-  getProductReviews,
-  debugStoreData
+  getProductReviews
 } from "../controllers/productController.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 const router = express.Router();
 
 // Public routes
-router.get("/debug", debugStoreData); // Debug route - TEMPORARY
 router.get("/", getProducts);
 router.get("/:id", getProduct);
 router.get("/:id/reviews", getProductReviews);
