@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { FiShoppingCart, FiFilter } from 'react-icons/fi';
@@ -14,6 +14,9 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
   const [showPriceRange, setShowPriceRange] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 1000]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  // Track selected filters
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
   // Refs for dropdown menus to handle outside clicks
   const brandDropdownRef = useRef(null);
@@ -95,20 +98,29 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
     }
   };
 
-  // Handle price range change
+  // Debounced price range change
+  const debounce = (func, delay) => {
+    let timer;
+    return (...args) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => func(...args), delay);
+    };
+  };
+
+  // Use a ref to avoid re-creating debounce on every render
+  const debouncedSetPriceRange = useRef(debounce((newRange) => {
+    setPriceRange(newRange);
+  }, 350)).current;
+
   const handlePriceChange = (e, index) => {
     const newValue = parseInt(e.target.value, 10);
     const newRange = [...priceRange];
-
     if (index === 0) {
-      // Ensure min doesn't exceed max
       newRange[0] = Math.min(newValue, priceRange[1]);
     } else {
-      // Ensure max doesn't go below min
       newRange[1] = Math.max(newValue, priceRange[0]);
     }
-
-    setPriceRange(newRange);
+    debouncedSetPriceRange(newRange);
   };
 
   // Calculate the position and width of the price range track
@@ -120,28 +132,61 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
     setShowMobileFilters(!showMobileFilters);
   };
 
-  // Fetch discounted products from backend
-  useEffect(() => {
-    const fetchDeals = async () => {
+  // Fetch discounted products from backend with filters
+  const fetchDeals = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      // Build filter params
+      const params = {};
+      if (selectedBrands.length > 0) params.brand = selectedBrands.join(',');
+      if (selectedCategories.length > 0) params.category = selectedCategories.join(',');
+      if (priceRange[0] > 0) params.minPrice = priceRange[0];
+      if (priceRange[1] < 1000) params.maxPrice = priceRange[1];
+      params.page = 1;
+      params.limit = 50;
+      params.isActive = true;
+      params.sortBy = 'discountPercentage';
+      params.sortOrder = 'desc';
+
+      console.log('Fetching deals with params:', params);
+
+      // Try using getProducts endpoint instead of searchProducts if the search endpoint is not working
+      let response;
       try {
-        setIsLoading(true);
-        setError(null);
+        // First try searchProducts
+        console.log('Trying searchProducts API endpoint...');
+        response = await productsApi.searchProducts(params);
+        console.log('searchProducts response:', response);
+      } catch (searchError) {
+        console.error('searchProducts failed:', searchError);
+        console.log('Falling back to getProducts API endpoint...');
+        // Fall back to getProducts if searchProducts fails
+        response = await productsApi.getProducts(params);
+        console.log('getProducts response:', response);
+      }
 
-        // Fetch products with discounts/offers
-        const response = await productsApi.getProducts({
-          page: 1,
-          limit: 50,
-          isActive: true,
-          sortBy: 'discountPercentage',
-          sortOrder: 'desc'
-        });
+      if (response && response.success) {
+        console.log('API call successful:', response);
+        const responseData = response.data || response.products || [];
+        console.log('Products from API:', responseData);
 
-        if (response.success) {
-          // Filter products that have discounts or offers
-          const dealsProducts = response.products
-            .filter(product => product.discountPercentage > 0 || product.originalPrice > product.price)
-            .map(product => ({
-              // Keep original structure for ProductView compatibility
+        const dealsProducts = responseData
+          .filter(product => {
+            const price = Number(product.price) || 0;
+            const originalPrice = Number(product.originalPrice) || price;
+            return (product.discountPercentage > 0) || (originalPrice > price);
+          })
+          .map(product => {
+            const price = Number(product.price) || 0;
+            const originalPrice = Number(product.originalPrice) || price;
+            let discount = 0;
+            if (originalPrice > 0 && originalPrice > price) {
+              discount = Math.round(((originalPrice - price) / originalPrice) * 100);
+            } else if (product.discountPercentage) {
+              discount = Math.round(product.discountPercentage);
+            }
+            return {
               _id: product._id,
               id: product._id || product.id,
               name: product.productName || product.name,
@@ -150,14 +195,14 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
               categoryId: product.categoryId,
               subcategoryId: product.subcategoryId,
               brand: product.brand || 'Unknown Brand',
-              price: product.price,
-              originalPrice: product.originalPrice || product.price,
-              discountPercentage: product.discountPercentage || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100),
+              price,
+              originalPrice,
+              discount,
               rating: product.averageRating || 0,
               averageRating: product.averageRating || 0,
               reviewCount: product.reviewCount || 0,
-              image: product.images?.[0] || '/public/default.jpg', // Compatibility
-              images: product.images || [product.images?.[0] || '/public/default.jpg'], // Full array for ProductView
+              image: product.images?.[0] || '/public/default.jpg',
+              images: product.images || [product.images?.[0] || '/public/default.jpg'],
               description: product.description,
               shortDescription: product.shortDescription,
               quantity: product.quantity || 0,
@@ -165,28 +210,37 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
               tags: product.tags || [],
               inStock: product.quantity > 0,
               isFeatured: product.isFeatured,
-              // Keep any other fields that might be needed
               ...product
-            }));
-
-          setProducts(dealsProducts);
-        }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching deals:', error);
-        setError('Failed to load deals. Please try again.');
-        setIsLoading(false);
+            };
+          });
+        console.log('Processed deal products:', dealsProducts);
+        setProducts(dealsProducts);
+        if (dealsProducts.length === 0) setError('No products found');
+      } else {
+        console.warn('API call returned unsuccessful status:', response);
+        setProducts([]);
+        setError('No products found');
       }
-    };
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching deals:', error);
+      console.error('Error details:', error.message);
+      if (error.response) {
+        console.error('Server response:', error.response);
+      }
+      setProducts([]);
+      setError('Failed to load deals. Please try again.');
+      setIsLoading(false);
+    }
+  }, [selectedBrands, selectedCategories, priceRange]);
 
+  // Initial fetch when component mounts
+  useEffect(() => {
     fetchDeals();
-  }, []);
+  }, [fetchDeals]);
 
   return (
     <div>
-      {/* Page Heading */}
-      <h2 className="text-white text-xl md:text-2xl font-bold mb-4">Offers & Deals</h2>
       <hr className="border-gray-600 mb-4" />
 
       {/* Desktop Filter Options */}
@@ -211,6 +265,10 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
                     type="checkbox"
                     id={`brand-${brand}`}
                     className="accent-[#f67a45] w-4 h-4"
+                    checked={selectedBrands.includes(brand)}
+                    onChange={e => {
+                      setSelectedBrands(prev => e.target.checked ? [...prev, brand] : prev.filter(b => b !== brand));
+                    }}
                   />
                   <label htmlFor={`brand-${brand}`} className="text-white cursor-pointer">{brand}</label>
                 </div>
@@ -239,6 +297,10 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
                     type="checkbox"
                     id={`category-${category}`}
                     className="accent-[#f67a45] w-4 h-4"
+                    checked={selectedCategories.includes(category)}
+                    onChange={e => {
+                      setSelectedCategories(prev => e.target.checked ? [...prev, category] : prev.filter(c => c !== category));
+                    }}
                   />
                   <label htmlFor={`category-${category}`} className="text-white cursor-pointer">{category}</label>
                 </div>
@@ -326,7 +388,7 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
           <span>Filters</span>
         </button>
 
-        <span className="text-white text-sm">12 items</span>
+        <span className="text-white text-sm">{products.length} items</span>
       </div>
 
       {/* Mobile Filters Panel */}
@@ -357,6 +419,10 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
                         type="checkbox"
                         id={`mobile-brand-${brand}`}
                         className="accent-[#f67a45] w-5 h-5"
+                        checked={selectedBrands.includes(brand)}
+                        onChange={e => {
+                          setSelectedBrands(prev => e.target.checked ? [...prev, brand] : prev.filter(b => b !== brand));
+                        }}
                       />
                       <label
                         htmlFor={`mobile-brand-${brand}`}
@@ -379,6 +445,10 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
                         type="checkbox"
                         id={`mobile-category-${category}`}
                         className="accent-[#f67a45] w-5 h-5"
+                        checked={selectedCategories.includes(category)}
+                        onChange={e => {
+                          setSelectedCategories(prev => e.target.checked ? [...prev, category] : prev.filter(c => c !== category));
+                        }}
                       />
                       <label
                         htmlFor={`mobile-category-${category}`}
@@ -450,8 +520,8 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
               <button
                 className="flex-1 bg-[#f67a45] text-white py-3 rounded-lg hover:bg-[#e56d3d]"
                 onClick={() => {
-                  // Apply filters logic here
                   setShowMobileFilters(false);
+                  fetchDeals();
                 }}
               >
                 Apply
@@ -500,7 +570,7 @@ const OffersAndDealsView = ({ favorites = [], onToggleFavorite, onAddToCart, add
                     onClick={(e) => handleProductClick(product, e)}
                   >
                     <div className="w-[29px] h-[29px] absolute top-0 right-0 bg-[#e50909] rounded-tr-sm rounded-bl-[7px] flex items-center justify-center text-white text-xs">
-                      {product.discount}%
+                      {typeof product.discount === 'number' ? `${product.discount}%` : '0%'}
                     </div>
 
                     {/* Action buttons group */}
