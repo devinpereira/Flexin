@@ -61,7 +61,7 @@ const Sidebar = ({ activeSection, name, trainer }) => {
   const profileImg = trainer?.profilePicture || "/src/assets/profile1.png";
 
   return (
-    <nav className="bg-[#03020d] rounded-tr-[30px] w-[240px] p-6 h-full flex flex-col">
+    <nav className="bg-[#03020d] rounded-tr-[30px] w-[240px] p-6 h-full flex flex-col mt-25">
       {/* User Profile */}
       <div className="flex flex-col items-center mb-8 pt-6">
         <div className="w-24 h-24 rounded-full overflow-hidden mb-4">

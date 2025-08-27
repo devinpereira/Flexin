@@ -1,41 +1,152 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import TrainerDashboardLayout from "../../layouts/TrainerDashboardLayout";
-import { FaPaperclip, FaImage, FaFile, FaMicrophone, FaPhoneAlt, FaStopCircle, FaPlay } from 'react-icons/fa';
-import { MdArrowBack, MdSend } from 'react-icons/md';
-import { BsEmojiSmile } from 'react-icons/bs';
+import { MdArrowBack } from 'react-icons/md';
 // --- Socket.IO client import ---
-import { io } from "socket.io-client";
+import { getSocket, connectSocket } from "../../utils/socket";
+import { BASE_URL } from "../../utils/apiPaths";
+
+// Import components
+import ChatSidebar from '../../components/TrainerDashboard/ChatSidebar';
+import ChatHeader from '../../components/TrainerDashboard/ChatHeader';
+import MessageBubble from '../../components/TrainerDashboard/MessageBubble';
+import MessageInput from '../../components/TrainerDashboard/MessageInput';
+import AppointmentModal from '../../components/TrainerDashboard/AppointmentModal';
 
 const Chat = () => {
   const { subscriberId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
-  const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState(null);
+  const [subscribers, setSubscribers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [unreadCounts, setUnreadCounts] = useState({});
   const messagesEndRef = useRef(null);
+  const messageAreaRef = useRef(null);
+  const inputTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Mock subscriber data
-  const subscriber = {
-    id: subscriberId,
-    name: "Alex Johnson",
-    image: "/src/assets/profile1.png",
-    specialty: "Beginner",
-    status: "Online"
-  };
+  // Get current subscriber data from subscribers list or use mock data if not found
+  const subscriber = useMemo(() => {
+    if (!subscriberId) return null;
+    return subscribers.find(sub => sub.id === subscriberId) || {
+      id: subscriberId,
+      name: "Alex Johnson",
+      image: "/src/assets/profile1.png",
+      specialty: "Beginner",
+      status: "Online",
+      isTyping: false,
+    };
+  }, [subscriberId, subscribers]);
 
-  // --- Replace with your actual trainer ID logic ---
+  // --- Get trainer ID ---
   const trainerId = localStorage.getItem("trainerId") || "demoTrainerId";
 
-  // --- Socket.IO connection (memoized) ---
-  const socket = useMemo(() => io("http://localhost:8000", {
-    auth: { token: localStorage.getItem("token") }
-  }), []);
+  // --- Socket.IO connection ---
+  const socket = useMemo(() => {
+    const token = localStorage.getItem("token");
+    return token ? connectSocket(token) : null;
+  }, []);
+
+  // --- Initialize mock subscribers data ---
+  useEffect(() => {
+    // In a real app, this would be fetched from an API
+    const mockSubscribers = [
+      {
+        id: "sub1",
+        name: "Alex Johnson",
+        image: "/src/assets/profile1.png",
+        specialty: "Beginner",
+        status: "Online",
+        lastMessage: {
+          text: "How's my progress on the routine?",
+          time: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
+        },
+      },
+      {
+        id: "sub2",
+        name: "Sarah Williams",
+        image: "/src/assets/posts/workout1.png",
+        specialty: "Intermediate",
+        status: "Offline",
+        lastMessage: {
+          text: "Thanks for the new schedule!",
+          time: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+        },
+      },
+      {
+        id: "sub3",
+        name: "Mike Chen",
+        image: "/src/assets/medal2.png",
+        specialty: "Advanced",
+        status: "Online",
+        lastMessage: {
+          text: "I completed yesterday's workout",
+          time: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
+        },
+      },
+    ];
+
+    setSubscribers(mockSubscribers);
+    setOnlineUsers(["sub1", "sub3"]);
+    setUnreadCounts({
+      sub1: 2,
+      sub2: 0,
+      sub3: 5,
+    });
+  }, []);
+
+  // --- Load previous messages ---
+  useEffect(() => {
+    if (subscriberId) {
+      // In a real app, you would fetch messages from an API
+      // For now, we'll use mock data
+      const mockPreviousMessages = [
+        {
+          id: 1,
+          sender: "trainer",
+          text: "Good morning! How are you feeling today?",
+          time: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+          isRead: true
+        },
+        {
+          id: 2,
+          sender: "user",
+          text: "Morning! I'm feeling great. The new workout routine is really helping.",
+          time: new Date(Date.now() - 1000 * 60 * 60 * 23).toISOString(), // 23 hours ago
+        },
+        {
+          id: 3,
+          sender: "trainer",
+          text: "That's fantastic to hear! Make sure to stretch properly before starting today's session.",
+          time: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(), // 22 hours ago
+          isRead: true
+        },
+        {
+          id: 4,
+          sender: "user",
+          text: "Will do. I had a question about the nutrition plan though. Can I substitute quinoa with rice?",
+          time: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+        },
+      ];
+
+      setMessages(mockPreviousMessages);
+
+      // Mark messages as read when opening chat
+      if (unreadCounts[subscriberId]) {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [subscriberId]: 0
+        }));
+      }
+    }
+  }, [subscriberId]);
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -44,38 +155,138 @@ const Chat = () => {
 
   // --- Listen for incoming messages from Socket.IO ---
   useEffect(() => {
-    socket.on("receiveMessage", (msg) => {
-      setMessages(prev => [
-        ...prev,
-        {
-          id: prev.length + 1,
+    if (socket) {
+      // Listen for incoming messages
+      socket.on("receiveMessage", (msg) => {
+        const newMessage = {
+          id: Date.now(),
           sender: msg.from === trainerId ? "trainer" : "user",
           text: msg.message,
-          time: new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          time: msg.time || new Date().toISOString(),
+        };
+
+        setMessages(prev => [...prev, newMessage]);
+
+        // Update last message for the subscriber
+        if (msg.from !== trainerId) {
+          setSubscribers(prev =>
+            prev.map(sub =>
+              sub.id === subscriberId
+                ? {
+                  ...sub,
+                  lastMessage: {
+                    text: msg.message,
+                    time: msg.time || new Date().toISOString()
+                  }
+                }
+                : sub
+            )
+          );
         }
-      ]);
-    });
-    return () => socket.off("receiveMessage");
-  }, [socket, trainerId]);
+      });
+
+      // Listen for typing indicators
+      socket.on("userTyping", ({ userId, isTyping }) => {
+        if (userId === subscriberId) {
+          setSubscribers(prev =>
+            prev.map(sub =>
+              sub.id === subscriberId
+                ? { ...sub, isTyping }
+                : sub
+            )
+          );
+        }
+      });
+
+      // Listen for online status updates
+      socket.on("userStatusChange", ({ userId, status }) => {
+        if (status === 'online') {
+          setOnlineUsers(prev => [...prev, userId]);
+        } else {
+          setOnlineUsers(prev => prev.filter(id => id !== userId));
+        }
+      });
+
+      return () => {
+        socket.off("receiveMessage");
+        socket.off("userTyping");
+        socket.off("userStatusChange");
+      };
+    }
+  }, [socket, trainerId, subscriberId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // --- Handle typing indicator ---
+  const handleTyping = () => {
+    if (socket && subscriberId) {
+      // Clear previous timeout
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+
+      // If not currently set as typing, emit event
+      if (!typing) {
+        setTyping(true);
+        socket.emit("typing", { to: subscriberId, isTyping: true });
+      }
+
+      // Set timeout to stop typing indicator after 3 seconds of inactivity
+      const timeout = setTimeout(() => {
+        setTyping(false);
+        socket.emit("typing", { to: subscriberId, isTyping: false });
+      }, 3000);
+
+      setTypingTimeout(timeout);
+    }
+  };
+
   // --- Send message via Socket.IO ---
   const handleSendMessage = () => {
-    if (message.trim() === '') return;
-    socket.emit("sendMessage", { to: subscriberId, message });
-    setMessages(prev => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        sender: "trainer",
-        text: message,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isRead: false
+    if (!message.trim()) return;
+
+    const newMsg = {
+      id: Date.now(),
+      sender: "trainer",
+      text: message,
+      time: new Date().toISOString(),
+      isRead: false
+    };
+
+    setMessages(prev => [...prev, newMsg]);
+
+    // Update last message for the subscriber
+    setSubscribers(prev =>
+      prev.map(sub =>
+        sub.id === subscriberId
+          ? {
+            ...sub,
+            lastMessage: {
+              text: message,
+              time: new Date().toISOString()
+            }
+          }
+          : sub
+      )
+    );
+
+    // Send message via socket
+    if (socket && subscriberId) {
+      socket.emit("sendMessage", { to: subscriberId, message });
+
+      // Stop typing indicator
+      if (typing) {
+        setTyping(false);
+        socket.emit("typing", { to: subscriberId, isTyping: false });
+        if (typingTimeout) {
+          clearTimeout(typingTimeout);
+          setTypingTimeout(null);
+        }
       }
-    ]);
+    }
+
     setMessage('');
   };
 
@@ -83,287 +294,233 @@ const Chat = () => {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const newMessage = {
-      id: messages.length + 1,
+      id: Date.now(),
       sender: 'trainer',
       file: {
         name: file.name,
         type: file.type,
         size: file.size
       },
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: new Date().toISOString(),
       isRead: false
     };
-    setMessages([...messages, newMessage]);
-    setShowAttachmentOptions(false);
+
+    setMessages(prev => [...prev, newMessage]);
+
+    // In a real implementation, you would upload the file to a server
+    // and send the URL via socket
   };
 
   // Handle voice recording
   const toggleRecording = () => {
     if (isRecording) {
       setIsRecording(false);
+      const recordedDuration = recordingTime;
       setRecordingTime(0);
+
       const newMessage = {
-        id: messages.length + 1,
+        id: Date.now(),
         sender: 'trainer',
         voiceMessage: true,
-        duration: recordingTime,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        duration: recordedDuration,
+        time: new Date().toISOString(),
         isRead: false
       };
-      setMessages([...messages, newMessage]);
+
+      setMessages(prev => [...prev, newMessage]);
+
+      // In a real implementation, you would upload the recording to a server
+      // and send the URL via socket
     } else {
       setIsRecording(true);
       const timer = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
-      return () => clearInterval(timer);
+
+      // Store interval ID for cleanup
+      inputTimeoutRef.current = timer;
     }
   };
 
-  // Format recording time
+  // Format time for display
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Handle appointment scheduling
+  const handleScheduleAppointment = ({ date, time }) => {
+    setShowAppointmentModal(false);
+
+    const formattedDate = new Date(date);
+    const formattedTime = new Date(`${date}T${time}`).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    setTimeout(() => {
+      const appointmentMsg = {
+        id: Date.now(),
+        sender: 'trainer',
+        text: `I've scheduled a video call for ${formattedDate.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric'
+        })} at ${formattedTime}.`,
+        time: new Date().toISOString(),
+        isRead: false
+      };
+      setMessages(prev => [...prev, appointmentMsg]);
+
+      // Simulate user response
+      setTimeout(() => {
+        const userResponse = {
+          id: Date.now() + 1,
+          sender: 'user',
+          text: 'Great! Looking forward to our discussion!',
+          time: new Date(Date.now() + 1000 * 60).toISOString(), // 1 minute later
+        };
+        setMessages(prev => [...prev, userResponse]);
+      }, 1500);
+    }, 500);
+  };
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      if (inputTimeoutRef.current) {
+        clearInterval(inputTimeoutRef.current);
+      }
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+    };
+  }, [typingTimeout]);
+
+  if (!subscriberId && subscribers.length > 0) {
+    // If no subscriber selected, navigate to first subscriber
+    return (
+      <TrainerDashboardLayout activeSection="Messages">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+          <div className="lg:col-span-1">
+            <ChatSidebar
+              subscribers={subscribers}
+              onlineUsers={onlineUsers}
+              unreadCounts={unreadCounts}
+            />
+          </div>
+          <div className="lg:col-span-2 hidden lg:flex items-center justify-center h-[70vh] bg-[#121225] border border-[#f67a45]/30 rounded-lg">
+            <div className="text-center p-6">
+              <h3 className="text-white text-lg font-medium mb-2">Select a conversation</h3>
+              <p className="text-gray-400">Choose a subscriber from the list to start chatting</p>
+            </div>
+          </div>
+        </div>
+      </TrainerDashboardLayout>
+    );
+  }
+
   return (
     <TrainerDashboardLayout activeSection="Messages">
-      <button
-        onClick={() => navigate("/trainer/subscribers")}
-        className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
-      >
-        <MdArrowBack size={20} />
-        <span>Back to Subscribers</span>
-      </button>
+      {/* Mobile Back Button */}
+      <div className="lg:hidden">
+        <button
+          onClick={() => navigate("/trainer/subscribers")}
+          className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
+        >
+          <MdArrowBack size={20} />
+          <span>Back to Subscribers</span>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
+        {/* Chat Sidebar (only visible on large screens) */}
+        <div className="lg:col-span-1 hidden lg:block">
+          <ChatSidebar
+            subscribers={subscribers}
+            onlineUsers={onlineUsers}
+            unreadCounts={unreadCounts}
+          />
+        </div>
+
         {/* Message area */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6 h-fit">
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden mb-4 sm:mb-8 flex flex-col h-[70vh]">
             {/* Chat Header */}
-            <div className="bg-[#1A1A2F] p-3 sm:p-4 flex items-center justify-between border-b border-gray-700">
-              <div className="flex items-center">
-                <div className="relative">
-                  <img
-                    src={subscriber.image}
-                    alt={subscriber.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = '/src/assets/profile1.png';
-                    }}
-                  />
-                  <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${subscriber.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'
-                    } border-2 border-[#1A1A2F]`}></div>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-white font-medium">{subscriber.name}</h3>
-                  <p className="text-gray-400 text-xs">{subscriber.status}</p>
-                </div>
-              </div>
-              <button
-                className="bg-[#f67a45]/20 text-[#f67a45] p-2 rounded-full hover:bg-[#f67a45]/30"
-                onClick={() => setShowAppointmentModal(true)}
-              >
-                <FaPhoneAlt size={16} />
-              </button>
-            </div>
+            <ChatHeader
+              subscriber={subscriber}
+              onShowAppointmentModal={() => setShowAppointmentModal(true)}
+            />
+
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 overflow-x-hidden">
+            <div
+              className="flex-1 overflow-y-auto p-4 space-y-4 overflow-x-hidden"
+              ref={messageAreaRef}
+            >
+              {/* Date separator */}
+              <div className="flex justify-center my-4">
+                <span className="bg-[#1A1A2F] text-gray-400 text-xs px-4 py-1 rounded-full">
+                  {new Date().toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+
               <div className="w-full">
                 {messages.map((msg) => (
-                  <div
+                  <MessageBubble
                     key={msg.id}
-                    className={`flex ${msg.sender === 'trainer' ? 'justify-end' : 'justify-start'} mb-4 w-full`}
-                  >
-                    {msg.sender === 'user' && (
-                      <img
-                        src={subscriber.image}
-                        alt={subscriber.name}
-                        className="w-8 h-8 rounded-full mr-2 mt-1 object-cover flex-shrink-0"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/src/assets/profile1.png';
-                        }}
-                      />
-                    )}
-                    <div
-                      className={`max-w-[75%] rounded-lg p-3 ${msg.sender === 'trainer'
-                        ? 'bg-[#f67a45] text-white rounded-tr-none'
-                        : 'bg-[#1A1A2F] text-white rounded-tl-none'
-                        }`}
-                    >
-                      {msg.image && (
-                        <div className="mb-2">
-                          <img
-                            src={msg.image}
-                            alt="Shared"
-                            className="rounded-lg max-w-full h-auto"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = '/src/assets/image-placeholder.jpg';
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {msg.file && (
-                        <div className="flex items-center bg-white/10 rounded-lg p-2 mb-2">
-                          <FaFile className="text-white mr-2" />
-                          <div className="overflow-hidden">
-                            <p className="truncate text-white/90 text-sm">{msg.file.name}</p>
-                            <p className="text-white/60 text-xs">
-                              {(msg.file.size / 1024).toFixed(1)} KB
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {msg.voiceMessage && (
-                        <div className="flex items-center gap-3">
-                          <button className="text-white p-1 bg-white/10 rounded-full">
-                            <FaPlay size={12} />
-                          </button>
-                          <div className="w-32 h-1 bg-white/20 rounded-full">
-                            <div className="h-full w-1/3 bg-white rounded-full"></div>
-                          </div>
-                          <span className="text-white/60 text-xs">{formatTime(msg.duration)}</span>
-                        </div>
-                      )}
-
-                      {msg.text && <p>{msg.text}</p>}
-
-                      <div className={`text-xs mt-1 flex justify-end items-center gap-1 ${msg.sender === 'trainer' ? 'text-white/70' : 'text-white/50'
-                        }`}>
-                        {msg.time}
-                        {msg.sender === 'trainer' && (
-                          <span>
-                            {msg.isRead ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M9.707 7.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L12 9.586l-2.293-2.293z" />
-                              </svg>
-                            ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {msg.sender === 'trainer' && (
-                      <img
-                        src="/src/assets/profile1.png"
-                        alt="You"
-                        className="w-8 h-8 rounded-full ml-2 mt-1 object-cover flex-shrink-0"
-                      />
-                    )}
-                  </div>
+                    msg={msg}
+                    subscriberImage={subscriber?.image}
+                    formatTime={formatTime}
+                  />
                 ))}
               </div>
-              <div ref={messagesEndRef} />
-            </div>
-            {/* Message Input Area */}
-            <div className="bg-[#1A1A2F] p-3 border-t border-gray-700 flex-shrink-0">
-              {isRecording ? (
-                <div className="flex items-center justify-between bg-[#121225] rounded-full px-4 py-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                    <span className="text-white">{formatTime(recordingTime)}</span>
+
+              {/* Typing indicator */}
+              {subscriber?.isTyping && (
+                <div className="flex justify-start mb-2">
+                  <div className="bg-[#1A1A2F]/50 text-white rounded-lg py-2 px-3 flex items-center space-x-1 max-w-[100px]">
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing-dot1"></div>
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing-dot2"></div>
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-typing-dot3"></div>
                   </div>
-                  <button
-                    className="bg-red-500 text-white p-2 rounded-full"
-                    onClick={toggleRecording}
-                  >
-                    <FaStopCircle size={20} />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <button
-                      className="text-white/70 hover:text-white p-2"
-                      onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}
-                    >
-                      <FaPaperclip size={18} />
-                    </button>
-                    {showAttachmentOptions && (
-                      <div className="absolute bottom-12 left-0 bg-[#121225] rounded-lg shadow-lg p-2 flex flex-col gap-2">
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                        <button
-                          className="flex items-center gap-2 p-2 hover:bg-[#1A1A2F] rounded text-white text-sm"
-                          onClick={() => {
-                            fileInputRef.current.accept = "image/*";
-                            fileInputRef.current.click();
-                          }}
-                        >
-                          <FaImage size={16} />
-                          <span>Image</span>
-                        </button>
-                        <button
-                          className="flex items-center gap-2 p-2 hover:bg-[#1A1A2F] rounded text-white text-sm"
-                          onClick={() => {
-                            fileInputRef.current.accept = ".pdf,.doc,.docx,.xlsx";
-                            fileInputRef.current.click();
-                          }}
-                        >
-                          <FaFile size={16} />
-                          <span>Document</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 bg-[#121225] rounded-full px-4 py-2 flex items-center">
-                    <input
-                      type="text"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      className="bg-transparent text-white w-full focus:outline-none"
-                    />
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="text-white/70 hover:text-white p-1"
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      >
-                        <BsEmojiSmile size={18} />
-                      </button>
-                    </div>
-                  </div>
-                  {message.trim() ? (
-                    <button
-                      className="bg-[#f67a45] text-white p-3 rounded-full"
-                      onClick={handleSendMessage}
-                    >
-                      <MdSend size={18} />
-                    </button>
-                  ) : (
-                    <button
-                      className="bg-[#f67a45] text-white p-3 rounded-full"
-                      onClick={toggleRecording}
-                    >
-                      <FaMicrophone size={18} />
-                    </button>
-                  )}
                 </div>
               )}
+
+              <div ref={messagesEndRef} />
             </div>
+
+            {/* Message Input Area */}
+            <MessageInput
+              message={message}
+              setMessage={(val) => {
+                setMessage(val);
+                handleTyping();
+              }}
+              handleSendMessage={handleSendMessage}
+              handleFileUpload={handleFileUpload}
+              isRecording={isRecording}
+              recordingTime={recordingTime}
+              toggleRecording={toggleRecording}
+              formatTime={formatTime}
+            />
           </div>
         </div>
+
         {/* Sidebar - Subscriber Info */}
         <div className="lg:col-span-1 space-y-4 sm:space-y-6 h-fit">
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 sticky top-4">
             <div className="flex flex-col items-center mb-4 sm:mb-6">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 sm:mb-4">
                 <img
-                  src={subscriber.image}
-                  alt={subscriber.name}
+                  src={subscriber?.image}
+                  alt={subscriber?.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
@@ -371,8 +528,8 @@ const Chat = () => {
                   }}
                 />
               </div>
-              <h3 className="text-white text-lg font-medium text-center">{subscriber.name}</h3>
-              <p className="text-gray-400 mb-2 text-sm text-center">{subscriber.specialty}</p>
+              <h3 className="text-white text-lg font-medium text-center">{subscriber?.name}</h3>
+              <p className="text-gray-400 mb-2 text-sm text-center">{subscriber?.specialty}</p>
               <a
                 onClick={() => navigate(`/trainer/subscriber-profile/${subscriberId}`)}
                 className="text-[#f67a45] hover:underline text-sm cursor-pointer"
@@ -396,63 +553,14 @@ const Chat = () => {
           </div>
         </div>
       </div>
+
       {/* Appointment Modal */}
       {showAppointmentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121225] rounded-xl max-w-md w-full p-4 sm:p-6">
-            <h3 className="text-white text-lg font-bold mb-4">Schedule a Call</h3>
-            <p className="text-white/70 mb-4">Set up a video call with {subscriber.name} to discuss their fitness goals in detail.</p>
-            <div className="mb-4">
-              <label className="block text-white text-sm font-medium mb-2">Select Date</label>
-              <input
-                type="date"
-                className="w-full px-4 py-2 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white"
-              />
-            </div>
-            <div className="mb-6">
-              <label className="block text-white text-sm font-medium mb-2">Select Time</label>
-              <input
-                type="time"
-                className="w-full px-4 py-2 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white"
-              />
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowAppointmentModal(false)}
-                className="px-4 py-2 border border-gray-700 rounded-lg text-white hover:bg-white/10"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowAppointmentModal(false);
-                  setTimeout(() => {
-                    const appointmentMsg = {
-                      id: messages.length + 1,
-                      sender: 'trainer',
-                      text: 'I\'ve scheduled a video call for tomorrow at 3:00 PM.',
-                      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                      isRead: false
-                    };
-                    setMessages(prev => [...prev, appointmentMsg]);
-                    setTimeout(() => {
-                      const userResponse = {
-                        id: messages.length + 2,
-                        sender: 'user',
-                        text: 'Great! Looking forward to our discussion!',
-                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      };
-                      setMessages(prev => [...prev, userResponse]);
-                    }, 1500);
-                  }, 500);
-                }}
-                className="px-4 py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d]"
-              >
-                Schedule
-              </button>
-            </div>
-          </div>
-        </div>
+        <AppointmentModal
+          subscriber={subscriber}
+          onClose={() => setShowAppointmentModal(false)}
+          onSchedule={handleScheduleAppointment}
+        />
       )}
     </TrainerDashboardLayout>
   );
