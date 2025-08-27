@@ -196,13 +196,13 @@ const Navbar = () => {
       <nav className="fixed top-0 md:top-5 left-0 right-0 z-50 bg-black/30 rounded-none md:rounded-[15px] backdrop-blur-[10.25px] p-2 md:mx-4 lg:mx-8">
         <div className="container mx-auto flex items-center justify-between">
           {/* Left side - Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="py-2 transition-transform hover:scale-105 duration-300">
-              <img src="/src/assets/logo.png" alt="Logo" width="100" height="40" className="cursor-pointer" />
-            </Link>
+            <div className="flex items-center">
+              <Link to="/" className="py-2 transition-transform hover:scale-105 duration-300">
+                <img src="/src/assets/logo.svg" alt="Logo" width="40" height="40" className="cursor-pointer md:ml-15" />
+              </Link>
 
-            {/* Desktop Navigation Links */}
-            <div className="hidden md:flex space-x-4 lg:space-x-8 ml-4 md:ml-10 lg:ml-20">
+                {/* Desktop Navigation Links */}
+            <div className="hidden md:flex space-x-4 lg:space-x-8 ml-4 md:ml-10 lg:ml-18">
               <Link
                 to="/calculators"
                 className={`text-white ${isLinkActive('/calculators') ? 'text-[#f67a45]' : 'hover:text-[#f67a45]'} text-base lg:text-lg px-2 py-1 relative group transition-all duration-300`}
@@ -230,6 +230,14 @@ const Navbar = () => {
               >
                 COMMUNITY
                 <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/community') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+              </Link>
+              <Link
+                to="/help"
+                className={`text-white ${isLinkActive('/help') || isLinkActive('/user-manual') ? 'text-[#f67a45]' : 'hover:text-[#f67a45]'} text-base lg:text-lg px-2 py-1 relative group transition-all duration-300 flex items-center`}
+              >
+                <FaQuestion className="mr-1" size={14} />
+                HELP
+                <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/help') || isLinkActive('/user-manual') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
 
               {/* Admin link - only visible for admin users */}
@@ -527,6 +535,13 @@ const Navbar = () => {
               className={`block py-3 text-lg transition-colors duration-200 ${isLinkActive('/community') ? 'text-[#f67a45]' : 'text-white hover:text-[#f67a45]'}`}
             >
               COMMUNITY
+            </Link>
+            <Link
+              to="/help"
+              className={`block py-3 text-lg transition-colors duration-200 ${isLinkActive('/help') || isLinkActive('/user-manual') ? 'text-[#f67a45]' : 'text-white hover:text-[#f67a45]'} flex items-center`}
+            >
+              <FaQuestion className="mr-2" size={16} />
+              HELP
             </Link>
 
             {/* Admin section in mobile menu - only for admin users */}
