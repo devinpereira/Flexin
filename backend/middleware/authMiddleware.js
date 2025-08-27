@@ -15,3 +15,22 @@ export const protect = async (req, res, next) => {
         res.status(401).json({ message: "Not authorized, token failed" })
     }
 };
+
+// Middleware for optional authentication - doesn't return 401 if no token
+export const optionalAuth = async (req, res, next) => {
+    let token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+        req.user = null;
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = await User.findById(decoded.id).select("-password");
+        next();
+    } catch (err) {
+        // Invalid token but we still continue
+        req.user = null;
+        next();
+    }
+};

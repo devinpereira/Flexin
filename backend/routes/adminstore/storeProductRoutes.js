@@ -1,4 +1,5 @@
 import express from "express";
+import { optionalAuth } from "../../middleware/authMiddleware.js";
 import {
     getAllProducts,
     getProductById,
@@ -31,7 +32,7 @@ const router = express.Router();
 // Product CRUD Routes
 router.get("/", getAllProducts);
 router.get("/search", searchProducts);
-router.get("/featured", getFeaturedProducts);
+router.get("/featured", optionalAuth, getFeaturedProducts);
 router.get("/analytics", getProductAnalytics);
 router.get("/export", exportProducts);
 router.get("/:id", getProductById);

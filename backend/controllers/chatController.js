@@ -2,12 +2,35 @@ import Chat from '../models/Chat.js';
 import User from '../models/User.js';
 import mongoose from 'mongoose';
 
+// Text message validation utility
+const validateTextMessage = (content) => {
+  if (typeof content !== 'string') {
+    return { isValid: false, error: 'Message must be a string' };
+  }
+  
+  if (!content.trim()) {
+    return { isValid: false, error: 'Message cannot be empty' };
+  }
+  
+  if (content.length > 1000) {
+    return { isValid: false, error: 'Message is too long (max 1000 characters)' };
+  }
+  
+  return { isValid: true };
+};
+
 // Create a new chat or add a message to an existing chat (POST)
 export const createOrAddMessage = async (req, res) => {
 	try {
 		const { trainerId, userId, content } = req.body;
 		if (!trainerId || !userId || !content) {
 			return res.status(400).json({ message: 'trainerId, userId, and content are required.' });
+		}
+
+		// Validate text message content
+		const validation = validateTextMessage(content);
+		if (!validation.isValid) {
+			return res.status(400).json({ message: validation.error });
 		}
 
 		// Determine sender based on the authenticated user
@@ -19,10 +42,10 @@ export const createOrAddMessage = async (req, res) => {
 			chat = new Chat({
 				trainerId,
 				userId,
-				messages: [{ sender: senderId, content }],
+				messages: [{ sender: senderId, content: content.trim() }],
 			});
 		} else {
-			chat.messages.push({ sender: senderId, content });
+			chat.messages.push({ sender: senderId, content: content.trim() });
 		}
 		await chat.save();
 		return res.status(201).json(chat);
@@ -66,6 +89,13 @@ export const updateMessage = async (req, res) => {
     if (!chatId || !messageId || !content) {
       return res.status(400).json({ message: 'chatId, messageId, and content are required.' });
     }
+
+    // Validate text message content
+    const validation = validateTextMessage(content);
+    if (!validation.isValid) {
+      return res.status(400).json({ message: validation.error });
+    }
+
     const chat = await Chat.findById(chatId);
     if (!chat) {
       return res.status(404).json({ message: 'Chat not found.' });
@@ -74,7 +104,7 @@ export const updateMessage = async (req, res) => {
     if (!message) {
       return res.status(404).json({ message: 'Message not found.' });
     }
-    message.content = content;
+    message.content = content.trim();
     await chat.save();
     return res.status(200).json(chat);
   } catch (error) {

@@ -226,7 +226,7 @@ const OrderDetails = () => {
 
     const statusSteps = getStatusSteps(order.orderStatus);
     const subtotal = calculateSubtotal();
-    const shipping = order.pricing?.shippingCost || 10.99; // Use order shipping cost or fallback
+    const shipping = order.pricing?.shippingCost || 0; // Free shipping
     const total = order.pricing?.totalPrice || order.totalPrice || (subtotal + shipping);
 
     return (
@@ -421,7 +421,7 @@ const OrderDetails = () => {
 
                                         <div className="flex justify-between">
                                             <span className="text-white/70">Shipping:</span>
-                                            <span className="text-white">${shipping.toFixed(2)}</span>
+                                            <span className="text-green-400">Free</span>
                                         </div>
 
                                         {order.pricing?.taxAmount > 0 && (

@@ -110,7 +110,7 @@ export const createOrder = async (req, res) => {
         }
 
         // Calculate pricing
-        const shippingCost = 10.99; // Fixed shipping cost
+        const shippingCost = 0; // Free shipping
         const taxAmount = 0; // No tax for now
         const discountAmount = 0; // No discount for now
         const totalPrice = subtotal + shippingCost + taxAmount - discountAmount;

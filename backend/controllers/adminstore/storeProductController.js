@@ -8,6 +8,7 @@ import {
 import { cloudinary } from "../../config/cloudinary.js";
 import mongoose from "mongoose";
 import ProductReview from "../../models/ProductReview.js";
+import FitnessProfile from "../../models/FitnessProfile.js";
 
 // Get All Products (Admin)
 export const getAllProducts = async (req, res) => {
@@ -611,10 +612,51 @@ export const searchProducts = async (req, res) => {
 // Get Featured Products
 export const getFeaturedProducts = async (req, res) => {
     try {
-        const products = await StoreProduct.find({ isFeatured: true, status: 'active' })
-            .populate('categoryId')
-            .populate('subcategoryId')
-            .limit(20);
+        // Helper function to normalize fitness goal for tag matching
+        function normalizeGoal(goal) {
+            // Simply remove spaces and convert to lowercase
+            return goal.toLowerCase().replace(/\s+/g, '');
+        }
+
+        let filter = { status: 'active' };
+        let userHasGoals = false;
+
+        // Check if user is authenticated and has fitness goals
+        if (req.user) {
+            // Find user's fitness profile
+            const fitnessProfile = await FitnessProfile.findOne({ userId: req.user._id });
+
+            if (fitnessProfile && fitnessProfile.goal && fitnessProfile.goal.length > 0) {
+                // Normalize user's fitness goals for tag matching
+                const normalizedGoals = fitnessProfile.goal.map(normalizeGoal);
+
+                // Look for products with tags matching user's goals
+                if (normalizedGoals.length > 0) {
+                    userHasGoals = true;
+                    filter = {
+                        status: 'active',
+                        tags: { $in: normalizedGoals }
+                    };
+                }
+            }
+        }
+
+        // Get personalized products based on fitness goals
+        let products = [];
+        if (userHasGoals) {
+            products = await StoreProduct.find(filter)
+                .populate('categoryId')
+                .populate('subcategoryId')
+                .limit(20);
+        }
+
+        // If no matching products found or user has no fitness goals, fall back to featured products
+        if (!userHasGoals || products.length === 0) {
+            products = await StoreProduct.find({ isFeatured: true, status: 'active' })
+                .populate('categoryId')
+                .populate('subcategoryId')
+                .limit(20);
+        }
 
         res.status(200).json({
             success: true,

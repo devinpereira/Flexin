@@ -216,29 +216,51 @@ export const updateOrderStatus = async (req, res) => {
                             newReserved: inventoryToUpdateDelivered.stock.reservedStock,
                             deducted: item.quantity
                         });
+
+                        // Create stock history record
+                        await StoreStockHistory.create({
+                            productId: item.productId,
+                            sku: item.sku,
+                            transaction: {
+                                type: 'out',
+                                reason: 'sale',
+                                quantity: item.quantity
+                            },
+                            stock: {
+                                previousStock: originalStock, // Use actual previous stock value
+                                newStock: inventoryToUpdateDelivered.stock.currentStock, // Use actual new stock value
+                                difference: inventoryToUpdateDelivered.stock.currentStock - originalStock // Calculate difference explicitly
+                            },
+                            reference: order.orderNumber,
+                            relatedDocument: {
+                                documentType: 'order',
+                                documentId: order._id
+                            }
+                        });
                     } else {
                         console.error(`Inventory record for product ${item.productId} not found for delivery update`);
-                    }
 
-                    // Create stock history record
-                    await StoreStockHistory.create({
-                        productId: item.productId,
-                        sku: item.sku,
-                        transaction: {
-                            type: 'out',
-                            reason: 'sale',
-                            quantity: item.quantity
-                        },
-                        stock: {
-                            previousStock: 0, // Will be updated by pre-save middleware
-                            newStock: 0 // Will be updated by pre-save middleware
-                        },
-                        reference: order.orderNumber,
-                        relatedDocument: {
-                            documentType: 'order',
-                            documentId: order._id
-                        }
-                    });
+                        // Create a basic stock history record with default values
+                        await StoreStockHistory.create({
+                            productId: item.productId,
+                            sku: item.sku || 'unknown',
+                            transaction: {
+                                type: 'out',
+                                reason: 'sale',
+                                quantity: item.quantity
+                            },
+                            stock: {
+                                previousStock: 0, // Default since we don't have the inventory
+                                newStock: 0,      // Default since we don't have the inventory
+                                difference: 0     // No change since we don't have the inventory
+                            },
+                            reference: order.orderNumber,
+                            relatedDocument: {
+                                documentType: 'order',
+                                documentId: order._id
+                            }
+                        });
+                    }
 
                     // Update product sales count - using direct modification to trigger hooks
                     const productForSalesCount = await StoreProduct.findById(item.productId);

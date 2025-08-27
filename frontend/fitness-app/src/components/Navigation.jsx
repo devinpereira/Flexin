@@ -204,11 +204,11 @@ const Navbar = () => {
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex space-x-4 lg:space-x-8 ml-4 md:ml-10 lg:ml-20">
               <Link
-                to="/"
-                className={`text-white ${isLinkActive('/') ? 'text-[#f67a45]' : 'hover:text-[#f67a45]'} text-base lg:text-lg px-2 py-1 relative group transition-all duration-300`}
+                to="/calculators"
+                className={`text-white ${isLinkActive('/calculators') ? 'text-[#f67a45]' : 'hover:text-[#f67a45]'} text-base lg:text-lg px-2 py-1 relative group transition-all duration-300`}
               >
-                HOME
-                <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+                Home
+                <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/calculators') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
               <Link
                 to="/store"
@@ -223,13 +223,6 @@ const Navbar = () => {
               >
                 TRAINERS
                 <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/trainers') || isLinkActive('/explore') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
-              </Link>
-              <Link
-                to="/calculators"
-                className={`text-white ${isLinkActive('/calculators') ? 'text-[#f67a45]' : 'hover:text-[#f67a45]'} text-base lg:text-lg px-2 py-1 relative group transition-all duration-300`}
-              >
-                CALCULATORS
-                <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/calculators') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
               <Link
                 to="/community/home"
