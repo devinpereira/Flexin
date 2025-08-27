@@ -509,8 +509,18 @@ export const addProductReview = async (req, res) => {
     const review = new StoreProductReview({
       productId,
       userId,
-      rating: parseInt(rating),
-      comment
+      review: {
+        rating: parseInt(rating),
+        title: comment && comment.length > 10 ? comment.substring(0, 30) + '...' : "Product Review",
+        comment
+      },
+      moderation: {
+        status: "approved" // Auto-approve user reviews
+      },
+      customer: {
+        name: req.user.fullName || req.user.username || "Customer",
+        isVerifiedPurchase: false
+      }
     });
 
     await review.save();
@@ -518,7 +528,7 @@ export const addProductReview = async (req, res) => {
 
     // Update product average rating and review count using admin store model
     const reviews = await StoreProductReview.find({ productId });
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const totalRating = reviews.reduce((sum, review) => sum + (review.review?.rating || 0), 0);
     const averageRating = totalRating / reviews.length;
 
     await StoreProduct.findByIdAndUpdate(productId, {

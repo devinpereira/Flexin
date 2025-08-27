@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiFillStar, AiOutlineCheckCircle, AiOutlineClose, AiOutlineZoomIn } from 'react-icons/ai';
+import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiFillStar, AiOutlineCheckCircle, AiOutlineClose, AiOutlineZoomIn, AiOutlineExclamationCircle } from 'react-icons/ai';
 import { FiShoppingCart, FiExternalLink, FiShare2 } from 'react-icons/fi';
 import { HiOutlineChevronLeft, HiOutlineChevronRight } from 'react-icons/hi';
 import { productsApi, cartApi } from '../../api/storeApi';
@@ -30,6 +30,8 @@ const ProductView = ({ onAddToCart, productData, favorites, onToggleFavorite, on
   const [isFavorite, setIsFavorite] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [showNotification, setShowNotification] = useState(false);
+  const [notificationType, setNotificationType] = useState('success');
+  const [notificationMessage, setNotificationMessage] = useState('');
   const [isAddedToCart, setIsAddedToCart] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -147,19 +149,20 @@ const ProductView = ({ onAddToCart, productData, favorites, onToggleFavorite, on
   // Fetch product reviews
   useEffect(() => {
     const fetchReviews = async () => {
-      if (productId) {
+      if (product?.id) {
         try {
           setReviewsLoading(true);
           setReviewsError(null);
-          const response = await productsApi.getReviews(productId);
+          const response = await productsApi.getReviews(product.id);
 
           if (response.success) {
             // Format reviews for display
             const formattedReviews = response.reviews.map(review => ({
               id: review._id,
               name: review.userId?.fullName || 'Anonymous User',
-              rating: review.rating,
-              comment: review.comment,
+              rating: review.review?.rating || 0,
+              comment: review.review?.comment || '',
+              title: review.review?.title || '',
               date: new Date(review.createdAt).toLocaleDateString(),
               userId: review.userId?._id
             }));
@@ -175,7 +178,7 @@ const ProductView = ({ onAddToCart, productData, favorites, onToggleFavorite, on
     };
 
     fetchReviews();
-  }, [productId]);
+  }, [product?.id]);
 
   // Handle the back button click
   const handleBack = () => {
@@ -407,15 +410,21 @@ const ProductView = ({ onAddToCart, productData, favorites, onToggleFavorite, on
   const handleSubmitReview = async (e) => {
     e.preventDefault();
 
-    // Validation
-    if (!newReview.rating || !newReview.comment.trim()) {
-      alert('Please provide both rating and comment');
+    // Validation - only rating is required, comment can be any length
+    if (!newReview.rating) {
+      setNotificationType('error');
+      setNotificationMessage('Please provide a rating');
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
       return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('Please login to submit a review');
+      setNotificationType('error');
+      setNotificationMessage('Please login to submit a review');
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
       return;
     }
 
@@ -424,18 +433,20 @@ const ProductView = ({ onAddToCart, productData, favorites, onToggleFavorite, on
 
       const reviewData = {
         rating: newReview.rating,
-        comment: newReview.comment.trim()
+        comment: newReview.comment // Allow any length comment
       };
 
-      const response = await productsApi.addReview(productId, reviewData);
+      // Use product.id for the API call
+      const response = await productsApi.addReview(product.id, reviewData);
 
       if (response.success) {
         // Add the new review to the list
         const newReviewFormatted = {
           id: response.review._id,
           name: response.review.userId?.fullName || 'You',
-          rating: response.review.rating,
-          comment: response.review.comment,
+          rating: response.review.review?.rating || 0,
+          comment: response.review.review?.comment || '',
+          title: response.review.review?.title || '',
           date: new Date(response.review.createdAt).toLocaleDateString(),
           userId: response.review.userId?._id
         };
@@ -445,15 +456,19 @@ const ProductView = ({ onAddToCart, productData, favorites, onToggleFavorite, on
         // Reset the form
         setNewReview({ rating: 0, comment: '' });
 
-        alert('Review submitted successfully!');
+        // Show success notification
+        setNotificationType('success');
+        setNotificationMessage('Review submitted successfully!');
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 3000);
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      if (error.message) {
-        alert(error.message);
-      } else {
-        alert('Failed to submit review. Please try again.');
-      }
+      // Show error notification
+      setNotificationType('error');
+      setNotificationMessage(error.message || 'Failed to submit review. Please try again.');
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 3000);
     } finally {
       setIsSubmittingReview(false);
     }
@@ -1143,11 +1158,17 @@ const ProductView = ({ onAddToCart, productData, favorites, onToggleFavorite, on
 
       {/* Notification */}
       {showNotification && (
-        <div className="fixed bottom-4 right-4 bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 shadow-lg flex items-center gap-3 animate-fade-in-up">
-          <AiOutlineCheckCircle className="text-[#f67a45] text-xl" />
+        <div className={`fixed bottom-4 right-4 bg-[#121225] border ${notificationType === 'error' ? 'border-red-500/30' : 'border-[#f67a45]/30'
+          } rounded-lg p-4 shadow-lg flex items-center gap-3 animate-fade-in-up z-50`}>
+          {notificationType === 'error' ? (
+            <AiOutlineExclamationCircle className="text-red-500 text-xl" />
+          ) : (
+            <AiOutlineCheckCircle className="text-[#f67a45] text-xl" />
+          )}
           <div className="flex-1">
-            <p className="text-white font-medium">Added to Cart!</p>
-            <p className="text-gray-400 text-sm">{quantity} x {product.name}</p>
+            <p className="text-white font-medium">
+              {notificationMessage || (notificationType === 'success' ? 'Success!' : 'Error!')}
+            </p>
           </div>
           <button
             onClick={() => setShowNotification(false)}

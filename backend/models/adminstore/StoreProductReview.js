@@ -25,13 +25,12 @@ const storeProductReviewSchema = new mongoose.Schema(
             },
             title: {
                 type: String,
-                required: true,
+                required: false, // Make title optional
                 maxlength: 100,
             },
             comment: {
                 type: String,
-                required: true,
-                minlength: 10,
+                required: false, // Make comment optional
                 maxlength: 2000,
             },
             pros: [String],
