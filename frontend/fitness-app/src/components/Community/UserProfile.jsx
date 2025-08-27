@@ -75,7 +75,7 @@ const UserProfile = ({ user, onBack }) => {
           <div className="flex flex-col items-center md:flex-row md:items-start gap-6">
             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#121225]">
               <img
-                src={profile.profileImage ? `${BASE_URL}/${profile.profileImage}` : '/src/assets/profile1.png'}
+                src={profile.profileImageUrl ? `${profile.profileImageUrl}` : '/src/assets/profile1.png'}
                 alt={profile.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
@@ -90,7 +90,7 @@ const UserProfile = ({ user, onBack }) => {
               <p className="text-white mb-4">{profile.bio}</p>
               <div className="flex flex-wrap justify-center md:justify-start gap-6 mb-4">
                 <div className="text-center">
-                  <p className="text-white font-bold">{profile.posts}</p>
+                  <p className="text-white font-bold">{profile.noOfPosts}</p>
                   <p className="text-gray-400 text-sm">Posts</p>
                 </div>
                 <div className="text-center">
@@ -152,7 +152,7 @@ const UserProfile = ({ user, onBack }) => {
                 <div className="p-4 flex items-center">
                   <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                     <img
-                      src={profile.profileImage ? `${profile.profileImage}` : '/default.jpg'}
+                      src={profile.profileImageUrl ? `${profile.profileImageUrl}` : '/default.jpg'}
                       alt={profile.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {

@@ -86,3 +86,18 @@ export const recalculateFitnessProfile = async (req, res) => {
         return res.status(500).json({ message: "Error updating fitness profile", error: error.message });
     }
 };
+
+// Get fitness profile by user ID
+export const getFitnessProfileById = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const existingProfile = await FitnessProfile.findOne({ userId });
+        if (existingProfile) {
+            return res.status(200).json({ exists: true, profile: existingProfile });
+        } else {
+            return res.status(200).json({ exists: false, message: "No fitness profile found" });
+        }
+    } catch (error) {
+        return res.status(500).json({ message: "Error checking existing profile", error: error.message });
+    }
+};

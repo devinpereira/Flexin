@@ -87,6 +87,7 @@ const Subscribers = () => {
     navigate(`/trainer/messages?user=${user.id}`);
   };
   const handleViewDetails = (user) => {
+    console.log("Viewing details for user:", user);
     navigate(`/trainer/subscriber-profile/${user.id}`);
   };
 

@@ -485,3 +485,44 @@ export const getSubscribersByTrainer = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+// GET /api/v1/subscription/user/:userId/trainer/:trainerId - Get specific user's subscription details for a trainer
+export const getUserSubscriptionForTrainer = async (req, res) => {
+  try {
+    const { userId, trainerId } = req.params;
+
+    // Get the most recent active subscription for this user with this trainer
+    const subscription = await Subscription.findOne({
+      userId,
+      trainerId,
+      $or: [{ endDate: { $exists: false } }, { endDate: null }]
+    }).sort({ startDate: -1 });
+
+    // Get trainer's packages
+    const trainer = await Trainer.findById(trainerId);
+    if (!trainer) {
+      return res.status(404).json({ success: false, error: "Trainer not found" });
+    }
+
+    // Find the package details (if subscribed)
+    let packageDetails = null;
+    if (subscription && subscription.package) {
+      packageDetails = Array.isArray(trainer.packages)
+        ? trainer.packages.find(
+            (pkg) =>
+              pkg.name &&
+              pkg.name.trim().toLowerCase() === subscription.package.trim().toLowerCase()
+          )
+        : null;
+    }
+
+    res.status(200).json({
+      success: true,
+      currentSubscription: subscription ? subscription.package : null,
+      subscription,
+      packageDetails: packageDetails || null,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: "Failed to fetch user subscription details", details: err.message });
+  }
+};
