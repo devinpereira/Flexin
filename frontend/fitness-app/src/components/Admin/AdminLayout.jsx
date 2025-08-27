@@ -113,9 +113,9 @@ const AdminLayout = ({ children, pageTitle = 'Admin Dashboard' }) => {
       <Navigation />
 
       {/* Development mode banner */}
-      <div className="bg-yellow-600 text-white text-center py-2 px-4 fixed top-0 left-0 right-0 z-[100]">
+      {/* <div className="bg-yellow-600 text-white text-center py-2 px-4 fixed top-0 left-0 right-0 z-[100]">
         ⚠️ Development Mode: Admin access is unrestricted for development purposes
-      </div>
+      </div> */}
 
       {/* Add padding to accommodate the dev banner */}
       <div className="pt-8"></div>
