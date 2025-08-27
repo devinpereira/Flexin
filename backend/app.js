@@ -20,6 +20,7 @@ import trainerRoutes from "./routes/trainerRoutes.js";
 import trainerScheduleRoutes from "./routes/trainer.schedule.routes.js";
 import mealPlanRoutes from "./routes/mealPlanRoutes.js";
 import subscriptionRoutes from "./routes/trainer.subscription.routes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 
 //Trainer dashboard routes
 import pendingTrainerRoutes from "./routes/pendingTrainerRoutes.js";
@@ -85,6 +86,7 @@ app.use("/api/v1/trainers", trainerRoutes);
 app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
 app.use("/api/v1/meal-plans", mealPlanRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
+app.use("/api/v1/chat", chatRoutes)
 
 // Trainer Dashboard Routes
 app.use("/api/v1/pending-trainer", pendingTrainerRoutes);

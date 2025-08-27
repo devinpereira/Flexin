@@ -251,10 +251,15 @@ export const API_PATHS = {
   MEAL_PLAN: {
     GET_MEAL_PLAN: (trainerId, userId) => `/api/v1/meal-plans/${trainerId}/${userId}`,
   },
-
   ADMIN_DASHBOARD: {
     GET_STATISTICS: "/api/v1/admin/statistics/getStatistics", // Done
     GET_USER_REGISTRATION_INFO: "/api/v1/admin/statistics/userCount", // Done
     GET_GENDER_DISTRIBUTION: "/api/v1/admin/statistics/genderInfo", // Done
+  },
+  CHAT: {
+    CREATE_OR_ADD_MESSAGE: "/api/v1/chat",
+    GET_CHAT: "/api/v1/chat",
+    UPDATE_MESSAGE: "/api/v1/chat/message",
+    GET_TRAINER_CHATS: (trainerId) => `/api/v1/chat/trainer/${trainerId}`,
   },
 };
