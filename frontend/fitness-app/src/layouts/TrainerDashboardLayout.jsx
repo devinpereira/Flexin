@@ -32,11 +32,16 @@ const TrainerDashboardLayout = ({ children, activeSection }) => {
       <div className="container mx-auto flex relative">
         {/* Left Sidebar */}
         <div className="fixed top-16 left-0 bottom-0 w-[240px] z-10 overflow-hidden">
-          <TrainerDashboardSidebar activeSection={activeSection} name="Nipuna Lakruwan" />
+          <TrainerDashboardSidebar
+            activeSection={activeSection}
+            name={trainer?.name || "Trainer"}
+            trainer={trainer}
+            loading={loading}
+          />
         </div>
         {/* Main Content */}
         <motion.div
-          className="flex-grow ml-[240px] px-4 pt-6 pb-10 max-w-[calc(100%-240px)] mt-8"
+          className="flex-grow ml-[240px] px-4 pt-6 pb-10 max-w-[calc(100%-240px)]"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
