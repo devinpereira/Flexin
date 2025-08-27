@@ -126,6 +126,7 @@ const SubscriberProfile = () => {
           throw new Error("Failed to fetch user data");
         }
         const userData = await userRes.json();
+        console.log("User data from API:", userData); // Debug log
 
         // Fetch user's fitness profile
         let fitnessProfile = null;
@@ -166,7 +167,7 @@ const SubscriberProfile = () => {
 
         // Format subscriber data
         const formattedSubscriber = {
-          id: userData.user._id,
+          id: userData.user.id || subscriberId, // Fixed: use userData.user.id instead of userData.user._id
           name: userData.user.fullName || userData.user.name,
           avatar: userData.user.profileImageUrl || "/src/assets/profile1.png",
           userType: fitnessProfile?.experienceLevel || "Beginner",
@@ -187,6 +188,13 @@ const SubscriberProfile = () => {
             renews: "N/A",
           },
         };
+
+        console.log("Formatted subscriber object:", formattedSubscriber); // Debug log
+        console.log("User ID check:", {
+          userDataUserId: userData.user.id,
+          userDataUserIdType: typeof userData.user.id,
+          subscriberIdParam: subscriberId,
+        }); // Debug log
 
         setSubscriber(formattedSubscriber);
       } catch (err) {
@@ -563,6 +571,13 @@ const SubscriberProfile = () => {
           setActiveButton(null);
         }}
         subscriber={displaySubscriber}
+        onScheduleUpdate={() => {
+          // Optional: Add any refresh logic here if needed
+          console.log(
+            "Schedule updated for subscriber:",
+            displaySubscriber.name
+          );
+        }}
       />
       {/* Assign Meal Plan Modal */}
       <AssignMealPlanModal

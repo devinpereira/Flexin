@@ -1,498 +1,608 @@
-import React, { useState } from "react";
-import { FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSave } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaArrowLeft,
+  FaSave,
+  FaTimes,
+} from "react-icons/fa";
 import ConfirmDialog from "../ConfirmDialog";
 import Notification from "../Admin/Notification";
+import trainerScheduleService from "../../services/trainerScheduleService";
 
-// Mock schedules for demonstration
-const initialSchedules = [
-  {
-    id: "s1",
-    name: "Beginner Full Body",
-    days: ["Day 1", "Day 2", "Day 3"],
-    exercises: {
-      "Day 1": [
-        { id: 1, name: "Incline Barbell Press", sets: 4, reps: 8, image: "/src/assets/exercise1.png" },
-        { id: 2, name: "Dumbbell Bench Press", sets: 3, reps: 10, image: "/src/assets/exercise1.png" }
-      ],
-      "Day 2": [
-        { id: 3, name: "Barbell Squat", sets: 5, reps: 5, image: "/src/assets/exercise1.png" }
-      ],
-      "Day 3": [
-        { id: 4, name: "Pull-ups", sets: 4, reps: 8, image: "/src/assets/exercise1.png" }
-      ]
-    }
-  },
-  {
-    id: "s2",
-    name: "Weight Loss Plan",
-    days: ["Day 1", "Day 2"],
-    exercises: {
-      "Day 1": [
-        { id: 5, name: "Burpees", sets: 4, reps: 12, image: "/src/assets/exercise1.png" }
-      ],
-      "Day 2": [
-        { id: 6, name: "Running", sets: 1, reps: 30, image: "/src/assets/exercise1.png" }
-      ]
-    }
-  }
-];
-
-// Mock exercise list for adding new exercises
-const exerciseLibrary = [
-  { id: 101, name: "Push-up", image: "/src/assets/exercise1.png" },
-  { id: 102, name: "Squat", image: "/src/assets/exercise1.png" },
-  { id: 103, name: "Deadlift", image: "/src/assets/exercise1.png" },
-  { id: 104, name: "Pull-up", image: "/src/assets/exercise1.png" },
-  { id: 105, name: "Plank", image: "/src/assets/exercise1.png" }
-];
-
-const AssignScheduleModal = ({ open, onClose, subscriber }) => {
-  const [schedules, setSchedules] = useState(initialSchedules);
-  const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [editSchedule, setEditSchedule] = useState(null);
-  const [editDay, setEditDay] = useState(null);
+const AssignScheduleModal = ({
+  open,
+  onClose,
+  subscriber,
+  onScheduleUpdate,
+}) => {
+  const [currentSchedule, setCurrentSchedule] = useState(null);
+  const [exercises, setExercises] = useState([]);
+  const [editSchedule, setEditSchedule] = useState({ days: [] });
+  const [selectedDay, setSelectedDay] = useState(0);
   const [showAddExercise, setShowAddExercise] = useState(false);
-  const [newScheduleName, setNewScheduleName] = useState("");
-  const [addingNewSchedule, setAddingNewSchedule] = useState(false);
+  const [exerciseSearch, setExerciseSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(() => () => { });
+  const [confirmAction, setConfirmAction] = useState(() => () => {});
   const [confirmTitle, setConfirmTitle] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
-  const [confirmType, setConfirmType] = useState("warning");
   const [notification, setNotification] = useState({
     isVisible: false,
     type: "success",
     message: "",
-    autoClose: true,
-    duration: 3000,
   });
 
-  const showAlert = (message, type = "success") => {
+  useEffect(() => {
+    if (open && subscriber) {
+      loadData();
+    }
+  }, [open, subscriber]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Debug subscriber info
+      console.log("Subscriber object:", subscriber);
+      console.log("Subscriber ID methods:", {
+        directId: subscriber?.id,
+        userIdField: subscriber?.userId?._id,
+        userIdDirect: subscriber?.userId,
+        subscriberId: subscriber?._id,
+        allKeys: Object.keys(subscriber || {}),
+        fullSubscriber: subscriber,
+      });
+
+      // Load exercises
+      const exercisesResult = await trainerScheduleService.getExercises();
+      console.log("Exercises result:", exercisesResult); // Debug log
+      if (exercisesResult.success) {
+        setExercises(exercisesResult.exercises);
+        console.log("Loaded exercises:", exercisesResult.exercises.length); // Debug log
+      } else {
+        console.error("Failed to load exercises:", exercisesResult.error);
+        showNotification("Failed to load exercises", "error");
+      }
+
+      // Check if user already has a schedule
+      // Extract user ID from various possible structures
+      let userId = null;
+      if (subscriber.id) {
+        userId = subscriber.id;
+      } else if (subscriber.userId?._id) {
+        userId = subscriber.userId._id;
+      } else if (subscriber.userId && typeof subscriber.userId === "string") {
+        userId = subscriber.userId;
+      } else if (subscriber._id) {
+        userId = subscriber._id;
+      }
+
+      console.log("Extracted userId:", userId);
+
+      if (userId) {
+        console.log("Using userId for schedule lookup:", userId);
+
+        const scheduleResult = await trainerScheduleService.getUserSchedule(
+          userId
+        );
+        console.log("Schedule result:", scheduleResult);
+
+        if (scheduleResult.success && scheduleResult.schedule) {
+          console.log("Found existing schedule:", scheduleResult.schedule);
+          setCurrentSchedule(scheduleResult.schedule);
+          setEditSchedule(scheduleResult.schedule);
+        } else {
+          console.log("No existing schedule found, creating new structure");
+          // Create new schedule structure
+          setCurrentSchedule(null);
+          setEditSchedule({
+            days: [{ day: "Day 1", exercises: [] }],
+          });
+        }
+      } else {
+        console.error("No valid user ID found in subscriber:", subscriber);
+        showNotification("Invalid subscriber data - missing user ID", "error");
+      }
+    } catch (error) {
+      console.error("Error loading data:", error);
+      showNotification("Failed to load data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showNotification = (message, type = "success") => {
     setNotification({
       isVisible: true,
       type,
       message,
-      autoClose: true,
-      duration: 3000,
     });
   };
 
-  const showConfirmDialog = (title, message, type, action) => {
+  const showConfirmDialog = (title, message, action) => {
     setConfirmTitle(title);
     setConfirmMessage(message);
-    setConfirmType(type);
     setConfirmAction(() => action);
     setShowConfirm(true);
   };
 
-  if (!open) return null;
-
-  // Add new schedule
-  const handleAddNewSchedule = () => {
-    setAddingNewSchedule(true);
-    setNewScheduleName("");
-    setEditSchedule({
-      id: `s${Date.now()}`,
-      name: "",
-      days: ["Day 1"],
-      exercises: { "Day 1": [] }
-    });
-    setEditMode(true);
-    setSelectedSchedule(null);
-  };
-
-  // Save new or edited schedule
-  const handleSaveSchedule = () => {
-    if (!editSchedule.name.trim()) {
-      showAlert("Schedule name is required", "error");
+  const handleSaveSchedule = async () => {
+    if (!editSchedule.days || editSchedule.days.length === 0) {
+      showNotification("Please add at least one day to the schedule", "error");
       return;
     }
-    let updatedSchedules;
-    if (addingNewSchedule) {
-      updatedSchedules = [...schedules, editSchedule];
-      showAlert("Schedule created successfully", "success");
-    } else {
-      updatedSchedules = schedules.map(s =>
-        s.id === editSchedule.id ? editSchedule : s
-      );
-      showAlert("Schedule updated successfully", "success");
+
+    console.log("Saving schedule...");
+    console.log("Current schedule exists:", !!currentSchedule);
+    console.log("Edit schedule data:", editSchedule);
+
+    setSaving(true);
+    try {
+      // Extract user ID using the same logic as loadData
+      let userId = null;
+      if (subscriber.id) {
+        userId = subscriber.id;
+      } else if (subscriber.userId?._id) {
+        userId = subscriber.userId._id;
+      } else if (subscriber.userId && typeof subscriber.userId === "string") {
+        userId = subscriber.userId;
+      } else if (subscriber._id) {
+        userId = subscriber._id;
+      }
+
+      console.log("Using userId for save:", userId);
+
+      if (!userId) {
+        showNotification("Invalid user ID", "error");
+        return;
+      }
+      const scheduleData = { days: editSchedule.days };
+      console.log("Schedule data to send:", scheduleData);
+
+      let result;
+      if (currentSchedule) {
+        console.log("Updating existing schedule...");
+        result = await trainerScheduleService.updateSchedule(
+          userId,
+          scheduleData
+        );
+      } else {
+        console.log("Assigning new schedule...");
+        result = await trainerScheduleService.assignSchedule(
+          userId,
+          scheduleData
+        );
+      }
+
+      console.log("Save result:", result);
+
+      if (result.success) {
+        showNotification(
+          result.message || "Schedule saved successfully!",
+          "success"
+        );
+        if (onScheduleUpdate) onScheduleUpdate();
+        setTimeout(() => onClose(), 1500);
+      } else {
+        showNotification(result.error || "Failed to save schedule", "error");
+      }
+    } catch (error) {
+      console.error("Error in handleSaveSchedule:", error);
+      showNotification("Failed to save schedule", "error");
+    } finally {
+      setSaving(false);
     }
-    setSchedules(updatedSchedules);
-    setEditMode(false);
-    setAddingNewSchedule(false);
-    setSelectedSchedule(editSchedule);
-    setEditSchedule(null);
   };
 
-  // Delete schedule
-  const handleDeleteSchedule = (id) => {
-    showConfirmDialog(
-      "Delete Schedule",
-      "Are you sure you want to delete this schedule? This action cannot be undone.",
-      "danger",
-      () => {
-        setSchedules(schedules.filter(s => s.id !== id));
-        setSelectedSchedule(null);
-        setEditMode(false);
-        setEditSchedule(null);
-        showAlert("Schedule deleted successfully", "success");
+  const handleDeleteSchedule = async () => {
+    // Extract user ID using the same logic as loadData
+    let userId = null;
+    if (subscriber.id) {
+      userId = subscriber.id;
+    } else if (subscriber.userId?._id) {
+      userId = subscriber.userId._id;
+    } else if (subscriber.userId && typeof subscriber.userId === "string") {
+      userId = subscriber.userId;
+    } else if (subscriber._id) {
+      userId = subscriber._id;
+    }
+
+    console.log("Deleting schedule for userId:", userId);
+
+    if (!userId) {
+      showNotification("Invalid user ID", "error");
+      return;
+    }
+    try {
+      const result = await trainerScheduleService.deleteSchedule(userId);
+      console.log("Delete result:", result);
+
+      if (result.success) {
+        showNotification("Schedule deleted successfully!", "success");
+        if (onScheduleUpdate) onScheduleUpdate();
+        setTimeout(() => onClose(), 1500);
+      } else {
+        showNotification(result.error || "Failed to delete schedule", "error");
       }
-    );
+    } catch (error) {
+      console.error("Error in handleDeleteSchedule:", error);
+      showNotification("Failed to delete schedule", "error");
+    }
   };
 
-  // Add new day to schedule
-  const handleAddDay = () => {
-    const nextDayNum = editSchedule.days.length + 1;
-    const newDay = `Day ${nextDayNum}`;
+  const addDay = () => {
+    const newDayNumber = editSchedule.days.length + 1;
     setEditSchedule({
       ...editSchedule,
-      days: [...editSchedule.days, newDay],
-      exercises: { ...editSchedule.exercises, [newDay]: [] }
+      days: [
+        ...editSchedule.days,
+        { day: `Day ${newDayNumber}`, exercises: [] },
+      ],
     });
   };
 
-  // Remove day from schedule
-  const handleRemoveDay = (day) => {
-    const newDays = editSchedule.days.filter(d => d !== day);
-    const newExercises = { ...editSchedule.exercises };
-    delete newExercises[day];
-    setEditSchedule({
-      ...editSchedule,
-      days: newDays,
-      exercises: newExercises
-    });
-    if (editDay === day) setEditDay(newDays[0] || null);
+  const removeDay = (dayIndex) => {
+    if (editSchedule.days.length <= 1) {
+      showNotification("Schedule must have at least one day", "error");
+      return;
+    }
+
+    const newDays = editSchedule.days.filter((_, index) => index !== dayIndex);
+    setEditSchedule({ ...editSchedule, days: newDays });
+
+    if (selectedDay >= newDays.length) {
+      setSelectedDay(newDays.length - 1);
+    }
   };
 
-  // Add exercise to a day
-  const handleAddExerciseToDay = (exercise) => {
-    setEditSchedule({
-      ...editSchedule,
-      exercises: {
-        ...editSchedule.exercises,
-        [editDay]: [
-          ...(editSchedule.exercises[editDay] || []),
-          { ...exercise, sets: 3, reps: 10, id: Date.now() }
-        ]
-      }
-    });
+  const addExerciseToDay = (exercise) => {
+    const newExercise = {
+      name: exercise.name,
+      sets: 3,
+      reps: 10,
+      bodyPart: exercise.bodyPart,
+      equipment: exercise.equipment,
+      difficulty: exercise.difficulty,
+    };
+
+    const newDays = [...editSchedule.days];
+    newDays[selectedDay].exercises.push(newExercise);
+    setEditSchedule({ ...editSchedule, days: newDays });
     setShowAddExercise(false);
+    setExerciseSearch("");
   };
 
-  // Edit exercise in a day
-  const handleEditExercise = (exIdx, field, value) => {
-    const updated = editSchedule.exercises[editDay].map((ex, idx) =>
-      idx === exIdx ? { ...ex, [field]: value } : ex
-    );
-    setEditSchedule({
-      ...editSchedule,
-      exercises: { ...editSchedule.exercises, [editDay]: updated }
-    });
+  const updateExercise = (exerciseIndex, field, value) => {
+    const newDays = [...editSchedule.days];
+    newDays[selectedDay].exercises[exerciseIndex][field] = value;
+    setEditSchedule({ ...editSchedule, days: newDays });
   };
 
-  // Remove exercise from a day
-  const handleRemoveExercise = (exIdx) => {
-    const updated = editSchedule.exercises[editDay].filter((_, idx) => idx !== exIdx);
-    setEditSchedule({
-      ...editSchedule,
-      exercises: { ...editSchedule.exercises, [editDay]: updated }
-    });
+  const removeExercise = (exerciseIndex) => {
+    const newDays = [...editSchedule.days];
+    newDays[selectedDay].exercises.splice(exerciseIndex, 1);
+    setEditSchedule({ ...editSchedule, days: newDays });
   };
 
-  // UI
+  const filteredExercises = exercises.filter((exercise) => {
+    if (!exerciseSearch.trim()) return true; // Show all if no search term
+
+    const searchLower = exerciseSearch.toLowerCase();
+    const name = (exercise.name || "").toLowerCase();
+    const bodyPart = (exercise.bodyPart || "").toLowerCase();
+    const equipment = (exercise.equipment || "").toLowerCase();
+    const difficulty = (exercise.difficulty || "").toLowerCase();
+    const primaryMuscles = (exercise.primaryMuscles || [])
+      .join(" ")
+      .toLowerCase();
+
+    const isMatch =
+      name.includes(searchLower) ||
+      bodyPart.includes(searchLower) ||
+      equipment.includes(searchLower) ||
+      difficulty.includes(searchLower) ||
+      primaryMuscles.includes(searchLower);
+
+    // Debug log for the first few exercises when searching
+    if (exerciseSearch && exercise === exercises[0]) {
+      console.log("Search debug for first exercise:", {
+        searchTerm: exerciseSearch,
+        searchLower,
+        exerciseName: name,
+        bodyPart,
+        equipment,
+        difficulty,
+        primaryMuscles,
+        isMatch,
+      });
+    }
+
+    return isMatch;
+  });
+
+  if (!open) return null;
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#1A1A2F] rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col" style={{ height: "92vh" }}>
+      <div
+        className="bg-[#1A1A2F] rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col"
+        style={{ height: "92vh" }}
+      >
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#232342]">
-          <span className="text-white font-semibold text-lg">
-            Assign Schedule to {subscriber?.name || "Subscriber"}
-          </span>
+          <h2 className="text-white font-semibold text-lg">
+            {currentSchedule ? "Edit" : "Assign"} Schedule -{" "}
+            {subscriber?.name || subscriber?.userId?.fullName || "Subscriber"}
+          </h2>
           <button
             className="text-white/70 hover:text-white text-2xl"
             onClick={onClose}
             aria-label="Close"
           >
-            &times;
+            <FaTimes />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-0 bg-[#121225]">
-          <div className="p-6">
-            {/* Schedules List */}
-            {!editMode && (
-              <>
-                <h3 className="text-white text-lg font-bold mb-4">Select a Schedule</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  {schedules.map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className={`bg-[#18182f] border rounded-lg p-4 cursor-pointer transition-all ${selectedSchedule?.id === schedule.id
-                          ? "border-[#f67a45] ring-2 ring-[#f67a45]"
-                          : "border-[#f67a45]/20 hover:border-[#f67a45]/50"
-                        }`}
-                      onClick={() => setSelectedSchedule(schedule)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-white font-semibold mb-2">{schedule.name}</h4>
-                        <div className="flex gap-2">
-                          <button
-                            className="text-[#f67a45] hover:text-[#e56d3d]"
-                            title="Edit"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setEditMode(true);
-                              setEditSchedule({ ...schedule });
-                              setEditDay(schedule.days[0]);
-                              setAddingNewSchedule(false);
-                            }}
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            className="text-red-500 hover:text-red-700"
-                            title="Delete"
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleDeleteSchedule(schedule.id);
-                            }}
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {schedule.days.map((day) => (
-                          <span
-                            key={day}
-                            className="bg-[#121225] text-xs text-white/80 px-2 py-1 rounded-full"
-                          >
-                            {day}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-white/60 text-xs">{Object.values(schedule.exercises).flat().length} exercises</p>
-                    </div>
-                  ))}
-                  {/* Add new schedule card */}
-                  <div
-                    className="bg-[#18182f] border border-dashed border-[#f67a45]/50 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#232342] transition-colors"
-                    onClick={handleAddNewSchedule}
-                  >
-                    <div className="bg-[#f67a45]/20 p-3 rounded-full mb-2">
-                      <FaPlus className="text-[#f67a45] text-lg" />
-                    </div>
-                    <p className="text-white text-center">Add New Schedule</p>
-                  </div>
-                </div>
-                {/* Preview and Assign */}
-                {selectedSchedule && (
-                  <div className="bg-[#18182f] rounded-lg p-4 mt-4">
-                    <h4 className="text-white font-semibold mb-2">Preview: {selectedSchedule.name}</h4>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {selectedSchedule.days.map((day) => (
-                        <span
-                          key={day}
-                          className="bg-[#121225] text-xs text-white/80 px-2 py-1 rounded-full"
-                        >
-                          {day}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {selectedSchedule.days.map((day) => (
-                        <div key={day}>
-                          <div className="text-[#f67a45] font-semibold text-sm mb-1">{day}</div>
-                          <div className="flex flex-col gap-1">
-                            {selectedSchedule.exercises[day]?.map((ex) => (
-                              <div key={ex.id} className="flex items-center gap-2">
-                                <img src={ex.image} alt={ex.name} className="w-7 h-7 rounded" />
-                                <span className="text-white text-xs">{ex.name}</span>
-                                <span className="text-white/60 text-xs">{ex.sets}x{ex.reps}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      className="mt-4 bg-[#f67a45] text-white px-6 py-2 rounded-full hover:bg-[#e56d3d] transition-colors font-medium"
-                      onClick={() => {
-                        showConfirmDialog(
-                          "Assign Schedule",
-                          `Are you sure you want to assign "${selectedSchedule.name}" to ${subscriber?.name || "subscriber"}?`,
-                          "warning",
-                          () => {
-                            showAlert(`Assigned "${selectedSchedule.name}" to ${subscriber?.name || "subscriber"}`, "success");
-                            onClose();
-                          }
-                        );
-                      }}
-                    >
-                      Assign Schedule
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
 
-            {/* Edit/New Schedule UI */}
-            {editMode && (
-              <div className="bg-[#18182f] rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <button
-                    className="text-white/70 hover:text-white"
-                    onClick={() => {
-                      setEditMode(false);
-                      setEditSchedule(null);
-                      setAddingNewSchedule(false);
-                    }}
-                  >
-                    <FaArrowLeft />
-                  </button>
-                  <h4 className="text-white font-semibold">
-                    {addingNewSchedule ? "Create New Schedule" : "Edit Schedule"}
-                  </h4>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-white/80 text-sm mb-1">Schedule Name</label>
-                  <input
-                    type="text"
-                    value={editSchedule.name}
-                    onChange={e => setEditSchedule({ ...editSchedule, name: e.target.value })}
-                    className="w-full px-4 py-2 bg-[#121225] border border-[#232342] rounded-lg text-white focus:outline-none focus:border-[#f67a45]"
-                    placeholder="e.g., Full Body Workout"
-                  />
-                </div>
-                {/* Days Tabs */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {editSchedule.days.map(day => (
+        {/* Content */}
+        <div className="flex-1 overflow-hidden bg-[#121225]">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-white">Loading...</div>
+            </div>
+          ) : (
+            <div className="h-full p-6">
+              {/* Days Navigation */}
+              <div className="flex items-center gap-2 mb-6 overflow-x-auto">
+                {editSchedule.days.map((day, index) => (
+                  <div key={index} className="flex items-center">
                     <button
-                      key={day}
-                      className={`px-4 py-1.5 rounded-full text-sm ${editDay === day
-                        ? "bg-[#f67a45] text-white"
-                        : "bg-[#121225] text-white/80 border border-[#232342]"
-                        }`}
-                      onClick={() => setEditDay(day)}
+                      className={`px-4 py-2 rounded-lg transition-colors ${
+                        selectedDay === index
+                          ? "bg-[#f67a45] text-white"
+                          : "bg-[#18182f] text-white/70 hover:text-white border border-gray-600"
+                      }`}
+                      onClick={() => setSelectedDay(index)}
                     >
-                      {day}
-                      {editSchedule.days.length > 1 && (
-                        <span
-                          className="ml-2 text-red-400 cursor-pointer"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleRemoveDay(day);
-                          }}
-                          title="Remove day"
-                        >
-                          &times;
-                        </span>
-                      )}
+                      {day.day}
                     </button>
-                  ))}
-                  <button
-                    className="px-3 py-1.5 rounded-full bg-[#232342] text-white/70 hover:bg-[#f67a45]/20"
-                    onClick={handleAddDay}
-                  >
-                    <FaPlus size={12} /> Add Day
-                  </button>
-                </div>
-                {/* Exercises for selected day */}
-                {editDay && (
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h5 className="text-white font-medium">{editDay} Exercises</h5>
+                    {editSchedule.days.length > 1 && (
                       <button
-                        className="bg-[#f67a45]/20 text-[#f67a45] px-3 py-1.5 rounded-md flex items-center gap-2 hover:bg-[#f67a45]/30"
-                        onClick={() => setShowAddExercise(true)}
+                        className="ml-1 text-red-400 hover:text-red-300"
+                        onClick={() => removeDay(index)}
                       >
-                        <FaPlus size={14} />
-                        <span>Add Exercise</span>
+                        <FaTimes size={12} />
                       </button>
-                    </div>
-                    <div className="space-y-2">
-                      {(editSchedule.exercises[editDay] || []).map((ex, idx) => (
-                        <div key={ex.id} className="flex items-center gap-2 bg-[#121225] rounded-lg p-2">
-                          <img src={ex.image} alt={ex.name} className="w-8 h-8 rounded" />
-                          <input
-                            type="text"
-                            value={ex.name}
-                            onChange={e => handleEditExercise(idx, "name", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-32"
-                          />
-                          <input
-                            type="number"
-                            min={1}
-                            value={ex.sets}
-                            onChange={e => handleEditExercise(idx, "sets", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-12"
-                            placeholder="Sets"
-                          />
-                          <input
-                            type="number"
-                            min={1}
-                            value={ex.reps}
-                            onChange={e => handleEditExercise(idx, "reps", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-12"
-                            placeholder="Reps"
-                          />
-                          <button
-                            className="text-red-400 hover:text-red-600 ml-2"
-                            onClick={() => handleRemoveExercise(idx)}
-                            title="Remove"
-                          >
-                            <FaTrash size={14} />
-                          </button>
-                        </div>
-                      ))}
-                      {(editSchedule.exercises[editDay] || []).length === 0 && (
-                        <div className="text-white/50 text-xs py-4 text-center">No exercises for this day.</div>
-                      )}
-                    </div>
+                    )}
                   </div>
-                )}
-                {/* Save Button */}
-                <div className="flex justify-end gap-2">
-                  <button
-                    className="bg-[#f67a45] text-white px-6 py-2 rounded-full hover:bg-[#e56d3d] transition-colors font-medium"
-                    onClick={handleSaveSchedule}
-                  >
-                    <FaSave className="inline mr-2" /> Save Schedule
-                  </button>
-                </div>
-                {/* Add Exercise Modal */}
-                {showAddExercise && (
-                  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div className="bg-[#18182f] rounded-xl p-6 max-w-md w-full">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-white font-semibold">Add Exercise</h4>
-                        <button
-                          className="text-white/70 hover:text-white text-2xl"
-                          onClick={() => setShowAddExercise(false)}
-                        >
-                          &times;
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 gap-3">
-                        {exerciseLibrary.map(ex => (
-                          <div
-                            key={ex.id}
-                            className="flex items-center gap-3 bg-[#121225] rounded-lg p-2 cursor-pointer hover:bg-[#232342]"
-                            onClick={() => handleAddExerciseToDay(ex)}
-                          >
-                            <img src={ex.image} alt={ex.name} className="w-8 h-8 rounded" />
-                            <span className="text-white text-sm">{ex.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                ))}
+                <button
+                  className="px-3 py-2 bg-[#18182f] border border-dashed border-[#f67a45] text-[#f67a45] rounded-lg hover:bg-[#f67a45]/10 transition-colors flex items-center gap-2"
+                  onClick={addDay}
+                >
+                  <FaPlus size={12} />
+                  Add Day
+                </button>
               </div>
+
+              {/* Selected Day Content */}
+              {editSchedule.days[selectedDay] && (
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-white font-medium">
+                      {editSchedule.days[selectedDay].day} (
+                      {editSchedule.days[selectedDay].exercises.length}{" "}
+                      exercises)
+                    </h3>
+                    <button
+                      className="bg-[#f67a45] text-white px-4 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors flex items-center gap-2"
+                      onClick={() => setShowAddExercise(true)}
+                    >
+                      <FaPlus />
+                      Add Exercise
+                    </button>
+                  </div>
+
+                  {/* Exercises List */}
+                  <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
+                    {editSchedule.days[selectedDay].exercises.length > 0 ? (
+                      editSchedule.days[selectedDay].exercises.map(
+                        (exercise, index) => (
+                          <div
+                            key={index}
+                            className="bg-[#18182f] rounded-lg p-4 border border-gray-700"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-white font-medium">
+                                {exercise.name}
+                              </h4>
+                              <button
+                                className="text-red-400 hover:text-red-300"
+                                onClick={() => removeExercise(index)}
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <label className="text-white/60 text-sm">
+                                  Sets:
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={exercise.sets}
+                                  onChange={(e) =>
+                                    updateExercise(
+                                      index,
+                                      "sets",
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="w-16 px-2 py-1 bg-[#121225] text-white border border-gray-600 rounded"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="text-white/60 text-sm">
+                                  Reps:
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={exercise.reps}
+                                  onChange={(e) =>
+                                    updateExercise(
+                                      index,
+                                      "reps",
+                                      parseInt(e.target.value) || 1
+                                    )
+                                  }
+                                  className="w-16 px-2 py-1 bg-[#121225] text-white border border-gray-600 rounded"
+                                />
+                              </div>
+                              {exercise.bodyPart && (
+                                <span className="text-[#f67a45] text-sm bg-[#f67a45]/20 px-2 py-1 rounded">
+                                  {exercise.bodyPart}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      )
+                    ) : (
+                      <div className="text-center py-8 text-white/60">
+                        No exercises added for this day. Click "Add Exercise" to
+                        get started.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#232342]">
+          <div>
+            {currentSchedule && (
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                onClick={() =>
+                  showConfirmDialog(
+                    "Delete Schedule",
+                    "Are you sure you want to delete this schedule? This action cannot be undone.",
+                    handleDeleteSchedule
+                  )
+                }
+              >
+                Delete Schedule
+              </button>
             )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-[#f67a45] text-white px-6 py-2 rounded-lg hover:bg-[#e56d3d] transition-colors flex items-center gap-2"
+              onClick={handleSaveSchedule}
+              disabled={saving}
+            >
+              {saving ? (
+                <>Saving...</>
+              ) : (
+                <>
+                  <FaSave />
+                  {currentSchedule ? "Update" : "Assign"} Schedule
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
-      {/* Custom Confirm Dialog */}
+
+      {/* Add Exercise Modal */}
+      {showAddExercise && (
+        <div className="fixed inset-0 z-60 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-[#1A1A2F] rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#232342]">
+              <h3 className="text-white font-semibold">Add Exercise</h3>
+              <button
+                className="text-white/70 hover:text-white text-xl"
+                onClick={() => setShowAddExercise(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <input
+                type="text"
+                placeholder="Search exercises..."
+                value={exerciseSearch}
+                onChange={(e) => setExerciseSearch(e.target.value)}
+                className="w-full px-4 py-2 bg-[#18182f] text-white border border-gray-600 rounded-lg mb-4"
+              />
+
+              {/* Debug info */}
+              <div className="text-white/60 text-sm mb-2">
+                Total exercises: {exercises.length} | Filtered:{" "}
+                {filteredExercises.length}
+                {exerciseSearch && ` | Search: "${exerciseSearch}"`}
+                <br />
+                First exercise name: {exercises[0]?.name || "None"} | Search
+                term length: {exerciseSearch.length}
+              </div>
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredExercises.map((exercise) => (
+                  <div
+                    key={exercise._id}
+                    className="flex items-center justify-between p-3 bg-[#18182f] rounded-lg border border-gray-700 hover:border-[#f67a45] cursor-pointer transition-colors"
+                    onClick={() => addExerciseToDay(exercise)}
+                  >
+                    <div>
+                      <h4 className="text-white font-medium">
+                        {exercise.name}
+                      </h4>
+                      <div className="flex gap-2 mt-1">
+                        {exercise.bodyPart && (
+                          <span className="text-xs bg-[#f67a45]/20 text-[#f67a45] px-2 py-1 rounded">
+                            {exercise.bodyPart}
+                          </span>
+                        )}
+                        {exercise.equipment && (
+                          <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">
+                            {exercise.equipment}
+                          </span>
+                        )}
+                        {exercise.difficulty && (
+                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">
+                            {exercise.difficulty}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <FaPlus className="text-[#f67a45]" />
+                  </div>
+                ))}
+                {filteredExercises.length === 0 && (
+                  <div className="text-center py-8 text-white/60">
+                    No exercises found. Try a different search term.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
@@ -502,16 +612,17 @@ const AssignScheduleModal = ({ open, onClose, subscriber }) => {
         }}
         title={confirmTitle}
         message={confirmMessage}
-        type={confirmType}
+        type="warning"
       />
-      {/* Custom Notification */}
+
+      {/* Notification */}
       <Notification
         isVisible={notification.isVisible}
         type={notification.type}
         message={notification.message}
-        onClose={() => setNotification(n => ({ ...n, isVisible: false }))}
-        autoClose={notification.autoClose}
-        duration={notification.duration}
+        onClose={() => setNotification({ ...notification, isVisible: false })}
+        autoClose={true}
+        duration={3000}
       />
     </div>
   );

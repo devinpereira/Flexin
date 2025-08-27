@@ -5,6 +5,12 @@ const exerciseSchema = new mongoose.Schema({
   sets: Number,
   reps: Number,
   image: String,
+  modalImage: String,
+  bodyPart: String,
+  equipment: String,
+  difficulty: String,
+  primaryMuscles: [String],
+  secondaryMuscles: [String],
 });
 
 const daySchema = new mongoose.Schema({
@@ -17,6 +23,10 @@ const trainerScheduleSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     trainerId: { type: mongoose.Schema.Types.ObjectId, ref: "Trainer", required: true },
     days: [daySchema], // Array of days, each with exercises
+    assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Trainer" },
+    assignedAt: { type: Date, default: Date.now },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Trainer" },
+    updatedAt: { type: Date, default: Date.now }
   },
   { timestamps: true,
     collection: "trainerSchedules" 
