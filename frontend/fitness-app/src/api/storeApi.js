@@ -59,6 +59,16 @@ export const productsApi = {
             throw error.response?.data || error.message;
         }
     },
+    // Search products with advanced filters (brand, category, price, etc)
+    searchProducts: async (params = {}) => {
+        try {
+            // Use /api/v1/store/products/search endpoint for advanced filtering
+            const response = await api.get('/api/v1/store/products/search', { params });
+            return response.data;
+        } catch (error) {
+            throw error.response?.data || error.message;
+        }
+    },
 };
 
 // Categories API
