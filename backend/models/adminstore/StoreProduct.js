@@ -105,7 +105,7 @@ const storeProductSchema = new mongoose.Schema(
         shipping: {
             freeShipping: {
                 type: Boolean,
-                default: false,
+                default: true,
             },
             shippingCost: {
                 type: Number,
