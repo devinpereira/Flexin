@@ -17,7 +17,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     subscribers: 0,
     dueAmount: 0,
-    requests: 3,
+    requests: 0,
   });
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +60,7 @@ const Dashboard = () => {
           setStats({
             subscribers: overviewData.data?.indicators?.subscriptions || 0,
             dueAmount: dueAmountData.success ? dueAmountData.total : 0,
-            requests: 3, // Keep mock data for requests for now
+            requests: 0, // Keep mock data for requests for now
           });
         }
 

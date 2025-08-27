@@ -249,8 +249,7 @@ const Explore = () => {
                     </h3>
 
                     <p className="text-gray-400 text-sm mb-1 truncate max-w-[200px]">
-                      {trainer.specialty ||
-                        (trainer.specialties && trainer.specialties[0])}
+                      {trainer.title}
                     </p>
 
                     <div className="flex items-center justify-center text-[#f67a45] mb-2">

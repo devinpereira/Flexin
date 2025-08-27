@@ -222,13 +222,13 @@ export const updateTrainer = async (req, res) => {
 export const getTrainerById = async (req, res) => {
     try {
         const trainerId = req.params.id;
-        const trainer = await Trainer.findById(trainerId).populate('userId', 'fullName email ');
+        const trainer = await Trainer.findOne({ _id: trainerId, status: 'active' }).populate('userId', 'fullName email ');
         
 
         if (!trainer) {
             return res.status(404).json({
                 success: false,
-                message: "Trainer profile not found"
+                message: "Trainer profile not found or not active"
             });
         }
 
@@ -248,7 +248,7 @@ export const getTrainerById = async (req, res) => {
 //Get all trainers
 export const getAllTrainers = async (req, res) => { 
     try {
-        const trainers = await Trainer.find().populate('userId', 'fullName email'); // Populate userId with name and email
+        const trainers = await Trainer.find({ status: 'active' }).populate('userId', 'fullName email'); // Only get active trainers
 
 
         res.status(200).json({
@@ -298,7 +298,7 @@ export const removeFollower = async (req, res) => {
 export const getTrainersForUser = async (req, res) => {
   try {
     const userId = req.user._id;
-    const trainers = await Trainer.find({ followers: userId });
+    const trainers = await Trainer.find({ followers: userId, status: 'active' });
     res.json({ success: true, trainers });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -527,6 +527,97 @@ export const updateMyTrainerProfile = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to update trainer profile",
+      error: err.message
+    });
+  }
+};
+
+// Get all feedbacks for the current trainer
+export const getMyTrainerFeedbacks = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    
+    // Find trainer profile for current user
+    const trainer = await Trainer.findOne({ userId }).select('feedbacks');
+    
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found"
+      });
+    }
+
+    // Sort feedbacks by creation date (newest first)
+    const sortedFeedbacks = trainer.feedbacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json({
+      success: true,
+      feedbacks: sortedFeedbacks
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to get feedbacks",
+      error: err.message
+    });
+  }
+};
+
+// Remove a specific feedback from trainer's profile
+export const removeFeedback = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { feedbackId } = req.params;
+    
+    // Find trainer profile for current user
+    const trainer = await Trainer.findOne({ userId });
+    
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: "Trainer profile not found"
+      });
+    }
+
+    // Find the feedback to remove
+    const feedbackIndex = trainer.feedbacks.findIndex(
+      feedback => feedback._id.toString() === feedbackId
+    );
+
+    if (feedbackIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Feedback not found"
+      });
+    }
+
+    // Remove the feedback
+    const removedFeedback = trainer.feedbacks[feedbackIndex];
+    trainer.feedbacks.splice(feedbackIndex, 1);
+
+    // Recalculate rating and review count
+    const feedbacks = trainer.feedbacks || [];
+    const ratings = feedbacks.map(fb => fb.rating);
+    const avgRating = ratings.length > 0 
+      ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length 
+      : 0;
+    
+    trainer.rating = Math.round(avgRating * 10) / 10; // Round to 1 decimal place
+    trainer.reviewCount = feedbacks.length;
+
+    await trainer.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Feedback removed successfully",
+      removedFeedback,
+      rating: trainer.rating,
+      reviewCount: trainer.reviewCount
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to remove feedback",
       error: err.message
     });
   }
