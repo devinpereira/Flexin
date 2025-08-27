@@ -125,10 +125,15 @@ export const updateOrderStatus = async (req, res) => {
             case 'confirmed':
                 // Reserve inventory
                 for (const item of order.items) {
-                    await StoreInventory.findOneAndUpdate(
-                        { productId: item.productId },
-                        { $inc: { 'stock.reservedStock': item.quantity } }
-                    );
+                    // Find inventory first for proper update with hooks
+                    const inventoryToReserve = await StoreInventory.findOne({ productId: item.productId });
+                    if (inventoryToReserve) {
+                        inventoryToReserve.stock.reservedStock += item.quantity;
+                        await inventoryToReserve.save();
+                        console.log(`Reserved ${item.quantity} units for product ${item.productId}, new reserved: ${inventoryToReserve.stock.reservedStock}`);
+                    } else {
+                        console.error(`Inventory record for product ${item.productId} not found for reservation`);
+                    }
                 }
 
                 // Send order confirmation email to customer
@@ -184,15 +189,36 @@ export const updateOrderStatus = async (req, res) => {
 
                 // Update inventory - remove reserved stock and reduce current stock
                 for (const item of order.items) {
-                    await StoreInventory.findOneAndUpdate(
-                        { productId: item.productId },
-                        {
-                            $inc: {
-                                'stock.currentStock': -item.quantity,
-                                'stock.reservedStock': -item.quantity
-                            }
+                    // Find inventory first for proper update with hooks
+                    const inventoryToUpdateDelivered = await StoreInventory.findOne({ productId: item.productId });
+                    if (inventoryToUpdateDelivered) {
+                        // Save original values for logging
+                        const originalStock = inventoryToUpdateDelivered.stock.currentStock;
+                        const originalReserved = inventoryToUpdateDelivered.stock.reservedStock;
+
+                        // Update values
+                        inventoryToUpdateDelivered.stock.currentStock = Math.max(0, originalStock - item.quantity);
+                        inventoryToUpdateDelivered.stock.reservedStock = Math.max(0, originalReserved - item.quantity);
+                        await inventoryToUpdateDelivered.save();
+
+                        // Update product quantity as well
+                        const productToUpdateDelivered = await StoreProduct.findById(item.productId);
+                        if (productToUpdateDelivered) {
+                            productToUpdateDelivered.quantity = inventoryToUpdateDelivered.stock.currentStock;
+                            await productToUpdateDelivered.save();
+                            console.log(`Updated product ${item.productId} quantity to ${productToUpdateDelivered.quantity}`);
                         }
-                    );
+
+                        console.log(`Delivered order: Updated inventory for product ${item.productId}:`, {
+                            originalStock,
+                            originalReserved,
+                            newStock: inventoryToUpdateDelivered.stock.currentStock,
+                            newReserved: inventoryToUpdateDelivered.stock.reservedStock,
+                            deducted: item.quantity
+                        });
+                    } else {
+                        console.error(`Inventory record for product ${item.productId} not found for delivery update`);
+                    }
 
                     // Create stock history record
                     await StoreStockHistory.create({
@@ -214,10 +240,15 @@ export const updateOrderStatus = async (req, res) => {
                         }
                     });
 
-                    // Update product sales count
-                    await StoreProduct.findByIdAndUpdate(item.productId, {
-                        $inc: { salesCount: item.quantity }
-                    });
+                    // Update product sales count - using direct modification to trigger hooks
+                    const productForSalesCount = await StoreProduct.findById(item.productId);
+                    if (productForSalesCount) {
+                        productForSalesCount.salesCount = (productForSalesCount.salesCount || 0) + item.quantity;
+                        await productForSalesCount.save();
+                        console.log(`Updated product ${item.productId} salesCount to ${productForSalesCount.salesCount}`);
+                    } else {
+                        console.error(`Product ${item.productId} not found for salesCount update`);
+                    }
                 }
                 break;
 
@@ -225,10 +256,24 @@ export const updateOrderStatus = async (req, res) => {
                 // Release reserved inventory
                 if (oldStatus === 'confirmed' || oldStatus === 'processing') {
                     for (const item of order.items) {
-                        await StoreInventory.findOneAndUpdate(
-                            { productId: item.productId },
-                            { $inc: { 'stock.reservedStock': -item.quantity } }
-                        );
+                        // Find inventory first for proper update with hooks
+                        const inventoryToRelease = await StoreInventory.findOne({ productId: item.productId });
+                        if (inventoryToRelease) {
+                            // Save original value for logging
+                            const originalReserved = inventoryToRelease.stock.reservedStock;
+
+                            // Update value
+                            inventoryToRelease.stock.reservedStock = Math.max(0, originalReserved - item.quantity);
+                            await inventoryToRelease.save();
+
+                            console.log(`Canceled order: Released ${item.quantity} units from product ${item.productId}:`, {
+                                originalReserved,
+                                newReserved: inventoryToRelease.stock.reservedStock,
+                                released: Math.min(item.quantity, originalReserved)
+                            });
+                        } else {
+                            console.error(`Inventory record for product ${item.productId} not found for reservation release`);
+                        }
                     }
                 }
                 break;

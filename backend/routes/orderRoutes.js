@@ -6,7 +6,8 @@ import {
     getOrder,
     cancelOrder,
     getAllOrders,
-    updateOrderStatus
+    updateOrderStatus,
+    syncProductInventory
 } from "../controllers/orderController.js";
 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.put("/:id/cancel", cancelOrder);
 // Admin routes (you might want to add admin middleware here)
 router.get("/admin/all", getAllOrders);
 router.put("/admin/:id/status", updateOrderStatus);
+router.post("/admin/sync/:productId", syncProductInventory);
 
 export default router;

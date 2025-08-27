@@ -112,8 +112,15 @@ export const updateStock = async (req, res) => {
         inventory.stock.currentStock = quantity;
         await inventory.save();
 
-        // Update product quantity
-        await StoreProduct.findByIdAndUpdate(productId, { quantity });
+        // Update product quantity - using direct modification and save to trigger hooks
+        const productToUpdate = await StoreProduct.findById(productId);
+        if (productToUpdate) {
+            productToUpdate.quantity = quantity;
+            await productToUpdate.save();
+            console.log(`Updated product ${productId} quantity to ${quantity}`);
+        } else {
+            console.error(`Product ${productId} not found for quantity update`);
+        }
 
         // Create stock history record
         await StoreStockHistory.create({
@@ -188,8 +195,15 @@ export const bulkUpdateStock = async (req, res) => {
                 inventory.stock.currentStock = quantity;
                 await inventory.save();
 
-                // Update product quantity
-                await StoreProduct.findByIdAndUpdate(productId, { quantity });
+                // Update product quantity - using direct modification and save to trigger hooks
+                const productToUpdate = await StoreProduct.findById(productId);
+                if (productToUpdate) {
+                    productToUpdate.quantity = quantity;
+                    await productToUpdate.save();
+                    console.log(`Updated product ${productId} quantity to ${quantity} in bulk operation`);
+                } else {
+                    console.error(`Product ${productId} not found for bulk quantity update`);
+                }
 
                 // Create stock history record
                 await StoreStockHistory.create({
@@ -303,15 +317,8 @@ export const updateReorderPoint = async (req, res) => {
         const { productId } = req.params;
         const { reorderPoint, lowStockThreshold } = req.body;
 
-        const updateData = {};
-        if (reorderPoint !== undefined) updateData['thresholds.reorderPoint'] = reorderPoint;
-        if (lowStockThreshold !== undefined) updateData['thresholds.lowStockThreshold'] = lowStockThreshold;
-
-        const inventory = await StoreInventory.findOneAndUpdate(
-            { productId },
-            updateData,
-            { new: true }
-        ).populate('productId', 'productName sku');
+        // Find inventory first
+        const inventory = await StoreInventory.findOne({ productId });
 
         if (!inventory) {
             return res.status(404).json({
@@ -319,6 +326,29 @@ export const updateReorderPoint = async (req, res) => {
                 message: 'Inventory record not found'
             });
         }
+
+        // Update fields directly
+        if (reorderPoint !== undefined) {
+            inventory.thresholds.reorderPoint = reorderPoint;
+        }
+
+        if (lowStockThreshold !== undefined) {
+            inventory.thresholds.lowStockThreshold = lowStockThreshold;
+
+            // Update product lowStockThreshold as well
+            const product = await StoreProduct.findById(productId);
+            if (product) {
+                product.lowStockThreshold = lowStockThreshold;
+                await product.save();
+                console.log(`Updated product ${productId} lowStockThreshold to ${lowStockThreshold}`);
+            }
+        }
+
+        // Save with hooks
+        await inventory.save();
+
+        // Populate after save
+        await inventory.populate('productId', 'productName sku');
 
         res.status(200).json({
             success: true,
@@ -514,11 +544,8 @@ export const createInventory = async (req, res) => {
 // Update Inventory
 export const updateInventory = async (req, res) => {
     try {
-        const inventory = await StoreInventory.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        // Find the inventory first
+        const inventory = await StoreInventory.findById(req.params.id);
 
         if (!inventory) {
             return res.status(404).json({
@@ -527,10 +554,30 @@ export const updateInventory = async (req, res) => {
             });
         }
 
+        // If updating stock, also update the product
+        let productUpdated = false;
+        if (req.body.stock && req.body.stock.currentStock !== undefined) {
+            const productToUpdate = await StoreProduct.findById(inventory.productId);
+            if (productToUpdate) {
+                productToUpdate.quantity = req.body.stock.currentStock;
+                await productToUpdate.save();
+                productUpdated = true;
+                console.log(`Updated product ${inventory.productId} quantity to ${req.body.stock.currentStock}`);
+            }
+        }
+
+        // Update the inventory object
+        Object.keys(req.body).forEach(key => {
+            inventory[key] = req.body[key];
+        });
+
+        // Save to trigger hooks
+        await inventory.save();
+
         res.status(200).json({
             success: true,
             data: inventory,
-            message: 'Inventory updated successfully'
+            message: `Inventory updated successfully${productUpdated ? ' with product stock' : ''}`
         });
     } catch (error) {
         res.status(500).json({
@@ -1089,14 +1136,8 @@ export const setStockAlerts = async (req, res) => {
         const { id } = req.params;
         const { lowStockThreshold, reorderThreshold } = req.body;
 
-        const inventory = await StoreInventory.findByIdAndUpdate(
-            id,
-            {
-                'thresholds.lowStockThreshold': lowStockThreshold,
-                'thresholds.reorderThreshold': reorderThreshold
-            },
-            { new: true }
-        );
+        // Find inventory first
+        const inventory = await StoreInventory.findById(id);
 
         if (!inventory) {
             return res.status(404).json({
@@ -1104,6 +1145,26 @@ export const setStockAlerts = async (req, res) => {
                 message: 'Inventory item not found'
             });
         }
+
+        // Update fields directly
+        if (lowStockThreshold !== undefined) {
+            inventory.thresholds.lowStockThreshold = lowStockThreshold;
+
+            // Update product lowStockThreshold as well
+            const product = await StoreProduct.findById(inventory.productId);
+            if (product) {
+                product.lowStockThreshold = lowStockThreshold;
+                await product.save();
+                console.log(`Updated product ${inventory.productId} lowStockThreshold to ${lowStockThreshold}`);
+            }
+        }
+
+        if (reorderThreshold !== undefined) {
+            inventory.thresholds.reorderPoint = reorderThreshold;
+        }
+
+        // Save with hooks
+        await inventory.save();
 
         res.status(200).json({
             success: true,
@@ -1126,16 +1187,8 @@ export const deleteStockAlerts = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const inventory = await StoreInventory.findByIdAndUpdate(
-            id,
-            {
-                $unset: {
-                    'thresholds.lowStockThreshold': '',
-                    'thresholds.reorderThreshold': ''
-                }
-            },
-            { new: true }
-        );
+        // Find inventory first
+        const inventory = await StoreInventory.findById(id);
 
         if (!inventory) {
             return res.status(404).json({
@@ -1143,6 +1196,22 @@ export const deleteStockAlerts = async (req, res) => {
                 message: 'Inventory item not found'
             });
         }
+
+        // Update product as well
+        const product = await StoreProduct.findById(inventory.productId);
+        if (product) {
+            // Reset to default values instead of unsetting
+            product.lowStockThreshold = 10; // Default value from schema
+            await product.save();
+            console.log(`Reset product ${inventory.productId} lowStockThreshold to default`);
+        }
+
+        // Reset to default values instead of unsetting
+        inventory.thresholds.lowStockThreshold = 10;
+        inventory.thresholds.reorderPoint = 5;
+
+        // Save with hooks
+        await inventory.save();
 
         res.status(200).json({
             success: true,

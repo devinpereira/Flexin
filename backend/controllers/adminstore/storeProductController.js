@@ -265,10 +265,26 @@ export const updateProduct = async (req, res) => {
             }
         }
 
-        const product = await StoreProduct.findByIdAndUpdate(id, updateData, {
-            new: true,
-            runValidators: true
-        }).populate('categoryId').populate('subcategoryId');
+        // Find product first to ensure hooks are triggered
+        const product = await StoreProduct.findById(id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Update fields
+        Object.keys(updateData).forEach(key => {
+            product[key] = updateData[key];
+        });
+
+        // Save with hooks
+        await product.save();
+
+        // Populate fields
+        await product.populate('categoryId');
+        await product.populate('subcategoryId');
 
         if (!product) {
             return res.status(404).json({
@@ -279,13 +295,15 @@ export const updateProduct = async (req, res) => {
 
         // Update inventory if quantity changed
         if (updateData.quantity !== undefined) {
-            await StoreInventory.findOneAndUpdate(
-                { productId: id },
-                {
-                    'stock.currentStock': updateData.quantity,
-                    'stock.availableStock': updateData.quantity
-                }
-            );
+            const inventory = await StoreInventory.findOne({ productId: id });
+            if (inventory) {
+                inventory.stock.currentStock = updateData.quantity;
+                inventory.stock.availableStock = updateData.quantity;
+                await inventory.save();
+                console.log(`Updated inventory for product ${id} quantity to ${updateData.quantity}`);
+            } else {
+                console.error(`Inventory record for product ${id} not found when updating quantity`);
+            }
         }
 
         res.status(200).json({
@@ -349,11 +367,18 @@ export const updateProductStatus = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
-        const product = await StoreProduct.findByIdAndUpdate(
-            id,
-            { status },
-            { new: true }
-        );
+        // Find product first to ensure hooks are triggered
+        const product = await StoreProduct.findById(id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Update status
+        product.status = status;
+        await product.save();
 
         if (!product) {
             return res.status(404).json({
@@ -387,10 +412,30 @@ export const bulkUpdateProducts = async (req, res) => {
             });
         }
 
-        const result = await StoreProduct.updateMany(
-            { _id: { $in: productIds } },
-            updateData
-        );
+        // Get all products first
+        const products = await StoreProduct.find({ _id: { $in: productIds } });
+
+        // Update each product individually to trigger hooks
+        let modifiedCount = 0;
+        for (const product of products) {
+            try {
+                // Apply update data
+                Object.keys(updateData).forEach(key => {
+                    product[key] = updateData[key];
+                });
+
+                await product.save();
+                modifiedCount++;
+            } catch (error) {
+                console.error(`Error updating product ${product._id}:`, error);
+                // Continue with other products
+            }
+        }
+
+        const result = {
+            modifiedCount,
+            matchedCount: products.length
+        };
 
         res.status(200).json({
             success: true,
@@ -589,11 +634,18 @@ export const updateFeaturedStatus = async (req, res) => {
         const { id } = req.params;
         const { isFeatured } = req.body;
 
-        const product = await StoreProduct.findByIdAndUpdate(
-            id,
-            { isFeatured },
-            { new: true }
-        );
+        // Find product first to ensure hooks are triggered
+        const product = await StoreProduct.findById(id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Update featured status
+        product.isFeatured = isFeatured;
+        await product.save();
 
         if (!product) {
             return res.status(404).json({
@@ -788,11 +840,18 @@ export const updateInventoryStock = async (req, res) => {
         const { id } = req.params;
         const { quantity } = req.body;
 
-        const product = await StoreProduct.findByIdAndUpdate(
-            id,
-            { quantity },
-            { new: true }
-        );
+        // Find product first to ensure hooks are triggered
+        const product = await StoreProduct.findById(id);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found'
+            });
+        }
+
+        // Update quantity
+        product.quantity = quantity;
+        await product.save();
 
         if (!product) {
             return res.status(404).json({
@@ -802,13 +861,15 @@ export const updateInventoryStock = async (req, res) => {
         }
 
         // Update inventory
-        await StoreInventory.findOneAndUpdate(
-            { productId: id },
-            {
-                'stock.currentStock': quantity,
-                'stock.availableStock': quantity
-            }
-        );
+        const inventory = await StoreInventory.findOne({ productId: id });
+        if (inventory) {
+            inventory.stock.currentStock = quantity;
+            inventory.stock.availableStock = quantity;
+            await inventory.save();
+            console.log(`Updated inventory for product ${id} quantity to ${quantity} from updateInventoryStock`);
+        } else {
+            console.error(`Inventory record for product ${id} not found when updating from updateInventoryStock`);
+        }
 
         res.status(200).json({
             success: true,
@@ -838,15 +899,27 @@ export const bulkUpdateStock = async (req, res) => {
         const results = [];
         for (const update of updates) {
             try {
-                await StoreProduct.findByIdAndUpdate(update.productId, { quantity: update.quantity });
-                await StoreInventory.findOneAndUpdate(
-                    { productId: update.productId },
-                    {
-                        'stock.currentStock': update.quantity,
-                        'stock.availableStock': update.quantity
+                // Update product with hooks
+                const product = await StoreProduct.findById(update.productId);
+                if (product) {
+                    product.quantity = update.quantity;
+                    await product.save();
+
+                    // Update inventory with hooks
+                    const inventory = await StoreInventory.findOne({ productId: update.productId });
+                    if (inventory) {
+                        inventory.stock.currentStock = update.quantity;
+                        inventory.stock.availableStock = update.quantity;
+                        await inventory.save();
+                        console.log(`Bulk updated inventory for product ${update.productId} quantity to ${update.quantity}`);
+                    } else {
+                        console.error(`Inventory record for product ${update.productId} not found in bulk update`);
                     }
-                );
-                results.push({ productId: update.productId, success: true });
+
+                    results.push({ productId: update.productId, success: true });
+                } else {
+                    results.push({ productId: update.productId, success: false, error: 'Product not found' });
+                }
             } catch (error) {
                 results.push({ productId: update.productId, success: false, error: error.message });
             }
