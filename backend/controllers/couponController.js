@@ -1,6 +1,4 @@
-import Coupon from "../models/Coupon.js";
-import Product from "../models/Product.js";
-import Category from "../models/Catergory.js";
+import { StoreCoupon, StoreProduct, StoreCategory } from "../models/adminstore/index.js";
 
 // Get All Coupons (Admin)
 export const getAllCoupons = async (req, res) => {
@@ -9,19 +7,19 @@ export const getAllCoupons = async (req, res) => {
 
         let filter = {};
         if (isActive !== undefined) {
-            filter.isActive = isActive === 'true';
+            filter.status = isActive === 'true' ? 'active' : 'disabled';
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
 
-        const coupons = await Coupon.find(filter)
-            .populate('applicableProducts', 'productName')
-            .populate('applicableCategories', 'name')
+        const coupons = await StoreCoupon.find(filter)
+            .populate('conditions.applicableProducts', 'productName')
+            .populate('conditions.applicableCategories', 'name')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit));
 
-        const totalCoupons = await Coupon.countDocuments(filter);
+        const totalCoupons = await StoreCoupon.countDocuments(filter);
         const totalPages = Math.ceil(totalCoupons / parseInt(limit));
 
         res.status(200).json({
@@ -49,16 +47,16 @@ export const getActiveCoupons = async (req, res) => {
     try {
         const currentDate = new Date();
 
-        const coupons = await Coupon.find({
-            isActive: true,
-            startDate: { $lte: currentDate },
-            endDate: { $gte: currentDate },
+        const coupons = await StoreCoupon.find({
+            status: 'active',
+            'validity.startDate': { $lte: currentDate },
+            'validity.endDate': { $gte: currentDate },
             $or: [
-                { usageLimit: null },
-                { $expr: { $lt: ["$usageCount", "$usageLimit"] } }
+                { 'usage.totalLimit': null },
+                { $expr: { $lt: ["$usage.totalUsed", "$usage.totalLimit"] } }
             ]
         })
-            .select('code discountType discountValue minimumPurchase endDate')
+            .select('code type discount.value discount.maxAmount conditions.minimumAmount validity.endDate')
             .sort({ createdAt: -1 });
 
         res.status(200).json({
@@ -93,12 +91,12 @@ export const validateCoupon = async (req, res) => {
             });
         }
 
-        const coupon = await Coupon.findOne({
+        const coupon = await StoreCoupon.findOne({
             code: code.toUpperCase(),
-            isActive: true
+            status: 'active'
         })
-            .populate('applicableProducts', '_id')
-            .populate('applicableCategories', '_id');
+            .populate('conditions.applicableProducts', '_id')
+            .populate('conditions.applicableCategories', '_id');
 
         if (!coupon) {
             return res.status(404).json({
@@ -110,7 +108,7 @@ export const validateCoupon = async (req, res) => {
         const currentDate = new Date();
 
         // Check if coupon is within valid date range
-        if (currentDate < coupon.startDate || currentDate > coupon.endDate) {
+        if (currentDate < coupon.validity.startDate || currentDate > coupon.validity.endDate) {
             return res.status(400).json({
                 success: false,
                 message: "Coupon has expired or not yet active"
@@ -118,7 +116,7 @@ export const validateCoupon = async (req, res) => {
         }
 
         // Check usage limit
-        if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
+        if (coupon.usage.totalLimit && coupon.usage.totalUsed >= coupon.usage.totalLimit) {
             return res.status(400).json({
                 success: false,
                 message: "Coupon usage limit exceeded"
@@ -126,27 +124,27 @@ export const validateCoupon = async (req, res) => {
         }
 
         // Check minimum purchase requirement
-        if (cartTotal < coupon.minimumPurchase) {
+        if (cartTotal < coupon.conditions.minimumAmount) {
             return res.status(400).json({
                 success: false,
-                message: `Minimum purchase of $${coupon.minimumPurchase} required`
+                message: `Minimum purchase of $${coupon.conditions.minimumAmount} required`
             });
         }
 
         // Check product/category restrictions
-        if (coupon.applicableProducts.length > 0 || coupon.applicableCategories.length > 0) {
+        if (coupon.conditions.applicableProducts.length > 0 || coupon.conditions.applicableCategories.length > 0) {
             let isApplicable = false;
 
-            if (coupon.applicableProducts.length > 0) {
-                const applicableProductIds = coupon.applicableProducts.map(p => p._id.toString());
+            if (coupon.conditions.applicableProducts.length > 0) {
+                const applicableProductIds = coupon.conditions.applicableProducts.map(p => p._id.toString());
                 isApplicable = productIds.some(id => applicableProductIds.includes(id));
             }
 
-            if (!isApplicable && coupon.applicableCategories.length > 0) {
+            if (!isApplicable && coupon.conditions.applicableCategories.length > 0) {
                 // Check if any products belong to applicable categories
-                const products = await Product.find({
+                const products = await StoreProduct.find({
                     _id: { $in: productIds },
-                    categoryId: { $in: coupon.applicableCategories.map(c => c._id) }
+                    categoryId: { $in: coupon.conditions.applicableCategories.map(c => c._id) }
                 });
                 isApplicable = products.length > 0;
             }
@@ -161,10 +159,20 @@ export const validateCoupon = async (req, res) => {
 
         // Calculate discount
         let discountAmount = 0;
-        if (coupon.discountType === 'percentage') {
-            discountAmount = (cartTotal * coupon.discountValue) / 100;
-        } else {
-            discountAmount = Math.min(coupon.discountValue, cartTotal);
+        switch (coupon.type) {
+            case 'percentage':
+                discountAmount = (cartTotal * coupon.discount.value) / 100;
+                if (coupon.discount.maxAmount) {
+                    discountAmount = Math.min(discountAmount, coupon.discount.maxAmount);
+                }
+                break;
+            case 'fixed_amount':
+                discountAmount = Math.min(coupon.discount.value, cartTotal);
+                break;
+            case 'free_shipping':
+                // Shipping discount would be handled separately
+                discountAmount = 0;
+                break;
         }
 
         const finalTotal = Math.max(0, cartTotal - discountAmount);
@@ -174,8 +182,8 @@ export const validateCoupon = async (req, res) => {
             message: "Coupon is valid",
             coupon: {
                 code: coupon.code,
-                discountType: coupon.discountType,
-                discountValue: coupon.discountValue,
+                type: coupon.type,
+                discountValue: coupon.discount.value,
                 discountAmount: parseFloat(discountAmount.toFixed(2)),
                 originalTotal: cartTotal,
                 finalTotal: parseFloat(finalTotal.toFixed(2))
@@ -235,7 +243,7 @@ export const createCoupon = async (req, res) => {
         }
 
         // Check if coupon code already exists
-        const existingCoupon = await Coupon.findOne({
+        const existingCoupon = await StoreCoupon.findOne({
             code: code.toUpperCase()
         });
         if (existingCoupon) {
@@ -245,16 +253,28 @@ export const createCoupon = async (req, res) => {
             });
         }
 
-        const coupon = new Coupon({
+        const coupon = new StoreCoupon({
             code: code.toUpperCase(),
-            discountType,
-            discountValue,
-            minimumPurchase,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            usageLimit,
-            applicableProducts,
-            applicableCategories
+            name: code.toUpperCase(),
+            type: discountType === 'percentage' ? 'percentage' : 'fixed_amount',
+            discount: {
+                value: discountValue,
+                maxAmount: discountType === 'percentage' ? discountValue : undefined
+            },
+            conditions: {
+                minimumAmount: minimumPurchase,
+                applicableProducts,
+                applicableCategories
+            },
+            validity: {
+                startDate: new Date(startDate),
+                endDate: new Date(endDate)
+            },
+            usage: {
+                totalLimit: usageLimit,
+                totalUsed: 0
+            },
+            status: 'active'
         });
 
         await coupon.save();
@@ -303,13 +323,13 @@ export const updateCoupon = async (req, res) => {
             updates.code = updates.code.toUpperCase();
         }
 
-        const coupon = await Coupon.findByIdAndUpdate(
+        const coupon = await StoreCoupon.findByIdAndUpdate(
             id,
             updates,
             { new: true, runValidators: true }
         )
-            .populate('applicableProducts', 'productName')
-            .populate('applicableCategories', 'name');
+            .populate('conditions.applicableProducts', 'productName')
+            .populate('conditions.applicableCategories', 'name');
 
         if (!coupon) {
             return res.status(404).json({
@@ -344,9 +364,9 @@ export const deleteCoupon = async (req, res) => {
             });
         }
 
-        const coupon = await Coupon.findByIdAndUpdate(
+        const coupon = await StoreCoupon.findByIdAndUpdate(
             id,
-            { isActive: false },
+            { status: 'disabled' },
             { new: true }
         );
 

@@ -1,6 +1,4 @@
-import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
-import Product from "../models/Product.js";
 import Address from "../models/Address.js";
 import User from "../models/User.js";
 // Import admin store models for correct product source and order integration
@@ -70,16 +68,8 @@ export const createOrder = async (req, res) => {
                 });
             }
 
-            // Debug log to check inventory before order
+            // Check inventory before order
             const inventoryBefore = await StoreInventory.findOne({ productId: item.productId });
-            console.log(`Pre-order inventory check for ${product.productName}:`, {
-                productId: item.productId,
-                productQuantity: product.quantity,
-                inventoryExists: !!inventoryBefore,
-                inventoryQuantity: inventoryBefore ? inventoryBefore.stock.currentStock : 'N/A',
-                quantityMatch: inventoryBefore ? product.quantity === inventoryBefore.stock.currentStock : false,
-                orderQuantity: item.quantity
-            });
 
             if (product.quantity < item.quantity) {
                 return res.status(400).json({
