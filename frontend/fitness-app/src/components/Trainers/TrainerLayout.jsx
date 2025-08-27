@@ -150,10 +150,10 @@ const TrainerLayout = ({ children, pageTitle = 'Trainers' }) => {
                 </a>
 
                 <div className="mt-32 border-t border-white/20 pt-6">
-                  <div className="flex items-center gap-3">
+                  {/* <div className="flex items-center gap-3">
                     <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
                     <span className="text-white">Account</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </nav>

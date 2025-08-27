@@ -255,7 +255,7 @@ const MealPlan = () => {
             <div className="flex flex-col items-center mb-4 sm:mb-6">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-3 sm:mb-4">
                 <img
-                  src={trainer?.image}
+                  src={trainer?.profilePhoto}
                   alt={trainer?.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -268,7 +268,7 @@ const MealPlan = () => {
                 {trainer.name}
               </h3>
               <p className="text-gray-400 mb-2 text-sm sm:text-base">
-                {trainer.specialty}
+                {trainer.specialties.join(", ")}
               </p>
               <a
                 onClick={() => navigate(`/trainers/${trainerId}`)}

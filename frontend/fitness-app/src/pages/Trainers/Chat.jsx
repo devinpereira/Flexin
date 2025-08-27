@@ -1,23 +1,38 @@
-import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Navigation from '../../components/Navigation';
-import { FaUserFriends, FaPaperclip, FaImage, FaFile, FaMicrophone, FaPhoneAlt, FaStopCircle, FaBars, FaPlay } from 'react-icons/fa';
-import { MdExplore, MdArrowBack, MdSend } from 'react-icons/md';
-import { BsCalendarWeek, BsEmojiSmile } from 'react-icons/bs';
-import { GiMeal } from 'react-icons/gi';
-import { BiChat } from 'react-icons/bi';
-import { RiVipDiamondLine } from 'react-icons/ri';
-import { API_PATHS } from '../../utils/apiPaths';
-import axiosInstance from '../../utils/axiosInstance';
-import { connectSocket, validateTextMessage, emitTextMessage, emitTypingStatus } from '../../utils/socket';
-import { UserContext } from '../../context/UserContext';
+import React, { useState, useRef, useEffect, useMemo, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import Navigation from "../../components/Navigation";
+import {
+  FaUserFriends,
+  FaPaperclip,
+  FaImage,
+  FaFile,
+  FaMicrophone,
+  FaPhoneAlt,
+  FaStopCircle,
+  FaBars,
+  FaPlay,
+} from "react-icons/fa";
+import { MdExplore, MdArrowBack, MdSend } from "react-icons/md";
+import { BsCalendarWeek, BsEmojiSmile } from "react-icons/bs";
+import { GiMeal } from "react-icons/gi";
+import { BiChat } from "react-icons/bi";
+import { RiVipDiamondLine } from "react-icons/ri";
+import { API_PATHS } from "../../utils/apiPaths";
+import axiosInstance from "../../utils/axiosInstance";
+import {
+  connectSocket,
+  validateTextMessage,
+  emitTextMessage,
+  emitTypingStatus,
+} from "../../utils/socket";
+import { UserContext } from "../../context/UserContext";
 
 const Chat = () => {
   const { trainerId } = useParams();
   const navigate = useNavigate();
   const { user, loading: userLoading } = useContext(UserContext);
-  const [activeSection, setActiveSection] = useState('My Trainers');
-  const [message, setMessage] = useState('');
+  const [activeSection, setActiveSection] = useState("My Trainers");
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -46,14 +61,22 @@ const Chat = () => {
       if (trainerId) {
         try {
           setLoading(true);
-          const response = await axiosInstance.get(API_PATHS.TRAINER.GET_TRAINER(trainerId));
+          const response = await axiosInstance.get(
+            API_PATHS.TRAINER.GET_TRAINER(trainerId)
+          );
           const trainerData = response.data.trainer;
           setTrainer({
             id: trainerData._id,
             name: trainerData.name,
             image: trainerData.profilePhoto || "/src/assets/trainer.png",
-            specialty: trainerData.specialties?.[0] || trainerData.title || "Personal Trainer",
-            status: trainerData.availabilityStatus === 'available' ? 'Online' : 'Offline'
+            specialty:
+              trainerData.specialties?.[0] ||
+              trainerData.title ||
+              "Personal Trainer",
+            status:
+              trainerData.availabilityStatus === "available"
+                ? "Online"
+                : "Offline",
           });
         } catch (error) {
           setTrainer({
@@ -61,7 +84,7 @@ const Chat = () => {
             name: "Trainer",
             image: "/src/assets/trainer.png",
             specialty: "Personal Trainer",
-            status: "Offline"
+            status: "Offline",
           });
         } finally {
           setLoading(false);
@@ -71,8 +94,6 @@ const Chat = () => {
 
     fetchTrainerData();
   }, [trainerId]);
-
-
 
   useEffect(() => {
     scrollToBottom();
@@ -94,23 +115,28 @@ const Chat = () => {
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
     const fetchChatMessages = async () => {
       if (trainerId && userId) {
         try {
-          const response = await axiosInstance.get(`${API_PATHS.CHAT.GET_CHAT}?trainerId=${trainerId}&userId=${userId}`);
+          const response = await axiosInstance.get(
+            `${API_PATHS.CHAT.GET_CHAT}?trainerId=${trainerId}&userId=${userId}`
+          );
           const chatData = response.data;
-          
-          const transformedMessages = (chatData.messages || []).map(msg => ({
+
+          const transformedMessages = (chatData.messages || []).map((msg) => ({
             id: msg._id,
             sender: msg.sender === userId ? "user" : "trainer",
             text: msg.content,
-            time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isRead: msg.isRead
+            time: new Date(msg.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            isRead: msg.isRead,
           }));
 
           setMessages(transformedMessages);
@@ -131,22 +157,27 @@ const Chat = () => {
           id: msg.messageId || `temp-${Date.now()}-${Math.random()}`,
           sender: msg.from === userId ? "user" : "trainer",
           text: msg.message,
-          time: new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isRead: false
+          time: new Date(msg.time).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          isRead: false,
         };
 
         // Check for duplicates
-        setMessages(prev => {
-          const exists = prev.some(existingMsg => 
-            existingMsg.text === newMessage.text && 
-            existingMsg.sender === newMessage.sender &&
-            Math.abs(new Date(existingMsg.time) - new Date(newMessage.time)) < 5000
+        setMessages((prev) => {
+          const exists = prev.some(
+            (existingMsg) =>
+              existingMsg.text === newMessage.text &&
+              existingMsg.sender === newMessage.sender &&
+              Math.abs(new Date(existingMsg.time) - new Date(newMessage.time)) <
+                5000
           );
-          
+
           if (exists) {
             return prev;
           }
-          
+
           return [...prev, newMessage];
         });
       }
@@ -161,9 +192,11 @@ const Chat = () => {
 
     // Handle message read status
     socket.on("messageRead", (data) => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === data.messageId ? { ...msg, isRead: true } : msg
-      ));
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === data.messageId ? { ...msg, isRead: true } : msg
+        )
+      );
     });
 
     // Handle websocket errors
@@ -180,14 +213,14 @@ const Chat = () => {
   }, [socket, userId]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSendMessage = async () => {
-    if (message.trim() === '') return;
+    if (message.trim() === "") return;
 
     const messageContent = message.trim();
-    
+
     // Validate text message
     const validation = validateTextMessage(messageContent);
     if (!validation.isValid) {
@@ -195,7 +228,7 @@ const Chat = () => {
       return;
     }
 
-    setMessage('');
+    setMessage("");
 
     // Clear typing indicator
     if (isTyping) {
@@ -205,21 +238,27 @@ const Chat = () => {
 
     try {
       // Send message to backend for persistence
-      const response = await axiosInstance.post(API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE, { 
-        trainerId, 
-        userId, 
-        content: messageContent 
-      });
-      
+      const response = await axiosInstance.post(
+        API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE,
+        {
+          trainerId,
+          userId,
+          content: messageContent,
+        }
+      );
+
       const newMessage = {
         id: response.data._id || Date.now(),
         sender: "user",
         text: messageContent,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isRead: false
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isRead: false,
       };
 
-      setMessages(prev => [...prev, newMessage]);
+      setMessages((prev) => [...prev, newMessage]);
 
       // Send text message via websocket for real-time delivery
       try {
@@ -237,17 +276,17 @@ const Chat = () => {
   // Handle typing indicators
   const handleTyping = (value) => {
     setMessage(value);
-    
-    if (value.trim() !== '' && !isTyping) {
+
+    if (value.trim() !== "" && !isTyping) {
       setIsTyping(true);
       emitTypingStatus(trainerId, true);
     }
-    
+
     // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     // Set new timeout to stop typing indicator
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
@@ -261,14 +300,17 @@ const Chat = () => {
 
     const newMessage = {
       id: messages.length + 1,
-      sender: 'user',
+      sender: "user",
       file: {
         name: file.name,
         type: file.type,
-        size: file.size
+        size: file.size,
       },
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isRead: false
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      isRead: false,
     };
 
     setMessages([...messages, newMessage]);
@@ -282,11 +324,14 @@ const Chat = () => {
 
       const newMessage = {
         id: messages.length + 1,
-        sender: 'user',
+        sender: "user",
         voiceMessage: true,
         duration: recordingTime,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isRead: false
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isRead: false,
       };
 
       setMessages([...messages, newMessage]);
@@ -294,7 +339,7 @@ const Chat = () => {
       setIsRecording(true);
 
       const timer = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime((prev) => prev + 1);
       }, 1000);
 
       return () => clearInterval(timer);
@@ -304,19 +349,27 @@ const Chat = () => {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
-    <div className="min-h-screen bg-cover bg-center bg-fixed overflow-x-hidden"
-      style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
+    <div
+      className="min-h-screen bg-cover bg-center bg-fixed overflow-x-hidden"
+      style={{
+        background: "linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)",
+      }}
+    >
       <Navigation />
 
       {loading ? (
         <div className="container mx-auto pt-4 sm:pt-8 px-4">
-                  <div className="w-full md:ml-[275px] lg:ml-[300px]">
+          <div className="w-full md:ml-[275px] lg:ml-[300px]">
             <div className="flex items-center justify-center h-[60vh]">
-              <div className="text-white text-lg">Loading trainer information...</div>
+              <div className="text-white text-lg">
+                Loading trainer information...
+              </div>
             </div>
           </div>
         </div>
@@ -331,476 +384,563 @@ const Chat = () => {
             </button>
           </div>
 
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
-        }`}>
-        <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
+          <div
+            className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${
+              isMobileMenuOpen ? "translate-y-0" : "translate-y-full"
+            }`}
+          >
+            <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
 
-        <div className="px-6 pb-8 pt-2">
-          <div className="flex flex-col space-y-4">
-            <a
-              href="#"
-              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'My Trainers'
-                  ? 'bg-[#f67a45] text-white font-medium'
-                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                }`}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/trainers');
-              }}
-            >
-              <FaUserFriends size={20} />
-              <span>My Trainers</span>
-            </a>
+            <div className="px-6 pb-8 pt-2">
+              <div className="flex flex-col space-y-4">
+                <a
+                  href="#"
+                  className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
+                    activeSection === "My Trainers"
+                      ? "bg-[#f67a45] text-white font-medium"
+                      : "text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]"
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("/trainers");
+                  }}
+                >
+                  <FaUserFriends size={20} />
+                  <span>My Trainers</span>
+                </a>
 
-            <a
-              href="#"
-              className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${activeSection === 'Explore'
-                  ? 'bg-[#f67a45] text-white font-medium'
-                  : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                }`}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate('/explore');
-              }}
-            >
-              <MdExplore size={20} />
-              <span>Explore</span>
-            </a>
+                <a
+                  href="#"
+                  className={`flex items-center gap-3 px-6 py-4 rounded-full transition-all ${
+                    activeSection === "Explore"
+                      ? "bg-[#f67a45] text-white font-medium"
+                      : "text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]"
+                  }`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate("/explore");
+                  }}
+                >
+                  <MdExplore size={20} />
+                  <span>Explore</span>
+                </a>
 
-            <div className="border-t border-white/20 pt-4 mt-4">
-              <div className="flex items-center gap-3 px-6 py-2">
-                <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
-                <span className="text-white">Account</span>
+                <div className="border-t border-white/20 pt-4 mt-4">
+                  <div className="flex items-center gap-3 px-6 py-2">
+                    <img
+                      src="/src/assets/profile1.png"
+                      className="w-10 h-10 rounded-full"
+                      alt="Profile"
+                    />
+                    <span className="text-white">Account</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="container mx-auto pt-4 sm:pt-8 px-4 overflow-x-hidden">
-                <div className="hidden md:block fixed left-0 top-16 h-full w-[250px] lg:w-[275px] bg-[#03020d] z-30 border-r border-gray-800">
-          <nav className="bg-[#03020d] rounded-tr-[30px] w-[275px] p-6 h-full">
-            <div className="space-y-6 mt-8">
-              <a
-                href="#"
-                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'My Trainers'
-                    ? 'bg-[#f67a45] text-white font-medium'
-                    : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                  }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate('/trainers');
-                }}
-              >
-                <FaUserFriends size={20} />
-                <span>My Trainers</span>
-              </a>
+          <div className="container mx-auto pt-4 sm:pt-8 px-4 overflow-x-hidden">
+            <div className="hidden md:block fixed left-0 top-16 h-full w-[250px] lg:w-[275px] bg-[#03020d] z-30 border-r border-gray-800">
+              <nav className="bg-[#03020d] rounded-tr-[30px] w-[275px] p-6 h-full">
+                <div className="space-y-6 mt-8">
+                  <a
+                    href="#"
+                    className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${
+                      activeSection === "My Trainers"
+                        ? "bg-[#f67a45] text-white font-medium"
+                        : "text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]"
+                    }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate("/trainers");
+                    }}
+                  >
+                    <FaUserFriends size={20} />
+                    <span>My Trainers</span>
+                  </a>
 
-              <a
-                href="#"
-                className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${activeSection === 'Explore'
-                    ? 'bg-[#f67a45] text-white font-medium'
-                    : 'text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]'
-                  }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigate('/explore');
-                }}
-              >
-                <MdExplore size={20} />
-                <span>Explore</span>
-              </a>
+                  <a
+                    href="#"
+                    className={`flex items-center gap-3 px-6 py-3 rounded-full transition-all duration-200 ${
+                      activeSection === "Explore"
+                        ? "bg-[#f67a45] text-white font-medium"
+                        : "text-white hover:bg-[#f67a45]/10 hover:text-[#f67a45]"
+                    }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate("/explore");
+                    }}
+                  >
+                    <MdExplore size={20} />
+                    <span>Explore</span>
+                  </a>
 
-              <div className="mt-32 border-t border-white/20 pt-6">
-                <div className="flex items-center gap-3">
-                  <img src="/src/assets/profile1.png" className="w-10 h-10 rounded-full" alt="Profile" />
-                  <span className="text-white">Account</span>
-                </div>
-              </div>
-            </div>
-          </nav>
-        </div>
-
-        <div className="w-full md:ml-[275px] lg:ml-[300px] overflow-x-hidden">
-          <button
-            onClick={() => navigate(`/trainers/${trainerId}`)}
-            className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
-          >
-            <MdArrowBack size={20} />
-            <span>Back to Trainer Profile</span>
-          </button>
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6 h-fit">
-              <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden mb-4 sm:mb-8 flex flex-col h-[70vh]">
-                <div className="bg-[#1A1A2F] p-3 sm:p-4 flex items-center justify-between border-b border-gray-700">
-                  <div className="flex items-center">
-                    <div className="relative">
+                  <div className="mt-32 border-t border-white/20 pt-6">
+                    <div className="flex items-center gap-3">
                       <img
-                        src={trainer?.image || "/src/assets/trainer.png"}
-                        alt={trainer?.name || "Trainer"}
-                        className="w-10 h-10 rounded-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/src/assets/profile1.png';
-                        }}
+                        src="/src/assets/profile1.png"
+                        className="w-10 h-10 rounded-full"
+                        alt="Profile"
                       />
-                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${trainer?.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'
-                        } border-2 border-[#1A1A2F]`}></div>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-white font-medium">{trainer?.name || "Loading..."}</h3>
-                      <p className="text-gray-400 text-xs">{trainer?.status || "Offline"}</p>
+                      <span className="text-white">Account</span>
                     </div>
                   </div>
-                  <button
-                    className="bg-[#f67a45]/20 text-[#f67a45] p-2 rounded-full hover:bg-[#f67a45]/30"
-                    onClick={() => setShowAppointmentModal(true)}
-                  >
-                    <FaPhoneAlt size={16} />
-                  </button>
                 </div>
+              </nav>
+            </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 overflow-x-hidden">
-                  <div className="w-full">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4 w-full`}
-                      >
-                        {msg.sender === 'trainer' && (
+            <div className="w-full md:ml-[275px] lg:ml-[300px] overflow-x-hidden">
+              <button
+                onClick={() => navigate(`/trainers/${trainerId}`)}
+                className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
+              >
+                <MdArrowBack size={20} />
+                <span>Back to Trainer Profile</span>
+              </button>
+
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
+                <div className="lg:col-span-2 space-y-4 sm:space-y-6 h-fit">
+                  <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden mb-4 sm:mb-8 flex flex-col h-[70vh]">
+                    <div className="bg-[#1A1A2F] p-3 sm:p-4 flex items-center justify-between border-b border-gray-700">
+                      <div className="flex items-center">
+                        <div className="relative">
                           <img
                             src={trainer?.image || "/src/assets/trainer.png"}
                             alt={trainer?.name || "Trainer"}
-                            className="w-8 h-8 rounded-full mr-2 mt-1 object-cover flex-shrink-0"
+                            className="w-10 h-10 rounded-full object-cover"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = '/src/assets/profile1.png';
+                              e.target.src = "/src/assets/profile1.png";
                             }}
                           />
-                        )}
-                        <div
-                          className={`max-w-[75%] rounded-lg p-3 ${msg.sender === 'user'
-                              ? 'bg-[#f67a45] text-white rounded-tr-none'
-                              : 'bg-[#1A1A2F] text-white rounded-tl-none'
-                            }`}
-                        >
-                          {msg.image && (
-                            <div className="mb-2">
-                              <img
-                                src={msg.image}
-                                alt="Shared"
-                                className="rounded-lg max-w-full h-auto"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = '/src/assets/image-placeholder.jpg';
-                                }}
-                              />
-                            </div>
-                          )}
-
-                          {msg.file && (
-                            <div className="flex items-center bg-white/10 rounded-lg p-2 mb-2">
-                              <FaFile className="text-white mr-2" />
-                              <div className="overflow-hidden">
-                                <p className="truncate text-white/90 text-sm">{msg.file.name}</p>
-                                <p className="text-white/60 text-xs">
-                                  {(msg.file.size / 1024).toFixed(1)} KB
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {msg.voiceMessage && (
-                            <div className="flex items-center gap-3">
-                              <button className="text-white p-1 bg-white/10 rounded-full">
-                                <FaPlay size={12} />
-                              </button>
-                              <div className="w-32 h-1 bg-white/20 rounded-full">
-                                <div className="h-full w-1/3 bg-white rounded-full"></div>
-                              </div>
-                              <span className="text-white/60 text-xs">{formatTime(msg.duration)}</span>
-                            </div>
-                          )}
-
-                          {msg.text && <p>{msg.text}</p>}
-
-                          <div className={`text-xs mt-1 flex justify-end items-center gap-1 ${msg.sender === 'user' ? 'text-white/70' : 'text-white/50'
-                            }`}>
-                            {msg.time}
-                            {msg.sender === 'user' && (
-                              <span>
-                                {msg.isRead ? (
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M9.707 7.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L12 9.586l-2.293-2.293z" />
-                                  </svg>
-                                ) : (
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </span>
-                            )}
-                          </div>
+                          <div
+                            className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${
+                              trainer?.status === "Online"
+                                ? "bg-green-500"
+                                : "bg-gray-500"
+                            } border-2 border-[#1A1A2F]`}
+                          ></div>
                         </div>
-
-                        {msg.sender === 'user' && (
-                          <img
-                            src="/src/assets/profile1.png"
-                            alt="You"
-                            className="w-8 h-8 rounded-full ml-2 mt-1 object-cover flex-shrink-0"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Typing Indicator */}
-                  {trainerTyping && (
-                    <div className="flex items-start gap-3 mb-4 animate-pulse">
-                      <img
-                        src={trainer?.image || "/src/assets/trainer.png"}
-                        alt="Trainer"
-                        className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                      />
-                      <div className="bg-[#2A2A3D] text-white p-3 rounded-lg max-w-xs">
-                        <div className="flex gap-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        <div className="ml-3">
+                          <h3 className="text-white font-medium">
+                            {trainer?.name || "Loading..."}
+                          </h3>
+                          <p className="text-gray-400 text-xs">
+                            {trainer?.status || "Offline"}
+                          </p>
                         </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <div className="bg-[#1A1A2F] p-3 border-t border-gray-700 flex-shrink-0">
-                  {isRecording ? (
-                    <div className="flex items-center justify-between bg-[#121225] rounded-full px-4 py-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                        <span className="text-white">{formatTime(recordingTime)}</span>
                       </div>
                       <button
-                        className="bg-red-500 text-white p-2 rounded-full"
-                        onClick={toggleRecording}
+                        className="bg-[#f67a45]/20 text-[#f67a45] p-2 rounded-full hover:bg-[#f67a45]/30"
+                        onClick={() => setShowAppointmentModal(true)}
                       >
-                        <FaStopCircle size={20} />
+                        <FaPhoneAlt size={16} />
                       </button>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="relative">
-                        <button
-                          className="text-white/70 hover:text-white p-2"
-                          onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}
-                        >
-                          <FaPaperclip size={18} />
-                        </button>
 
-                        {showAttachmentOptions && (
-                          <div className="absolute bottom-12 left-0 bg-[#121225] rounded-lg shadow-lg p-2 flex flex-col gap-2">
-                            <input
-                              type="file"
-                              ref={fileInputRef}
-                              onChange={handleFileUpload}
-                              className="hidden"
-                            />
-                            <button
-                              className="flex items-center gap-2 p-2 hover:bg-[#1A1A2F] rounded text-white text-sm"
-                              onClick={() => {
-                                fileInputRef.current.accept = "image/*";
-                                fileInputRef.current.click();
-                              }}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 overflow-x-hidden">
+                      <div className="w-full">
+                        {messages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`flex ${
+                              msg.sender === "user"
+                                ? "justify-end"
+                                : "justify-start"
+                            } mb-4 w-full`}
+                          >
+                            {msg.sender === "trainer" && (
+                              <img
+                                src={
+                                  trainer?.image || "/src/assets/trainer.png"
+                                }
+                                alt={trainer?.name || "Trainer"}
+                                className="w-8 h-8 rounded-full mr-2 mt-1 object-cover flex-shrink-0"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "/src/assets/profile1.png";
+                                }}
+                              />
+                            )}
+                            <div
+                              className={`max-w-[75%] rounded-lg p-3 ${
+                                msg.sender === "user"
+                                  ? "bg-[#f67a45] text-white rounded-tr-none"
+                                  : "bg-[#1A1A2F] text-white rounded-tl-none"
+                              }`}
                             >
-                              <FaImage size={16} />
-                              <span>Image</span>
-                            </button>
-                            <button
-                              className="flex items-center gap-2 p-2 hover:bg-[#1A1A2F] rounded text-white text-sm"
-                              onClick={() => {
-                                fileInputRef.current.accept = ".pdf,.doc,.docx,.xlsx";
-                                fileInputRef.current.click();
-                              }}
-                            >
-                              <FaFile size={16} />
-                              <span>Document</span>
-                            </button>
+                              {msg.image && (
+                                <div className="mb-2">
+                                  <img
+                                    src={msg.image}
+                                    alt="Shared"
+                                    className="rounded-lg max-w-full h-auto"
+                                    onError={(e) => {
+                                      e.target.onerror = null;
+                                      e.target.src =
+                                        "/src/assets/image-placeholder.jpg";
+                                    }}
+                                  />
+                                </div>
+                              )}
+
+                              {msg.file && (
+                                <div className="flex items-center bg-white/10 rounded-lg p-2 mb-2">
+                                  <FaFile className="text-white mr-2" />
+                                  <div className="overflow-hidden">
+                                    <p className="truncate text-white/90 text-sm">
+                                      {msg.file.name}
+                                    </p>
+                                    <p className="text-white/60 text-xs">
+                                      {(msg.file.size / 1024).toFixed(1)} KB
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              {msg.voiceMessage && (
+                                <div className="flex items-center gap-3">
+                                  <button className="text-white p-1 bg-white/10 rounded-full">
+                                    <FaPlay size={12} />
+                                  </button>
+                                  <div className="w-32 h-1 bg-white/20 rounded-full">
+                                    <div className="h-full w-1/3 bg-white rounded-full"></div>
+                                  </div>
+                                  <span className="text-white/60 text-xs">
+                                    {formatTime(msg.duration)}
+                                  </span>
+                                </div>
+                              )}
+
+                              {msg.text && <p>{msg.text}</p>}
+
+                              <div
+                                className={`text-xs mt-1 flex justify-end items-center gap-1 ${
+                                  msg.sender === "user"
+                                    ? "text-white/70"
+                                    : "text-white/50"
+                                }`}
+                              >
+                                {msg.time}
+                                {msg.sender === "user" && (
+                                  <span>
+                                    {msg.isRead ? (
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-blue-400"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path d="M9.707 7.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L12 9.586l-2.293-2.293z" />
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M5 13l4 4L19 7"
+                                        />
+                                      </svg>
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {msg.sender === "user" && (
+                              <img
+                                src="/src/assets/profile1.png"
+                                alt="You"
+                                className="w-8 h-8 rounded-full ml-2 mt-1 object-cover flex-shrink-0"
+                              />
+                            )}
                           </div>
-                        )}
+                        ))}
                       </div>
 
-                      <div className="flex-1 bg-[#121225] rounded-full px-4 py-2 flex items-center">
-                        <input
-                          type="text"
-                          value={message}
-                          onChange={(e) => handleTyping(e.target.value)}
-                          placeholder="Type a message..."
-                          className="bg-transparent text-white w-full focus:outline-none"
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSendMessage();
-                            }
-                          }}
-                        />
+                      {/* Typing Indicator */}
+                      {trainerTyping && (
+                        <div className="flex items-start gap-3 mb-4 animate-pulse">
+                          <img
+                            src={trainer?.image || "/src/assets/trainer.png"}
+                            alt="Trainer"
+                            className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                          />
+                          <div className="bg-[#2A2A3D] text-white p-3 rounded-lg max-w-xs">
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.1s" }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: "0.2s" }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                        <div className="flex items-center gap-2">
+                      <div ref={messagesEndRef} />
+                    </div>
+
+                    <div className="bg-[#1A1A2F] p-3 border-t border-gray-700 flex-shrink-0">
+                      {isRecording ? (
+                        <div className="flex items-center justify-between bg-[#121225] rounded-full px-4 py-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                            <span className="text-white">
+                              {formatTime(recordingTime)}
+                            </span>
+                          </div>
                           <button
-                            className="text-white/70 hover:text-white p-1"
-                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                            className="bg-red-500 text-white p-2 rounded-full"
+                            onClick={toggleRecording}
                           >
-                            <BsEmojiSmile size={18} />
+                            <FaStopCircle size={20} />
                           </button>
                         </div>
-                      </div>
-
-                      {message.trim() ? (
-                        <button
-                          className="bg-[#f67a45] text-white p-3 rounded-full"
-                          onClick={handleSendMessage}
-                        >
-                          <MdSend size={18} />
-                        </button>
                       ) : (
-                        <button
-                          className="bg-[#f67a45] text-white p-3 rounded-full"
-                          onClick={toggleRecording}
-                        >
-                          <FaMicrophone size={18} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <div className="relative">
+                            <button
+                              className="text-white/70 hover:text-white p-2"
+                              onClick={() =>
+                                setShowAttachmentOptions(!showAttachmentOptions)
+                              }
+                            >
+                              <FaPaperclip size={18} />
+                            </button>
+
+                            {showAttachmentOptions && (
+                              <div className="absolute bottom-12 left-0 bg-[#121225] rounded-lg shadow-lg p-2 flex flex-col gap-2">
+                                <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  onChange={handleFileUpload}
+                                  className="hidden"
+                                />
+                                <button
+                                  className="flex items-center gap-2 p-2 hover:bg-[#1A1A2F] rounded text-white text-sm"
+                                  onClick={() => {
+                                    fileInputRef.current.accept = "image/*";
+                                    fileInputRef.current.click();
+                                  }}
+                                >
+                                  <FaImage size={16} />
+                                  <span>Image</span>
+                                </button>
+                                <button
+                                  className="flex items-center gap-2 p-2 hover:bg-[#1A1A2F] rounded text-white text-sm"
+                                  onClick={() => {
+                                    fileInputRef.current.accept =
+                                      ".pdf,.doc,.docx,.xlsx";
+                                    fileInputRef.current.click();
+                                  }}
+                                >
+                                  <FaFile size={16} />
+                                  <span>Document</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex-1 bg-[#121225] rounded-full px-4 py-2 flex items-center">
+                            <input
+                              type="text"
+                              value={message}
+                              onChange={(e) => handleTyping(e.target.value)}
+                              placeholder="Type a message..."
+                              className="bg-transparent text-white w-full focus:outline-none"
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  handleSendMessage();
+                                }
+                              }}
+                            />
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                className="text-white/70 hover:text-white p-1"
+                                onClick={() =>
+                                  setShowEmojiPicker(!showEmojiPicker)
+                                }
+                              >
+                                <BsEmojiSmile size={18} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {message.trim() ? (
+                            <button
+                              className="bg-[#f67a45] text-white p-3 rounded-full"
+                              onClick={handleSendMessage}
+                            >
+                              <MdSend size={18} />
+                            </button>
+                          ) : (
+                            <button
+                              className="bg-[#f67a45] text-white p-3 rounded-full"
+                              onClick={toggleRecording}
+                            >
+                              <FaMicrophone size={18} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-1 space-y-4 sm:space-y-6 h-fit">
-              <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 sticky top-4">
-                <div className="flex flex-col items-center mb-4 sm:mb-6">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 sm:mb-4">
-                    <img
-                      src={trainer?.image || "/src/assets/trainer.png"}
-                      alt={trainer?.name || "Trainer"}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/src/assets/profile1.png';
-                      }}
-                    />
                   </div>
-                  <h3 className="text-white text-lg font-medium text-center">{trainer?.name || "Loading..."}</h3>
-                  <p className="text-gray-400 mb-2 text-sm text-center">{trainer?.specialty || "Personal Trainer"}</p>
-                  <a
-                    onClick={() => navigate(`/trainers/${trainerId}`)}
-                    className="text-[#f67a45] hover:underline text-sm cursor-pointer"
-                  >
-                    View Profile
-                  </a>
                 </div>
 
-                <div className="grid gap-2">
-                  <button
-                    onClick={() => navigate(`/schedule/${trainerId}`)}
-                    className="w-full bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                  >
-                    <BsCalendarWeek size={14} />
-                    <span>Schedule</span>
-                  </button>
+                <div className="lg:col-span-1 space-y-4 sm:space-y-6 h-fit">
+                  <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 sticky top-4">
+                    <div className="flex flex-col items-center mb-4 sm:mb-6">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 sm:mb-4">
+                        <img
+                          src={trainer?.image || "/src/assets/trainer.png"}
+                          alt={trainer?.name || "Trainer"}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/src/assets/profile1.png";
+                          }}
+                        />
+                      </div>
+                      <h3 className="text-white text-lg font-medium text-center">
+                        {trainer?.name || "Loading..."}
+                      </h3>
+                      <p className="text-gray-400 mb-2 text-sm text-center">
+                        {trainer?.specialty || "Personal Trainer"}
+                      </p>
+                      <a
+                        onClick={() => navigate(`/trainers/${trainerId}`)}
+                        className="text-[#f67a45] hover:underline text-sm cursor-pointer"
+                      >
+                        View Profile
+                      </a>
+                    </div>
 
-                  <button
-                    onClick={() => navigate(`/meal-plan/${trainerId}`)}
-                    className="w-full bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                  >
-                    <GiMeal size={14} />
-                    <span>Meal Plan</span>
-                  </button>
+                    <div className="grid gap-2">
+                      <button
+                        onClick={() => navigate(`/schedule/${trainerId}`)}
+                        className="w-full bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                      >
+                        <BsCalendarWeek size={14} />
+                        <span>Schedule</span>
+                      </button>
 
-                  <button
-                    className="w-full bg-[#f67a45] text-white py-2 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center justify-center gap-2 text-sm"
-                  >
-                    <BiChat size={14} />
-                    <span>Chat</span>
-                  </button>
+                      <button
+                        onClick={() => navigate(`/meal-plan/${trainerId}`)}
+                        className="w-full bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                      >
+                        <GiMeal size={14} />
+                        <span>Meal Plan</span>
+                      </button>
 
-                  <button
-                    onClick={() => navigate(`/subscription/${trainerId}`)}
-                    className="w-full bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
-                  >
-                    <RiVipDiamondLine size={14} />
-                    <span>Subscription</span>
-                  </button>
+                      <button className="w-full bg-[#f67a45] text-white py-2 rounded-full hover:bg-[#e56d3d] transition-colors flex items-center justify-center gap-2 text-sm">
+                        <BiChat size={14} />
+                        <span>Chat</span>
+                      </button>
+
+                      <button
+                        onClick={() => navigate(`/subscription/${trainerId}`)}
+                        className="w-full bg-gray-700/50 text-white py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                      >
+                        <RiVipDiamondLine size={14} />
+                        <span>Subscription</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {showAppointmentModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#121225] rounded-xl max-w-md w-full p-4 sm:p-6">
-            <h3 className="text-white text-lg font-bold mb-4">Schedule a Call</h3>
+          {showAppointmentModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-[#121225] rounded-xl max-w-md w-full p-4 sm:p-6">
+                <h3 className="text-white text-lg font-bold mb-4">
+                  Schedule a Call
+                </h3>
 
-            <p className="text-white/70 mb-4">Set up a video call with {trainer?.name || "your trainer"} to discuss your fitness goals in detail.</p>
+                <p className="text-white/70 mb-4">
+                  Set up a video call with {trainer?.name || "your trainer"} to
+                  discuss your fitness goals in detail.
+                </p>
 
-            <div className="mb-4">
-              <label className="block text-white text-sm font-medium mb-2">Select Date</label>
-              <input
-                type="date"
-                className="w-full px-4 py-2 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white"
-              />
+                <div className="mb-4">
+                  <label className="block text-white text-sm font-medium mb-2">
+                    Select Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full px-4 py-2 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white"
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-white text-sm font-medium mb-2">
+                    Select Time
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full px-4 py-2 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowAppointmentModal(false)}
+                    className="px-4 py-2 border border-gray-700 rounded-lg text-white hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAppointmentModal(false);
+                      setTimeout(() => {
+                        const appointmentMsg = {
+                          id: messages.length + 1,
+                          sender: "user",
+                          text: "I've scheduled a video call for tomorrow at 3:00 PM.",
+                          time: new Date().toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }),
+                          isRead: false,
+                        };
+                        setMessages((prev) => [...prev, appointmentMsg]);
+
+                        setTimeout(() => {
+                          const trainerResponse = {
+                            id: messages.length + 2,
+                            sender: "trainer",
+                            text: "Great! I've confirmed our video call for tomorrow at 3:00 PM. Looking forward to our discussion!",
+                            time: new Date().toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }),
+                          };
+                          setMessages((prev) => [...prev, trainerResponse]);
+                        }, 1500);
+                      }, 500);
+                    }}
+                    className="px-4 py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d]"
+                  >
+                    Schedule
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <div className="mb-6">
-              <label className="block text-white text-sm font-medium mb-2">Select Time</label>
-              <input
-                type="time"
-                className="w-full px-4 py-2 bg-[#1A1A2F] border border-gray-700 rounded-lg text-white"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowAppointmentModal(false)}
-                className="px-4 py-2 border border-gray-700 rounded-lg text-white hover:bg-white/10"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowAppointmentModal(false);
-                  setTimeout(() => {
-                    const appointmentMsg = {
-                      id: messages.length + 1,
-                      sender: 'user',
-                      text: 'I\'ve scheduled a video call for tomorrow at 3:00 PM.',
-                      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                      isRead: false
-                    };
-                    setMessages(prev => [...prev, appointmentMsg]);
-
-                    setTimeout(() => {
-                      const trainerResponse = {
-                        id: messages.length + 2,
-                        sender: 'trainer',
-                        text: 'Great! I\'ve confirmed our video call for tomorrow at 3:00 PM. Looking forward to our discussion!',
-                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                      };
-                      setMessages(prev => [...prev, trainerResponse]);
-                    }, 1500);
-                  }, 500);
-                }}
-                className="px-4 py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d]"
-              >
-                Schedule
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
         </>
       )}
     </div>

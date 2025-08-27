@@ -334,7 +334,7 @@ const Subscription = () => {
                 {trainer.name}
               </h3>
               <p className="text-gray-400 mb-2 text-sm sm:text-base">
-                {trainer.specialty}
+                {trainer.specialties.join(", ")}
               </p>
               <a
                 onClick={() => navigate(`/trainers/${trainerId}`)}
