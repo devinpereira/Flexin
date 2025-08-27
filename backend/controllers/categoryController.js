@@ -7,11 +7,11 @@ export const getCategories = async (req, res) => {
     try {
         const { isActive = true } = req.query;
 
-        
+
         const filter = isActive === 'true' ? { isActive: true } : {};
         const categories = await StoreCategory.find(filter).sort({ name: 1 });
 
-       
+
         const transformedCategories = categories.map(category => ({
             _id: category._id,
             name: category.name,
@@ -48,7 +48,7 @@ export const getCategory = async (req, res) => {
             });
         }
 
-        
+
         const category = await StoreCategory.findById(id);
         if (!category) {
             return res.status(404).json({
@@ -85,10 +85,10 @@ export const getCategory = async (req, res) => {
             originalPrice: product.originalPrice,
             // Transform images from {url, alt, isPrimary} to simple URL strings
             images: product.images && Array.isArray(product.images) ? product.images.map(img => {
-                if (typeof img === 'string') return img; 
+                if (typeof img === 'string') return img;
                 if (img && img.url) return img.url;
-                return null; 
-            }).filter(Boolean) : [], 
+                return null;
+            }).filter(Boolean) : [],
             stock: product.quantity || 0,
             quantity: product.quantity || 0,
             isActive: product.status === 'active',
