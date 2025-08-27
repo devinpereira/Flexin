@@ -198,7 +198,7 @@ const Navbar = () => {
           {/* Left side - Logo */}
           <div className="flex items-center">
             <Link to="/" className="py-2 transition-transform hover:scale-105 duration-300">
-              <img src="/src/assets/logo.svg" alt="Logo" width="100" height="40" className="cursor-pointer" />
+              <img src="/src/assets/logo.png" alt="Logo" width="100" height="40" className="cursor-pointer" />
             </Link>
 
             {/* Desktop Navigation Links */}

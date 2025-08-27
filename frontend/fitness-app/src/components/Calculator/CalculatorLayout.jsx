@@ -115,7 +115,7 @@ const CalculatorLayout = ({ children, pageTitle = 'Calculator' }) => {
           <nav className="bg-[#03020d] rounded-tr-[30px] w-[220px] lg:w-[275px] p-4 lg:p-6 h-full overflow-y-auto">
             {/* Logo or brand area */}
             <div className="mb-10 mt-6 px-4">
-              <img src="/src/assets/logo.svg" alt="Logo" className="h-8" />
+              <img src="/src/assets/logo.png" alt="Logo" className="h-8" />
             </div>
 
             <div className="space-y-3">
