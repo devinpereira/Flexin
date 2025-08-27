@@ -9,6 +9,8 @@ import { BiChat } from 'react-icons/bi';
 import { RiVipDiamondLine } from 'react-icons/ri';
 // --- Socket.IO client import ---
 import { io } from "socket.io-client";
+import { API_PATHS } from '../../utils/apiPaths';
+import axiosInstance from '../../utils/axiosInstance';
 
 const Chat = () => {
   const { trainerId } = useParams();
@@ -25,14 +27,9 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Mock trainer data
-  const trainer = {
-    id: trainerId,
-    name: "John Smith",
-    image: "/src/assets/trainer.png",
-    specialty: "Strength & Conditioning",
-    status: "Online"
-  };
+  // Trainer data state
+  const [trainer, setTrainer] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // --- Replace with your actual user ID logic ---
   const userId = localStorage.getItem("userId") || "demoUserId";
@@ -41,6 +38,42 @@ const Chat = () => {
   const socket = useMemo(() => io("http://localhost:8000", {
     auth: { token: localStorage.getItem("token") }
   }), []);
+
+  // --- Fetch trainer data ---
+  useEffect(() => {
+    const fetchTrainerData = async () => {
+      if (trainerId) {
+        try {
+          setLoading(true);
+          const response = await axiosInstance.get(API_PATHS.TRAINER.GET_TRAINER(trainerId));
+          console.log('Trainer API response:', response.data); // Debug log
+          const trainerData = response.data.trainer; // Note: API returns { success: true, trainer: {...} }
+          console.log('Trainer data:', trainerData); // Debug log
+          setTrainer({
+            id: trainerData._id,
+            name: trainerData.name,
+            image: trainerData.profilePhoto || "/src/assets/trainer.png",
+            specialty: trainerData.specialties?.[0] || trainerData.title || "Personal Trainer",
+            status: trainerData.availabilityStatus === 'available' ? 'Online' : 'Offline'
+          });
+        } catch (error) {
+          console.error('Error fetching trainer data:', error);
+          // Fallback to default data
+          setTrainer({
+            id: trainerId,
+            name: "Trainer",
+            image: "/src/assets/trainer.png",
+            specialty: "Personal Trainer",
+            status: "Offline"
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchTrainerData();
+  }, [trainerId]);
 
 
 
@@ -60,6 +93,35 @@ const Chat = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // --- Load chat messages from API ---
+  useEffect(() => {
+    const fetchChatMessages = async () => {
+      if (trainerId && userId) {
+        try {
+          const response = await axiosInstance.get(`${API_PATHS.CHAT.GET_CHAT}?trainerId=${trainerId}&userId=${userId}`);
+          const chatData = response.data;
+          
+          // Transform API response to match component structure (handle empty messages array)
+          const transformedMessages = (chatData.messages || []).map(msg => ({
+            id: msg._id,
+            sender: msg.sender === userId ? "user" : "trainer",
+            text: msg.content,
+            time: new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isRead: msg.isRead
+          }));
+
+          setMessages(transformedMessages);
+        } catch (error) {
+          console.error('Error fetching chat messages:', error);
+          // Set empty messages on error
+          setMessages([]);
+        }
+      }
+    };
+
+    fetchChatMessages();
+  }, [trainerId, userId]);
 
   // --- Listen for incoming messages from Socket.IO ---
   useEffect(() => {
@@ -81,21 +143,34 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // --- Send message via Socket.IO ---
-  const handleSendMessage = () => {
+  // --- Send message via API and Socket.IO ---
+  const handleSendMessage = async () => {
     if (message.trim() === '') return;
-    socket.emit("sendMessage", { to: trainerId, message });
-    setMessages(prev => [
-      ...prev,
-      {
-        id: prev.length + 1,
+
+    const messageContent = message;
+    setMessage(''); // Clear input immediately for better UX
+
+    try {
+      // Send message via API
+      const response = await axiosInstance.post(API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE, { trainerId, userId, content: messageContent });
+      
+      const newMessage = {
+        id: response.data._id || Date.now(),
         sender: "user",
-        text: message,
+        text: messageContent,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isRead: false
-      }
-    ]);
-    setMessage('');
+      };
+
+      setMessages(prev => [...prev, newMessage]);
+
+      // Send message via socket
+      socket.emit("sendMessage", { to: trainerId, message: messageContent });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Restore message if API call fails
+      setMessage(messageContent);
+    }
   };
 
   // Handle file upload
@@ -165,15 +240,26 @@ const Chat = () => {
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
 
-      {/* Mobile Menu Toggle Button */}
-      <div className="md:hidden fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-[#f67a45] text-white p-4 rounded-full shadow-lg"
-        >
-          <FaBars size={24} />
-        </button>
-      </div>
+      {/* Loading state */}
+      {loading ? (
+        <div className="container mx-auto pt-4 sm:pt-8 px-4">
+          <div className="w-full md:ml-[275px] lg:ml-[300px]">
+            <div className="flex items-center justify-center h-[60vh]">
+              <div className="text-white text-lg">Loading trainer information...</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Menu Toggle Button */}
+          <div className="md:hidden fixed bottom-6 right-6 z-50">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="bg-[#f67a45] text-white p-4 rounded-full shadow-lg"
+            >
+              <FaBars size={24} />
+            </button>
+          </div>
 
       {/* Mobile Menu Panel */}
       <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
@@ -270,7 +356,7 @@ const Chat = () => {
         {/* Main Content */}
         <div className="w-full md:ml-[275px] lg:ml-[300px] overflow-x-hidden">
           <button
-            onClick={() => navigate(`/trainer-profile/${trainerId}`)}
+            onClick={() => navigate(`/trainers/${trainerId}`)}
             className="mb-4 sm:mb-6 text-white flex items-center gap-2 hover:text-[#f67a45]"
           >
             <MdArrowBack size={20} />
@@ -286,20 +372,20 @@ const Chat = () => {
                   <div className="flex items-center">
                     <div className="relative">
                       <img
-                        src={trainer.image}
-                        alt={trainer.name}
+                        src={trainer?.image || "/src/assets/trainer.png"}
+                        alt={trainer?.name || "Trainer"}
                         className="w-10 h-10 rounded-full object-cover"
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = '/src/assets/profile1.png';
                         }}
                       />
-                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${trainer.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'
+                      <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${trainer?.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'
                         } border-2 border-[#1A1A2F]`}></div>
                     </div>
                     <div className="ml-3">
-                      <h3 className="text-white font-medium">{trainer.name}</h3>
-                      <p className="text-gray-400 text-xs">{trainer.status}</p>
+                      <h3 className="text-white font-medium">{trainer?.name || "Loading..."}</h3>
+                      <p className="text-gray-400 text-xs">{trainer?.status || "Offline"}</p>
                     </div>
                   </div>
                   <button
@@ -320,8 +406,8 @@ const Chat = () => {
                       >
                         {msg.sender === 'trainer' && (
                           <img
-                            src={trainer.image}
-                            alt={trainer.name}
+                            src={trainer?.image || "/src/assets/trainer.png"}
+                            alt={trainer?.name || "Trainer"}
                             className="w-8 h-8 rounded-full mr-2 mt-1 object-cover flex-shrink-0"
                             onError={(e) => {
                               e.target.onerror = null;
@@ -510,8 +596,8 @@ const Chat = () => {
                 <div className="flex flex-col items-center mb-4 sm:mb-6">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 sm:mb-4">
                     <img
-                      src={trainer.image}
-                      alt={trainer.name}
+                      src={trainer?.image || "/src/assets/trainer.png"}
+                      alt={trainer?.name || "Trainer"}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.onerror = null;
@@ -519,8 +605,8 @@ const Chat = () => {
                       }}
                     />
                   </div>
-                  <h3 className="text-white text-lg font-medium text-center">{trainer.name}</h3>
-                  <p className="text-gray-400 mb-2 text-sm text-center">{trainer.specialty}</p>
+                  <h3 className="text-white text-lg font-medium text-center">{trainer?.name || "Loading..."}</h3>
+                  <p className="text-gray-400 mb-2 text-sm text-center">{trainer?.specialty || "Personal Trainer"}</p>
                   <a
                     onClick={() => navigate(`/trainers/${trainerId}`)}
                     className="text-[#f67a45] hover:underline text-sm cursor-pointer"
@@ -573,7 +659,7 @@ const Chat = () => {
           <div className="bg-[#121225] rounded-xl max-w-md w-full p-4 sm:p-6">
             <h3 className="text-white text-lg font-bold mb-4">Schedule a Call</h3>
 
-            <p className="text-white/70 mb-4">Set up a video call with {trainer.name} to discuss your fitness goals in detail.</p>
+            <p className="text-white/70 mb-4">Set up a video call with {trainer?.name || "your trainer"} to discuss your fitness goals in detail.</p>
 
             <div className="mb-4">
               <label className="block text-white text-sm font-medium mb-2">Select Date</label>
@@ -631,6 +717,8 @@ const Chat = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

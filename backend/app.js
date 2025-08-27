@@ -86,7 +86,7 @@ app.use("/api/v1/trainers", trainerRoutes);
 app.use("/api/v1/trainer-schedules", trainerScheduleRoutes);
 app.use("/api/v1/meal-plans", mealPlanRoutes);
 app.use("/api/v1/subscription", subscriptionRoutes);
-app.use("/api/v1/chat", chatRoutes)
+app.use("/api/v1/chat", chatRoutes);
 
 // Trainer Dashboard Routes
 app.use("/api/v1/pending-trainer", pendingTrainerRoutes);

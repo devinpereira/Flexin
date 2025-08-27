@@ -4,7 +4,8 @@ import TrainerDashboardLayout from "../../layouts/TrainerDashboardLayout";
 import { MdArrowBack } from 'react-icons/md';
 // --- Socket.IO client import ---
 import { getSocket, connectSocket } from "../../utils/socket";
-import { BASE_URL } from "../../utils/apiPaths";
+import { API_PATHS } from "../../utils/apiPaths";
+import axiosInstance from "../../utils/axiosInstance";
 
 // Import components
 import ChatSidebar from '../../components/TrainerDashboard/ChatSidebar';
@@ -12,9 +13,21 @@ import ChatHeader from '../../components/TrainerDashboard/ChatHeader';
 import MessageBubble from '../../components/TrainerDashboard/MessageBubble';
 import MessageInput from '../../components/TrainerDashboard/MessageInput';
 import AppointmentModal from '../../components/TrainerDashboard/AppointmentModal';
+import { useContext } from 'react';
+import { UserContext } from '../../context/UserContext';
 
 const Chat = () => {
   const { subscriberId } = useParams();
+
+  // Helper function to check if subscriberId is valid
+  const isValidSubscriberId = (id) => {
+    return id && 
+           id !== 'undefined' && 
+           id !== 'null' && 
+           id !== undefined && 
+           id !== null;
+  };
+  const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
   const [message, setMessage] = useState('');
@@ -34,7 +47,7 @@ const Chat = () => {
 
   // Get current subscriber data from subscribers list or use mock data if not found
   const subscriber = useMemo(() => {
-    if (!subscriberId) return null;
+    if (!isValidSubscriberId(subscriberId)) return null;
     return subscribers.find(sub => sub.id === subscriberId) || {
       id: subscriberId,
       name: "Alex Johnson",
@@ -45,8 +58,10 @@ const Chat = () => {
     };
   }, [subscriberId, subscribers]);
 
+  console.log('Current subscriber:', subscriber);
+
   // --- Get trainer ID ---
-  const trainerId = localStorage.getItem("trainerId") || "demoTrainerId";
+  const trainerId = user.trainerId;
 
   // --- Socket.IO connection ---
   const socket = useMemo(() => {
@@ -54,99 +69,96 @@ const Chat = () => {
     return token ? connectSocket(token) : null;
   }, []);
 
-  // --- Initialize mock subscribers data ---
+  // --- Initialize subscribers data from API ---
   useEffect(() => {
-    // In a real app, this would be fetched from an API
-    const mockSubscribers = [
-      {
-        id: "sub1",
-        name: "Alex Johnson",
-        image: "/src/assets/profile1.png",
-        specialty: "Beginner",
-        status: "Online",
-        lastMessage: {
-          text: "How's my progress on the routine?",
-          time: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-        },
-      },
-      {
-        id: "sub2",
-        name: "Sarah Williams",
-        image: "/src/assets/posts/workout1.png",
-        specialty: "Intermediate",
-        status: "Offline",
-        lastMessage: {
-          text: "Thanks for the new schedule!",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-        },
-      },
-      {
-        id: "sub3",
-        name: "Mike Chen",
-        image: "/src/assets/medal2.png",
-        specialty: "Advanced",
-        status: "Online",
-        lastMessage: {
-          text: "I completed yesterday's workout",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
-        },
-      },
-    ];
+    const fetchTrainerChats = async () => {
+      try {
+        const response = await axiosInstance.get(API_PATHS.CHAT.GET_TRAINER_CHATS(trainerId));
+        const chatsData = response.data;
+        
+        // Transform API response to match component structure
+        const transformedSubscribers = chatsData
+          .filter(chat => chat.user) // Filter out invalid entries
+          .map(chat => {
+            // Handle both populated and non-populated user data
+            const user = typeof chat.user === 'object' ? chat.user : { _id: chat.user, fullName: 'Unknown User' };
+            
+            return {
+              id: user._id || user.id || chat.user,
+              name: user.fullName || `${user.firstName || 'Unknown'} ${user.lastName || 'User'}` || 'Unknown User',
+              image: user.profileImage || "/src/assets/profile1.png",
+              specialty: "User", // You can customize this based on user data
+              status: "Offline", // This will be updated by socket events
+              lastMessage: chat.lastMessage ? {
+                text: chat.lastMessage.content,
+                time: chat.lastMessage.timestamp,
+              } : null,
+              isTyping: false,
+            };
+          })
+          .filter((subscriber, index, self) => 
+            // Remove duplicates based on ID
+            index === self.findIndex(s => s.id === subscriber.id)
+          );
 
-    setSubscribers(mockSubscribers);
-    setOnlineUsers(["sub1", "sub3"]);
-    setUnreadCounts({
-      sub1: 2,
-      sub2: 0,
-      sub3: 5,
-    });
-  }, []);
+        setSubscribers(transformedSubscribers);
+        
+        // Set unread counts
+        const unreadCountsObj = {};
+        chatsData.forEach(chat => {
+          unreadCountsObj[chat.user._id] = chat.unreadCount;
+        });
+        setUnreadCounts(unreadCountsObj);
+        
+      } catch (error) {
+        console.error('Error fetching trainer chats:', error);
+        // Fallback to empty array on error
+        setSubscribers([]);
+      }
+    };
+
+    if (trainerId) {
+      fetchTrainerChats();
+    }
+  }, [trainerId]);
 
   // --- Load previous messages ---
   useEffect(() => {
-    if (subscriberId) {
-      // In a real app, you would fetch messages from an API
-      // For now, we'll use mock data
-      const mockPreviousMessages = [
-        {
-          id: 1,
-          sender: "trainer",
-          text: "Good morning! How are you feeling today?",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-          isRead: true
-        },
-        {
-          id: 2,
-          sender: "user",
-          text: "Morning! I'm feeling great. The new workout routine is really helping.",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 23).toISOString(), // 23 hours ago
-        },
-        {
-          id: 3,
-          sender: "trainer",
-          text: "That's fantastic to hear! Make sure to stretch properly before starting today's session.",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(), // 22 hours ago
-          isRead: true
-        },
-        {
-          id: 4,
-          sender: "user",
-          text: "Will do. I had a question about the nutrition plan though. Can I substitute quinoa with rice?",
-          time: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-        },
-      ];
+    const fetchChatMessages = async () => {
+      // Only fetch if we have a valid subscriberId (not undefined/null/string 'undefined'/'null')
+      if (isValidSubscriberId(subscriberId) && trainerId) {
+        try {
+          const response = await axiosInstance.get(`${API_PATHS.CHAT.GET_CHAT}?trainerId=${trainerId}&userId=${subscriberId}`);
+          const chatData = response.data;
+          
+          // Transform API response to match component structure (handle empty messages array)
+          const transformedMessages = (chatData.messages || []).map(msg => ({
+            id: msg._id,
+            sender: msg.sender === trainerId ? "trainer" : "user",
+            text: msg.content,
+            time: msg.timestamp,
+            isRead: msg.isRead
+          }));
 
-      setMessages(mockPreviousMessages);
+          setMessages(transformedMessages);
 
-      // Mark messages as read when opening chat
-      if (unreadCounts[subscriberId]) {
-        setUnreadCounts(prev => ({
-          ...prev,
-          [subscriberId]: 0
-        }));
+          // Mark messages as read when opening chat
+          if (unreadCounts[subscriberId]) {
+            setUnreadCounts(prev => ({
+              ...prev,
+              [subscriberId]: 0
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching chat messages:', error);
+          // Set empty messages on error
+          setMessages([]);
+        }
       }
-    }
-  }, [subscriberId]);
+    };
+
+    fetchChatMessages();
+  }, [subscriberId, trainerId]);
 
   // Scroll to bottom of messages
   useEffect(() => {
@@ -221,7 +233,7 @@ const Chat = () => {
 
   // --- Handle typing indicator ---
   const handleTyping = () => {
-    if (socket && subscriberId) {
+    if (socket && isValidSubscriberId(subscriberId)) {
       // Clear previous timeout
       if (typingTimeout) {
         clearTimeout(typingTimeout);
@@ -243,51 +255,65 @@ const Chat = () => {
     }
   };
 
-  // --- Send message via Socket.IO ---
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  // --- Send message via API and Socket.IO ---
+  const handleSendMessage = async () => {
+    if (!message.trim() || !isValidSubscriberId(subscriberId)) return;
 
-    const newMsg = {
-      id: Date.now(),
-      sender: "trainer",
-      text: message,
-      time: new Date().toISOString(),
-      isRead: false
-    };
+    const messageContent = message;
+    setMessage(''); // Clear input immediately for better UX
 
-    setMessages(prev => [...prev, newMsg]);
+    try {
+      // Send message via API
+      const response = await axiosInstance.post(API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE, { 
+        trainerId, 
+        userId: subscriberId, 
+        content: messageContent 
+      });
+      
+      const newMsg = {
+        id: response.data._id || Date.now(),
+        sender: "trainer",
+        text: messageContent,
+        time: new Date().toISOString(),
+        isRead: false
+      };
 
-    // Update last message for the subscriber
-    setSubscribers(prev =>
-      prev.map(sub =>
-        sub.id === subscriberId
-          ? {
-            ...sub,
-            lastMessage: {
-              text: message,
-              time: new Date().toISOString()
+      setMessages(prev => [...prev, newMsg]);
+
+      // Update last message for the subscriber
+      setSubscribers(prev =>
+        prev.map(sub =>
+          sub.id === subscriberId
+            ? {
+              ...sub,
+              lastMessage: {
+                text: messageContent,
+                time: new Date().toISOString()
+              }
             }
+            : sub
+        )
+      );
+
+      // Send message via socket
+      if (socket && subscriberId) {
+        socket.emit("sendMessage", { to: subscriberId, message: messageContent });
+
+        // Stop typing indicator
+        if (typing) {
+          setTyping(false);
+          socket.emit("typing", { to: subscriberId, isTyping: false });
+          if (typingTimeout) {
+            clearTimeout(typingTimeout);
+            setTypingTimeout(null);
           }
-          : sub
-      )
-    );
-
-    // Send message via socket
-    if (socket && subscriberId) {
-      socket.emit("sendMessage", { to: subscriberId, message });
-
-      // Stop typing indicator
-      if (typing) {
-        setTyping(false);
-        socket.emit("typing", { to: subscriberId, isTyping: false });
-        if (typingTimeout) {
-          clearTimeout(typingTimeout);
-          setTypingTimeout(null);
         }
       }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Restore message if API call fails
+      setMessage(messageContent);
     }
-
-    setMessage('');
   };
 
   // Handle file upload
@@ -476,7 +502,7 @@ const Chat = () => {
                   <MessageBubble
                     key={msg.id}
                     msg={msg}
-                    subscriberImage={subscriber?.image}
+                    subscriberImage={subscriber?.profileImageUrl}
                     formatTime={formatTime}
                   />
                 ))}
@@ -519,7 +545,7 @@ const Chat = () => {
             <div className="flex flex-col items-center mb-4 sm:mb-6">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 sm:mb-4">
                 <img
-                  src={subscriber?.image}
+                  src={subscriber?.profileImageUrl}
                   alt={subscriber?.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {

@@ -1,4 +1,5 @@
 import Chat from '../models/Chat.js';
+import User from '../models/User.js';
 import mongoose from 'mongoose';
 
 // Create a new chat or add a message to an existing chat (POST)
@@ -9,18 +10,21 @@ export const createOrAddMessage = async (req, res) => {
 			return res.status(400).json({ message: 'trainerId, userId, and content are required.' });
 		}
 
+		// Determine sender based on the authenticated user
+		// You can modify this logic based on your authentication setup
+		const senderId = req.user?.id || userId; // Default to userId if no authenticated user
+
 		let chat = await Chat.findOne({ trainerId, userId });
 		if (!chat) {
 			chat = new Chat({
 				trainerId,
 				userId,
-				messages: [{ sender: userId, content }],
+				messages: [{ sender: senderId, content }],
 			});
-			await chat.save();
 		} else {
-			chat.messages.push({ sender: userId, content });
-			await chat.save();
+			chat.messages.push({ sender: senderId, content });
 		}
+		await chat.save();
 		return res.status(201).json(chat);
 	} catch (error) {
 		return res.status(500).json({ message: 'Error creating or adding message', error });
@@ -30,16 +34,27 @@ export const createOrAddMessage = async (req, res) => {
 // Get chat messages between a trainer and a user (GET)
 export const getChat = async (req, res) => {
 	try {
-		const { trainerId, userId } = req.body;
+		const { trainerId, userId } = req.query;
+		
 		if (!trainerId || !userId) {
 			return res.status(400).json({ message: 'trainerId and userId are required.' });
 		}
-		const chat = await Chat.findOne({ trainerId, userId });
+		
+		let chat = await Chat.findOne({ trainerId, userId });
 		if (!chat) {
-			return res.status(404).json({ message: 'Chat not found.' });
+			// Return empty chat structure instead of 404
+			return res.status(200).json({
+				trainerId,
+				userId,
+				messages: [],
+				createdAt: new Date(),
+				updatedAt: new Date()
+			});
 		}
+		
 		return res.status(200).json(chat);
 	} catch (error) {
+		console.error('Error in getChat:', error);
 		return res.status(500).json({ message: 'Error fetching chat', error });
 	}
 };
@@ -76,12 +91,22 @@ export const getTrainerChats = async (req, res) => {
     }
     
     const chats = await Chat.find({ trainerId })
-      .populate('userId', 'firstName lastName email profileImage')
+      .populate('userId', 'fullName email profileImageUrl')
       .sort({ updatedAt: -1 });
     
     // Transform the data to include last message and user info
     const chatList = chats.map(chat => {
       const lastMessage = chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : null;
+      
+      // Only count unread messages from the user (not from the trainer)
+      const unreadCount = chat.messages.filter(msg => {
+        const senderId = msg.sender.toString();
+        const userId = chat.userId._id ? chat.userId._id.toString() : chat.userId.toString();
+        const isFromUser = senderId === userId;
+        const isUnread = !msg.isRead;
+        return isFromUser && isUnread;
+      }).length;
+      
       return {
         chatId: chat._id,
         user: chat.userId,
@@ -90,10 +115,12 @@ export const getTrainerChats = async (req, res) => {
           timestamp: lastMessage.timestamp,
           sender: lastMessage.sender
         } : null,
-        unreadCount: chat.messages.filter(msg => !msg.isRead && msg.sender.toString() === chat.userId.toString()).length,
+        unreadCount: unreadCount,
         updatedAt: chat.updatedAt
       };
     });
+    
+    console.log('Transformed chatList:', JSON.stringify(chatList, null, 2));
     
     return res.status(200).json(chatList);
   } catch (error) {

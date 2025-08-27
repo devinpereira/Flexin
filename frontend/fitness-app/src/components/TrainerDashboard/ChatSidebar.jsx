@@ -66,9 +66,9 @@ const ChatSidebar = ({ subscribers, onlineUsers, unreadCounts }) => {
       {/* Subscribers List */}
       <div className="flex-1 overflow-y-auto">
         {filteredSubscribers.length > 0 ? (
-          filteredSubscribers.map((sub) => (
+          filteredSubscribers.map((sub, index) => (
             <div
-              key={sub.id}
+              key={sub.id || `subscriber-${index}`}
               onClick={() => navigate(`/trainer/messages/${sub.id}`)}
               className={`p-3 border-b border-gray-700 flex items-center cursor-pointer hover:bg-[#1A1A2F] transition-colors ${subscriberId === sub.id ? 'bg-[#1A1A2F]' : ''
                 }`}
