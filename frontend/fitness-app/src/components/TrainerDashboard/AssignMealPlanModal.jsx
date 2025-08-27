@@ -1,72 +1,177 @@
-import React, { useState } from "react";
-import { FaPlus, FaEdit, FaTrash, FaArrowLeft, FaSave } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import {
+  FaPlus,
+  FaEdit,
+  FaTrash,
+  FaArrowLeft,
+  FaSave,
+  FaTimes,
+} from "react-icons/fa";
 import ConfirmDialog from "../ConfirmDialog";
 import Notification from "../Admin/Notification";
+import { getUserInfo } from "../../api/user";
 
 const defaultMealTypes = [
-  "Breakfast", "Lunch", "Pre-Workout", "Dinner", "Snack"
+  "Breakfast",
+  "Lunch",
+  "Pre-Workout",
+  "Post-Workout",
+  "Dinner",
+  "Snack",
 ];
 
-// Mock meal plans for demonstration
-const initialMealPlans = [
-  {
-    id: "mp1",
-    name: "Weight Loss Plan",
-    days: ["Monday", "Tuesday", "Wednesday"],
-    meals: {
-      "Monday": [
-        {
-          id: 1,
-          type: "Breakfast",
-          time: "7:00 AM",
-          meal: "Oatmeal with Berries and Protein Shake",
-          calories: 450,
-          protein: "30g",
-          carbs: "45g",
-          fats: "12g",
-          recipe: "1. Cook 1 cup oats with water or almond milk\n2. Add 1 cup mixed berries\n3. Add 1 scoop protein powder\n4. Top with honey and cinnamon"
-        }
-      ],
-      "Tuesday": [],
-      "Wednesday": []
-    }
-  }
+const daysOfWeek = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
 ];
 
-const AssignMealPlanModal = ({ open, onClose, subscriber }) => {
-  const [mealPlans, setMealPlans] = useState(initialMealPlans);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [editPlan, setEditPlan] = useState(null);
-  const [editDay, setEditDay] = useState(null);
-  const [showAddMeal, setShowAddMeal] = useState(false);
-  const [showAddDay, setShowAddDay] = useState(false);
-  const [newMeal, setNewMeal] = useState({
-    type: "Breakfast",
-    time: "",
-    meal: "",
-    calories: "",
-    protein: "",
-    carbs: "",
-    fats: "",
-    recipe: ""
+const AssignMealPlanModal = ({
+  open,
+  onClose,
+  subscriber,
+  onMealPlanUpdate,
+}) => {
+  const [currentMealPlan, setCurrentMealPlan] = useState(null);
+  const [editMealPlan, setEditMealPlan] = useState({
+    week: "default",
+    days: new Map(),
   });
-  const [newDayName, setNewDayName] = useState("");
-  const [addingNewPlan, setAddingNewPlan] = useState(false);
+  const [selectedDay, setSelectedDay] = useState("Monday");
+  const [showAddMeal, setShowAddMeal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(() => () => { });
+  const [confirmAction, setConfirmAction] = useState(() => () => {});
   const [confirmTitle, setConfirmTitle] = useState("");
   const [confirmMessage, setConfirmMessage] = useState("");
-  const [confirmType, setConfirmType] = useState("warning");
   const [notification, setNotification] = useState({
     isVisible: false,
     type: "success",
     message: "",
-    autoClose: true,
-    duration: 3000,
+  });
+  const [newMeal, setNewMeal] = useState({
+    type: "Breakfast",
+    time: "08:00",
+    meal: "",
+    calories: 0,
+    protein: "",
+    carbs: "",
+    fats: "",
+    recipe: "",
   });
 
-  const showAlert = (message, type = "success") => {
+  useEffect(() => {
+    if (open && subscriber) {
+      loadMealPlan();
+    }
+  }, [open, subscriber]);
+
+  const loadMealPlan = async () => {
+    setLoading(true);
+    try {
+      // Extract user ID from subscriber object
+      let userId = null;
+      if (subscriber.id) {
+        userId = subscriber.id;
+      } else if (subscriber.userId?._id) {
+        userId = subscriber.userId._id;
+      } else if (subscriber.userId && typeof subscriber.userId === "string") {
+        userId = subscriber.userId;
+      } else if (subscriber._id) {
+        userId = subscriber._id;
+      }
+
+      if (!userId) {
+        showNotification("User ID not found", "error");
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showNotification("Authentication required", "error");
+        return;
+      }
+
+      // Get trainer information using getUserInfo
+      const userInfo = await getUserInfo();
+      console.log("User info:", userInfo);
+
+      // The trainer ID should be in userInfo.trainerId if the user is a trainer
+      let trainerId = null;
+      if (userInfo.trainerId) {
+        trainerId = userInfo.trainerId;
+      } else if (userInfo.isTrainer && userInfo._id) {
+        // Fallback to user ID if trainerId is not available but user is a trainer
+        trainerId = userInfo._id;
+      } else {
+        // If no trainer field, this user might not be a trainer
+        showNotification("User is not a trainer", "error");
+        return;
+      }
+
+      console.log("Trainer ID:", trainerId);
+
+      // Fetch existing meal plan
+      const response = await fetch(
+        `/api/v1/meal-plans/${trainerId}/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.mealPlan) {
+          setCurrentMealPlan(data.mealPlan);
+          // Convert days object to Map for easier manipulation
+          const daysMap = new Map();
+          Object.entries(data.mealPlan.days || {}).forEach(([day, meals]) => {
+            daysMap.set(day, meals);
+          });
+          setEditMealPlan({
+            week: data.mealPlan.week || "default",
+            days: daysMap,
+          });
+        } else {
+          // No existing meal plan, create new structure
+          initializeNewMealPlan();
+        }
+      } else if (response.status === 404) {
+        // No meal plan found, create new structure
+        initializeNewMealPlan();
+      } else {
+        showNotification("Failed to load meal plan", "error");
+      }
+    } catch (error) {
+      console.error("Error loading meal plan:", error);
+      showNotification("Error loading meal plan", "error");
+      initializeNewMealPlan();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const initializeNewMealPlan = () => {
+    const daysMap = new Map();
+    daysOfWeek.forEach((day) => {
+      daysMap.set(day, []);
+    });
+    setCurrentMealPlan(null);
+    setEditMealPlan({
+      week: "default",
+      days: daysMap,
+    });
+  };
+
+  const showNotification = (message, type = "success") => {
     setNotification({
       isVisible: true,
       type,
@@ -76,613 +181,579 @@ const AssignMealPlanModal = ({ open, onClose, subscriber }) => {
     });
   };
 
-  const showConfirmDialog = (title, message, type, action) => {
+  const showConfirmDialog = (title, message, action) => {
+    console.log("showConfirmDialog called with:", title, message);
     setConfirmTitle(title);
     setConfirmMessage(message);
-    setConfirmType(type);
     setConfirmAction(() => action);
     setShowConfirm(true);
   };
 
-  if (!open) return null;
-
-  // Add new meal plan
-  const handleAddNewPlan = () => {
-    setAddingNewPlan(true);
-    setEditPlan({
-      id: `mp${Date.now()}`,
-      name: "",
-      days: ["Monday"],
-      meals: { "Monday": [] }
-    });
-    setEditDay("Monday");
-    setEditMode(true);
-    setSelectedPlan(null);
-  };
-
-  // Save new or edited meal plan
-  const handleSavePlan = () => {
-    if (!editPlan.name.trim()) {
-      showAlert("Meal plan name is required", "error");
-      return;
-    }
-    let updatedPlans;
-    if (addingNewPlan) {
-      updatedPlans = [...mealPlans, editPlan];
-      showAlert("Meal plan created successfully", "success");
-    } else {
-      updatedPlans = mealPlans.map(mp =>
-        mp.id === editPlan.id ? editPlan : mp
-      );
-      showAlert("Meal plan updated successfully", "success");
-    }
-    setMealPlans(updatedPlans);
-    setEditMode(false);
-    setAddingNewPlan(false);
-    setSelectedPlan(editPlan);
-    setEditPlan(null);
-  };
-
-  // Delete meal plan
-  const handleDeletePlan = (id) => {
-    showConfirmDialog(
-      "Delete Meal Plan",
-      "Are you sure you want to delete this meal plan? This action cannot be undone.",
-      "danger",
-      () => {
-        setMealPlans(mealPlans.filter(mp => mp.id !== id));
-        setSelectedPlan(null);
-        setEditMode(false);
-        setEditPlan(null);
-        showAlert("Meal plan deleted successfully", "success");
-      }
-    );
-  };
-
-  // Add new day to meal plan
-  const handleAddDay = () => {
-    if (!newDayName.trim()) {
-      showAlert("Day name is required", "error");
-      return;
-    }
-    if (editPlan.days.includes(newDayName)) {
-      showAlert("Day already exists", "error");
-      return;
-    }
-    setEditPlan({
-      ...editPlan,
-      days: [...editPlan.days, newDayName],
-      meals: { ...editPlan.meals, [newDayName]: [] }
-    });
-    setEditDay(newDayName);
-    setShowAddDay(false);
-    setNewDayName("");
-  };
-
-  // Remove day from meal plan
-  const handleRemoveDay = (day) => {
-    const newDays = editPlan.days.filter(d => d !== day);
-    const newMeals = { ...editPlan.meals };
-    delete newMeals[day];
-    setEditPlan({
-      ...editPlan,
-      days: newDays,
-      meals: newMeals
-    });
-    if (editDay === day) setEditDay(newDays[0] || null);
-  };
-
-  // Add meal to a day
-  const handleAddMealToDay = () => {
+  const handleAddMeal = () => {
     if (!newMeal.meal.trim() || !newMeal.type.trim()) {
-      showAlert("Meal name and type are required", "error");
+      showNotification("Meal name and type are required", "error");
       return;
     }
-    setEditPlan({
-      ...editPlan,
-      meals: {
-        ...editPlan.meals,
-        [editDay]: [
-          ...(editPlan.meals[editDay] || []),
-          { ...newMeal, id: Date.now() }
-        ]
-      }
+
+    if (!newMeal.calories || newMeal.calories <= 0) {
+      showNotification("Valid calories are required", "error");
+      return;
+    }
+
+    if (
+      !newMeal.protein.trim() ||
+      !newMeal.carbs.trim() ||
+      !newMeal.fats.trim()
+    ) {
+      showNotification("Protein, carbs, and fats are required", "error");
+      return;
+    }
+
+    if (!newMeal.recipe.trim()) {
+      showNotification("Recipe is required", "error");
+      return;
+    }
+
+    const currentDayMeals = editMealPlan.days.get(selectedDay) || [];
+    const updatedMeals = [...currentDayMeals, { ...newMeal, id: Date.now() }];
+
+    const newDaysMap = new Map(editMealPlan.days);
+    newDaysMap.set(selectedDay, updatedMeals);
+
+    setEditMealPlan({
+      ...editMealPlan,
+      days: newDaysMap,
     });
+
     setShowAddMeal(false);
     setNewMeal({
       type: "Breakfast",
-      time: "",
+      time: "08:00",
       meal: "",
-      calories: "",
+      calories: 0,
       protein: "",
       carbs: "",
       fats: "",
-      recipe: ""
+      recipe: "",
     });
+    showNotification("Meal added successfully", "success");
   };
 
-  // Edit meal in a day
-  const handleEditMeal = (mealIdx, field, value) => {
-    const updated = editPlan.meals[editDay].map((m, idx) =>
-      idx === mealIdx ? { ...m, [field]: value } : m
+  const handleRemoveMeal = (dayName, mealIndex) => {
+    showConfirmDialog(
+      "Remove Meal",
+      "Are you sure you want to remove this meal?",
+      () => {
+        const currentDayMeals = editMealPlan.days.get(dayName) || [];
+        const updatedMeals = currentDayMeals.filter(
+          (_, index) => index !== mealIndex
+        );
+
+        const newDaysMap = new Map(editMealPlan.days);
+        newDaysMap.set(dayName, updatedMeals);
+
+        setEditMealPlan({
+          ...editMealPlan,
+          days: newDaysMap,
+        });
+        showNotification("Meal removed successfully", "success");
+      }
     );
-    setEditPlan({
-      ...editPlan,
-      meals: { ...editPlan.meals, [editDay]: updated }
-    });
   };
 
-  // Remove meal from a day
-  const handleRemoveMeal = (mealIdx) => {
-    const updated = editPlan.meals[editDay].filter((_, idx) => idx !== mealIdx);
-    setEditPlan({
-      ...editPlan,
-      meals: { ...editPlan.meals, [editDay]: updated }
-    });
+  const handleSaveMealPlan = async () => {
+    setSaving(true);
+    try {
+      // Extract user ID from subscriber object
+      let userId = null;
+      if (subscriber.id) {
+        userId = subscriber.id;
+      } else if (subscriber.userId?._id) {
+        userId = subscriber.userId._id;
+      } else if (subscriber.userId && typeof subscriber.userId === "string") {
+        userId = subscriber.userId;
+      } else if (subscriber._id) {
+        userId = subscriber._id;
+      }
+
+      if (!userId) {
+        showNotification("User ID not found", "error");
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showNotification("Authentication required", "error");
+        return;
+      }
+
+      // Convert Map back to object for API
+      const daysObject = {};
+      editMealPlan.days.forEach((meals, day) => {
+        if (meals.length > 0) {
+          daysObject[day] = meals;
+        }
+      });
+
+      // Check if there are any meals to save
+      if (Object.keys(daysObject).length === 0) {
+        showNotification("Please add at least one meal before saving", "error");
+        return;
+      }
+
+      const mealPlanData = {
+        userId,
+        week: editMealPlan.week,
+        days: daysObject,
+      };
+
+      let response;
+      if (currentMealPlan) {
+        // Update existing meal plan
+        response = await fetch(`/api/v1/meal-plans/${currentMealPlan._id}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(mealPlanData),
+        });
+      } else {
+        // Create new meal plan
+        response = await fetch("/api/v1/meal-plans/", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(mealPlanData),
+        });
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentMealPlan(data.mealPlan);
+        showNotification(
+          currentMealPlan
+            ? "Meal plan updated successfully"
+            : "Meal plan created successfully",
+          "success"
+        );
+        if (onMealPlanUpdate) {
+          onMealPlanUpdate(data.mealPlan);
+        }
+      } else {
+        const errorData = await response.json();
+        showNotification(
+          errorData.message || "Failed to save meal plan",
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error saving meal plan:", error);
+      showNotification("Error saving meal plan", "error");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const handleDeleteMealPlan = async () => {
+    console.log("Delete meal plan clicked", currentMealPlan);
+    if (!currentMealPlan) return;
+
+    showConfirmDialog(
+      "Delete Meal Plan",
+      "Are you sure you want to delete this meal plan? This action cannot be undone.",
+      async () => {
+        console.log("Delete confirmed, executing delete operation");
+        try {
+          const token = localStorage.getItem("token");
+          console.log("Token:", token ? "exists" : "missing");
+          console.log("Deleting meal plan with ID:", currentMealPlan._id);
+
+          const response = await fetch(
+            `/api/v1/meal-plans/${currentMealPlan._id}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          console.log("Delete response status:", response.status);
+
+          if (response.ok) {
+            console.log("Delete successful");
+            setCurrentMealPlan(null);
+            initializeNewMealPlan();
+            showNotification("Meal plan deleted successfully", "success");
+            if (onMealPlanUpdate) {
+              onMealPlanUpdate(null);
+            }
+          } else {
+            const errorData = await response.json();
+            console.log("Delete failed:", errorData);
+            showNotification(
+              errorData.message || "Failed to delete meal plan",
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Error deleting meal plan:", error);
+          showNotification("Error deleting meal plan", "error");
+        }
+      }
+    );
+  };
+
+  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#1A1A2F] rounded-2xl shadow-2xl max-w-4xl w-full flex flex-col" style={{ height: "92vh" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#232342]">
-          <span className="text-white font-semibold text-lg">
-            Assign Meal Plan to {subscriber?.name || "Subscriber"}
-          </span>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="bg-[#18182f] rounded-xl p-6 max-w-6xl w-full max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">
+            Assign Meal Plan -{" "}
+            {subscriber?.name || subscriber?.userId?.name || "User"}
+          </h3>
           <button
             className="text-white/70 hover:text-white text-2xl"
             onClick={onClose}
-            aria-label="Close"
           >
-            &times;
+            <FaTimes />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-0 bg-[#121225]">
-          <div className="p-6">
-            {/* Meal Plans List */}
-            {!editMode && (
-              <>
-                <h3 className="text-white text-lg font-bold mb-4">Select a Meal Plan</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  {mealPlans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      className={`bg-[#18182f] border rounded-lg p-4 cursor-pointer transition-all ${selectedPlan?.id === plan.id
-                        ? "border-[#f67a45] ring-2 ring-[#f67a45]"
-                        : "border-[#f67a45]/20 hover:border-[#f67a45]/50"
-                        }`}
-                      onClick={() => setSelectedPlan(plan)}
-                    >
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-white font-semibold mb-2">{plan.name}</h4>
-                        <div className="flex gap-2">
-                          <button
-                            className="text-[#f67a45] hover:text-[#e56d3d]"
-                            title="Edit"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setEditMode(true);
-                              setEditPlan({ ...plan });
-                              setEditDay(plan.days[0]);
-                              setAddingNewPlan(false);
-                            }}
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            className="text-red-500 hover:text-red-700"
-                            title="Delete"
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleDeletePlan(plan.id);
-                            }}
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {plan.days.map((day) => (
-                          <span
-                            key={day}
-                            className="bg-[#121225] text-xs text-white/80 px-2 py-1 rounded-full"
-                          >
-                            {day}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-white/60 text-xs">{Object.values(plan.meals).flat().length} meals</p>
-                    </div>
-                  ))}
-                  {/* Add new meal plan card */}
-                  <div
-                    className="bg-[#18182f] border border-dashed border-[#f67a45]/50 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-[#232342] transition-colors"
-                    onClick={handleAddNewPlan}
-                  >
-                    <div className="bg-[#f67a45]/20 p-3 rounded-full mb-2">
-                      <FaPlus className="text-[#f67a45] text-lg" />
-                    </div>
-                    <p className="text-white text-center">Add New Meal Plan</p>
-                  </div>
-                </div>
-                {/* Preview and Assign */}
-                {selectedPlan && (
-                  <div className="bg-[#18182f] rounded-lg p-4 mt-4">
-                    <h4 className="text-white font-semibold mb-2">Preview: {selectedPlan.name}</h4>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {selectedPlan.days.map((day) => (
-                        <span
-                          key={day}
-                          className="bg-[#121225] text-xs text-white/80 px-2 py-1 rounded-full"
-                        >
-                          {day}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {selectedPlan.days.map((day) => (
-                        <div key={day}>
-                          <div className="text-[#f67a45] font-semibold text-sm mb-1">{day}</div>
-                          <div className="flex flex-col gap-1">
-                            {selectedPlan.meals[day]?.map((m) => (
-                              <div key={m.id} className="flex items-center gap-2">
-                                <span className="text-white text-xs">{m.type}:</span>
-                                <span className="text-white text-xs">{m.meal}</span>
-                                <span className="text-white/60 text-xs">{m.calories} cal</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      className="mt-4 bg-[#f67a45] text-white px-6 py-2 rounded-full hover:bg-[#e56d3d] transition-colors font-medium"
-                      onClick={() => {
-                        showConfirmDialog(
-                          "Assign Meal Plan",
-                          `Are you sure you want to assign "${selectedPlan.name}" to ${subscriber?.name || "subscriber"}?`,
-                          "warning",
-                          () => {
-                            showAlert(`Assigned "${selectedPlan.name}" to ${subscriber?.name || "subscriber"}`, "success");
-                            onClose();
-                          }
-                        );
-                      }}
-                    >
-                      Assign Meal Plan
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
 
-            {/* Edit/New Meal Plan UI */}
-            {editMode && (
-              <div className="bg-[#18182f] rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-4">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f67a45]"></div>
+          </div>
+        ) : (
+          <div className="flex h-[70vh]">
+            {/* Days Sidebar */}
+            <div className="w-48 border-r border-[#232342] pr-4">
+              <h4 className="text-white font-semibold mb-4">Days of Week</h4>
+              <div className="space-y-2">
+                {daysOfWeek.map((day) => (
                   <button
-                    className="text-white/70 hover:text-white"
-                    onClick={() => {
-                      setEditMode(false);
-                      setEditPlan(null);
-                      setAddingNewPlan(false);
-                    }}
-                  >
-                    <FaArrowLeft />
-                  </button>
-                  <h4 className="text-white font-semibold">
-                    {addingNewPlan ? "Create New Meal Plan" : "Edit Meal Plan"}
-                  </h4>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-white/80 text-sm mb-1">Meal Plan Name</label>
-                  <input
-                    type="text"
-                    value={editPlan.name}
-                    onChange={e => setEditPlan({ ...editPlan, name: e.target.value })}
-                    className="w-full px-4 py-2 bg-[#121225] border border-[#232342] rounded-lg text-white focus:outline-none focus:border-[#f67a45]"
-                    placeholder="e.g., Weight Loss Plan"
-                  />
-                </div>
-                {/* Days Tabs */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {editPlan.days.map(day => (
-                    <button
-                      key={day}
-                      className={`px-4 py-1.5 rounded-full text-sm ${editDay === day
+                    key={day}
+                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                      selectedDay === day
                         ? "bg-[#f67a45] text-white"
-                        : "bg-[#121225] text-white/80 border border-[#232342]"
-                        }`}
-                      onClick={() => setEditDay(day)}
+                        : "bg-[#121225] text-white/80 hover:bg-[#232342]"
+                    }`}
+                    onClick={() => setSelectedDay(day)}
+                  >
+                    <div className="font-medium">{day}</div>
+                    <div className="text-xs opacity-80">
+                      {editMealPlan.days.get(day)?.length || 0} meals
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 pl-6">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-white font-semibold text-lg">
+                  {selectedDay} - Meals
+                </h4>
+                <button
+                  className="px-4 py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d] transition-colors flex items-center gap-2"
+                  onClick={() => setShowAddMeal(true)}
+                >
+                  <FaPlus /> Add Meal
+                </button>
+              </div>
+
+              {/* Meals List */}
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                {(editMealPlan.days.get(selectedDay) || []).map(
+                  (meal, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#121225] rounded-lg p-4 border border-[#232342]"
                     >
-                      {day}
-                      {editPlan.days.length > 1 && (
-                        <span
-                          className="ml-2 text-red-400 cursor-pointer"
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleRemoveDay(day);
-                          }}
-                          title="Remove day"
-                        >
-                          &times;
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                  <button
-                    className="px-3 py-1.5 rounded-full bg-[#232342] text-white/70 hover:bg-[#f67a45]/20"
-                    onClick={() => setShowAddDay(true)}
-                  >
-                    <FaPlus size={12} /> Add Day
-                  </button>
-                </div>
-                {/* Meals for selected day */}
-                {editDay && (
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h5 className="text-white font-medium">{editDay} Meals</h5>
-                      <button
-                        className="bg-[#f67a45]/20 text-[#f67a45] px-3 py-1.5 rounded-md flex items-center gap-2 hover:bg-[#f67a45]/30"
-                        onClick={() => setShowAddMeal(true)}
-                      >
-                        <FaPlus size={14} />
-                        <span>Add Meal</span>
-                      </button>
-                    </div>
-                    <div className="space-y-2">
-                      {(editPlan.meals[editDay] || []).map((m, idx) => (
-                        <div key={m.id} className="flex items-center gap-2 bg-[#121225] rounded-lg p-2">
-                          <input
-                            type="text"
-                            value={m.type}
-                            onChange={e => handleEditMeal(idx, "type", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-24"
-                            placeholder="Type"
-                          />
-                          <input
-                            type="text"
-                            value={m.meal}
-                            onChange={e => handleEditMeal(idx, "meal", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-40"
-                            placeholder="Meal"
-                          />
-                          <input
-                            type="text"
-                            value={m.time}
-                            onChange={e => handleEditMeal(idx, "time", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-16"
-                            placeholder="Time"
-                          />
-                          <input
-                            type="number"
-                            value={m.calories}
-                            onChange={e => handleEditMeal(idx, "calories", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-14"
-                            placeholder="Cal"
-                          />
-                          <input
-                            type="text"
-                            value={m.protein}
-                            onChange={e => handleEditMeal(idx, "protein", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-14"
-                            placeholder="Protein"
-                          />
-                          <input
-                            type="text"
-                            value={m.carbs}
-                            onChange={e => handleEditMeal(idx, "carbs", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-14"
-                            placeholder="Carbs"
-                          />
-                          <input
-                            type="text"
-                            value={m.fats}
-                            onChange={e => handleEditMeal(idx, "fats", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-14"
-                            placeholder="Fats"
-                          />
-                          <input
-                            type="text"
-                            value={m.recipe}
-                            onChange={e => handleEditMeal(idx, "recipe", e.target.value)}
-                            className="bg-transparent border-b border-[#232342] text-white text-xs px-2 py-1 w-32"
-                            placeholder="Recipe"
-                          />
-                          <button
-                            className="text-red-400 hover:text-red-600 ml-2"
-                            onClick={() => handleRemoveMeal(idx)}
-                            title="Remove"
-                          >
-                            <FaTrash size={14} />
-                          </button>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="bg-[#f67a45] text-white text-xs px-2 py-1 rounded">
+                              {meal.type}
+                            </span>
+                            <span className="text-white/80 text-sm">
+                              {meal.time}
+                            </span>
+                          </div>
+                          <h5 className="text-white font-medium mb-2">
+                            {meal.meal}
+                          </h5>
+                          <div className="grid grid-cols-4 gap-4 text-sm">
+                            <div className="text-white/80">
+                              <span className="text-white/60">Calories:</span>{" "}
+                              {meal.calories}
+                            </div>
+                            <div className="text-white/80">
+                              <span className="text-white/60">Protein:</span>{" "}
+                              {meal.protein}
+                            </div>
+                            <div className="text-white/80">
+                              <span className="text-white/60">Carbs:</span>{" "}
+                              {meal.carbs}
+                            </div>
+                            <div className="text-white/80">
+                              <span className="text-white/60">Fats:</span>{" "}
+                              {meal.fats}
+                            </div>
+                          </div>
+                          {meal.recipe && (
+                            <div className="mt-2 text-white/70 text-sm">
+                              <span className="text-white/60">Recipe:</span>{" "}
+                              {meal.recipe}
+                            </div>
+                          )}
                         </div>
-                      ))}
-                      {(editPlan.meals[editDay] || []).length === 0 && (
-                        <div className="text-white/50 text-xs py-4 text-center">No meals for this day.</div>
-                      )}
+                        <button
+                          className="text-red-400 hover:text-red-300 ml-4"
+                          onClick={() => handleRemoveMeal(selectedDay, index)}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )
                 )}
-                {/* Save Button */}
-                <div className="flex justify-end gap-2">
-                  <button
-                    className="bg-[#f67a45] text-white px-6 py-2 rounded-full hover:bg-[#e56d3d] transition-colors font-medium"
-                    onClick={handleSavePlan}
-                  >
-                    <FaSave className="inline mr-2" /> Save Meal Plan
-                  </button>
-                </div>
-                {/* Add Meal Modal */}
-                {showAddMeal && (
-                  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div className="bg-[#18182f] rounded-xl p-6 max-w-md w-full">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-white font-semibold">Add Meal</h4>
-                        <button
-                          className="text-white/70 hover:text-white text-2xl"
-                          onClick={() => setShowAddMeal(false)}
-                        >
-                          &times;
-                        </button>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-white/80 text-xs mb-1">Meal Type</label>
-                          <select
-                            value={newMeal.type}
-                            onChange={e => setNewMeal({ ...newMeal, type: e.target.value })}
-                            className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                          >
-                            {defaultMealTypes.map(type => (
-                              <option key={type} value={type}>{type}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-white/80 text-xs mb-1">Meal Name</label>
-                          <input
-                            type="text"
-                            value={newMeal.meal}
-                            onChange={e => setNewMeal({ ...newMeal, meal: e.target.value })}
-                            className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-white/80 text-xs mb-1">Time</label>
-                          <input
-                            type="text"
-                            value={newMeal.time}
-                            onChange={e => setNewMeal({ ...newMeal, time: e.target.value })}
-                            className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-white/80 text-xs mb-1">Calories</label>
-                            <input
-                              type="number"
-                              value={newMeal.calories}
-                              onChange={e => setNewMeal({ ...newMeal, calories: e.target.value })}
-                              className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-white/80 text-xs mb-1">Protein</label>
-                            <input
-                              type="text"
-                              value={newMeal.protein}
-                              onChange={e => setNewMeal({ ...newMeal, protein: e.target.value })}
-                              className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-white/80 text-xs mb-1">Carbs</label>
-                            <input
-                              type="text"
-                              value={newMeal.carbs}
-                              onChange={e => setNewMeal({ ...newMeal, carbs: e.target.value })}
-                              className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-white/80 text-xs mb-1">Fats</label>
-                            <input
-                              type="text"
-                              value={newMeal.fats}
-                              onChange={e => setNewMeal({ ...newMeal, fats: e.target.value })}
-                              className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-white/80 text-xs mb-1">Recipe</label>
-                          <textarea
-                            value={newMeal.recipe}
-                            onChange={e => setNewMeal({ ...newMeal, recipe: e.target.value })}
-                            className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white min-h-[60px]"
-                          />
-                        </div>
-                        <div className="flex justify-end gap-2 mt-4">
-                          <button
-                            className="px-4 py-2 border border-gray-400 rounded-full text-white hover:bg-gray-700 transition-colors"
-                            onClick={() => setShowAddMeal(false)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            className="px-4 py-2 bg-[#f67a45] rounded-full text-white hover:bg-[#e56d3d] transition-colors"
-                            onClick={handleAddMealToDay}
-                          >
-                            <FaSave className="inline mr-2" /> Add Meal
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {/* Add Day Modal */}
-                {showAddDay && (
-                  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div className="bg-[#18182f] rounded-xl p-6 max-w-md w-full">
-                      <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-white font-semibold">Add Day</h4>
-                        <button
-                          className="text-white/70 hover:text-white text-2xl"
-                          onClick={() => setShowAddDay(false)}
-                        >
-                          &times;
-                        </button>
-                      </div>
-                      <div>
-                        <label className="block text-white/80 text-xs mb-1">Day Name</label>
-                        <input
-                          type="text"
-                          value={newDayName}
-                          onChange={e => setNewDayName(e.target.value)}
-                          className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
-                          placeholder="e.g. Thursday"
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2 mt-4">
-                        <button
-                          className="px-4 py-2 border border-gray-400 rounded-full text-white hover:bg-gray-700 transition-colors"
-                          onClick={() => setShowAddDay(false)}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          className="px-4 py-2 bg-[#f67a45] rounded-full text-white hover:bg-[#e56d3d] transition-colors"
-                          onClick={handleAddDay}
-                        >
-                          <FaSave className="inline mr-2" /> Add Day
-                        </button>
-                      </div>
-                    </div>
+
+                {(!editMealPlan.days.get(selectedDay) ||
+                  editMealPlan.days.get(selectedDay).length === 0) && (
+                  <div className="text-center text-white/60 py-8">
+                    No meals added for {selectedDay}
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="flex justify-between mt-6 pt-4 border-t border-[#232342]">
+          <div>
+            {currentMealPlan && (
+              <button
+                className="px-4 py-2 bg-red-600 rounded-lg text-white hover:bg-red-700 transition-colors flex items-center gap-2"
+                onClick={handleDeleteMealPlan}
+              >
+                <FaTrash /> Delete Meal Plan
+              </button>
             )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              className="px-6 py-2 border border-gray-400 rounded-lg text-white hover:bg-gray-700 transition-colors"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              className={`px-6 py-2 rounded-lg text-white transition-colors flex items-center gap-2 ${
+                saving
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-[#f67a45] hover:bg-[#e56d3d]"
+              }`}
+              onClick={handleSaveMealPlan}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <FaSave /> Save Meal Plan
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
-      {/* Custom Confirm Dialog */}
+
+      {/* Add Meal Modal */}
+      {showAddMeal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-60">
+          <div className="bg-[#18182f] rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-white font-semibold">
+                Add Meal to {selectedDay}
+              </h4>
+              <button
+                className="text-white/70 hover:text-white text-2xl"
+                onClick={() => setShowAddMeal(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white/80 text-sm mb-2">
+                  Meal Type
+                </label>
+                <select
+                  value={newMeal.type}
+                  onChange={(e) =>
+                    setNewMeal({ ...newMeal, type: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
+                >
+                  {defaultMealTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-white/80 text-sm mb-2">
+                  Meal Name *
+                </label>
+                <input
+                  type="text"
+                  value={newMeal.meal}
+                  onChange={(e) =>
+                    setNewMeal({ ...newMeal, meal: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
+                  placeholder="e.g., Grilled Chicken Salad"
+                />
+              </div>
+              <div>
+                <label className="block text-white/80 text-sm mb-2">Time</label>
+                <input
+                  type="time"
+                  value={newMeal.time}
+                  onChange={(e) =>
+                    setNewMeal({ ...newMeal, time: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white/80 text-sm mb-2">
+                    Calories *
+                  </label>
+                  <input
+                    type="number"
+                    value={newMeal.calories}
+                    onChange={(e) =>
+                      setNewMeal({
+                        ...newMeal,
+                        calories: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
+                    placeholder="450"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/80 text-sm mb-2">
+                    Protein *
+                  </label>
+                  <input
+                    type="text"
+                    value={newMeal.protein}
+                    onChange={(e) =>
+                      setNewMeal({ ...newMeal, protein: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
+                    placeholder="30g"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/80 text-sm mb-2">
+                    Carbs *
+                  </label>
+                  <input
+                    type="text"
+                    value={newMeal.carbs}
+                    onChange={(e) =>
+                      setNewMeal({ ...newMeal, carbs: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
+                    placeholder="45g"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/80 text-sm mb-2">
+                    Fats *
+                  </label>
+                  <input
+                    type="text"
+                    value={newMeal.fats}
+                    onChange={(e) =>
+                      setNewMeal({ ...newMeal, fats: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white"
+                    placeholder="12g"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-white/80 text-sm mb-2">
+                  Recipe *
+                </label>
+                <textarea
+                  value={newMeal.recipe}
+                  onChange={(e) =>
+                    setNewMeal({ ...newMeal, recipe: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded bg-[#121225] border border-[#232342] text-white min-h-[80px]"
+                  placeholder="1. Grill chicken breast for 6-8 minutes each side..."
+                />
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  className="px-4 py-2 border border-gray-400 rounded-lg text-white hover:bg-gray-700 transition-colors"
+                  onClick={() => setShowAddMeal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-[#f67a45] rounded-lg text-white hover:bg-[#e56d3d] transition-colors flex items-center gap-2"
+                  onClick={handleAddMeal}
+                >
+                  <FaPlus /> Add Meal
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showConfirm}
-        onClose={() => setShowConfirm(false)}
+        title={confirmTitle}
+        message={confirmMessage}
         onConfirm={() => {
+          console.log(
+            "ConfirmDialog onConfirm clicked, executing confirmAction"
+          );
           confirmAction();
           setShowConfirm(false);
         }}
-        title={confirmTitle}
-        message={confirmMessage}
-        type={confirmType}
+        onClose={() => setShowConfirm(false)}
       />
-      {/* Custom Notification */}
+
+      {/* Notification */}
       <Notification
         isVisible={notification.isVisible}
         type={notification.type}
         message={notification.message}
-        onClose={() => setNotification(n => ({ ...n, isVisible: false }))}
+        onClose={() => setNotification({ ...notification, isVisible: false })}
         autoClose={notification.autoClose}
         duration={notification.duration}
       />
