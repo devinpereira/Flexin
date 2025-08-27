@@ -526,3 +526,31 @@ export const getUserSubscriptionForTrainer = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to fetch user subscription details", details: err.message });
   }
 };
+
+// Remove/Cancel subscription for a specific user (for trainers)
+export const removeUserSubscription = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const trainerId = req.user._id; // The trainer making the request
+    
+    // Verify the trainer exists
+    const trainer = await Trainer.findOne({ userId: trainerId });
+    if (!trainer) {
+      return res.status(403).json({ success: false, error: "User is not a trainer" });
+    }
+    
+    // End any current active subscription for the specific user
+    const result = await Subscription.updateMany(
+      { userId, trainerId: trainer._id, $or: [{ endDate: { $exists: false } }, { endDate: null }] },
+      { $set: { endDate: new Date() } }
+    );
+    
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ success: false, error: "No active subscription found for this user" });
+    }
+    
+    res.status(200).json({ success: true, message: "User subscription removed successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: "Failed to remove user subscription", details: err.message });
+  }
+};

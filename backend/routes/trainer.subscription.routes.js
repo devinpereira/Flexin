@@ -12,6 +12,7 @@ import {
   markTrainerPaymentAsPaid,
   getSubscribersByTrainer,
   getUserSubscriptionForTrainer,
+  removeUserSubscription,
 } from '../controllers/trainer.subscription.controller.js';
 
 const router = express.Router();
@@ -21,6 +22,9 @@ router.get('/trainer/:trainerId', protect, getSubscribersByTrainer);
 
 // GET specific user's subscription details for a trainer (for trainers to check their subscribers)
 router.get('/user/:userId/trainer/:trainerId', protect, getUserSubscriptionForTrainer);
+
+// Remove/Cancel subscription for a specific user (for trainers)
+router.delete('/remove/:userId', protect, removeUserSubscription);
 
 // Get user's subscription details for a trainer
 router.get('/:id', protect, getSubscriptionDetails);

@@ -7,6 +7,8 @@ import SubscriberReportsModal from "../../components/TrainerDashboard/Subscriber
 import MessageModal from "../../components/TrainerDashboard/MessageModal";
 import AssignScheduleModal from "../../components/TrainerDashboard/AssignScheduleModal";
 import AssignMealPlanModal from "../../components/TrainerDashboard/AssignMealPlanModal";
+import ConfirmDialog from "../../components/ConfirmDialog";
+import Notification from "../../components/Admin/Notification";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -95,6 +97,14 @@ const SubscriberProfile = () => {
   const [subscriber, setSubscriber] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Confirmation dialog and notification states
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [notification, setNotification] = useState({
+    isVisible: false,
+    type: "success",
+    message: "",
+  });
 
   useEffect(() => {
     const fetchSubscriberData = async () => {
@@ -210,6 +220,15 @@ const SubscriberProfile = () => {
     }
   }, [subscriberId]);
 
+  // Helper function to show notifications
+  const showNotification = (message, type = "success") => {
+    setNotification({
+      isVisible: true,
+      type,
+      message,
+    });
+  };
+
   // Find the subscriber by ID (fallback to mock data if needed)
   const mockSubscriber = mockSubscribers.find((s) => s.id === subscriberId);
 
@@ -278,6 +297,45 @@ const SubscriberProfile = () => {
       setShowAssignMealPlan(true);
     }
     // Implement navigation or modal logic here for other buttons
+  };
+
+  // Handle remove subscription
+  const handleRemoveSubscription = () => {
+    setShowConfirmDialog(true);
+  };
+
+  // Confirm remove subscription
+  const confirmRemoveSubscription = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `/api/v1/subscription/remove/${subscriberId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        showNotification("Subscription removed successfully", "success");
+        // Refresh the subscriber data to reflect the change
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        const errorData = await response.json();
+        showNotification(
+          errorData.message || "Failed to remove subscription",
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error removing subscription:", error);
+      showNotification("Error removing subscription", "error");
+    }
   };
 
   // Example mock data for reports (replace with real data as needed)
@@ -518,7 +576,7 @@ const SubscriberProfile = () => {
                 fontSize: "1rem",
                 outline: "none",
               }}
-              onClick={() => alert("Remove subscription")}
+              onClick={handleRemoveSubscription}
               onMouseOver={(e) =>
                 (e.currentTarget.style.background = "rgba(239,68,68,0.08)")
               }
@@ -587,6 +645,28 @@ const SubscriberProfile = () => {
           setActiveButton(null);
         }}
         subscriber={displaySubscriber}
+      />
+
+      {/* Confirmation Dialog for Remove Subscription */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => setShowConfirmDialog(false)}
+        onConfirm={confirmRemoveSubscription}
+        title="Remove Subscription"
+        message="Are you sure you want to remove this subscriber's subscription? This action cannot be undone."
+        confirmText="Remove"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      {/* Notification */}
+      <Notification
+        type={notification.type}
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={() => setNotification({ ...notification, isVisible: false })}
+        autoClose={true}
+        duration={3000}
       />
     </TrainerDashboardLayout>
   );

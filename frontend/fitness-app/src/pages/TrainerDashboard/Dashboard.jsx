@@ -116,7 +116,7 @@ const Dashboard = () => {
           </div>
           <div>
             <h2 className="text-white text-lg font-semibold mb-1">
-              Subscribers
+              Subscribers in the past
             </h2>
             <p className="text-[#f67a45] text-3xl font-bold">
               {stats.subscribers}
