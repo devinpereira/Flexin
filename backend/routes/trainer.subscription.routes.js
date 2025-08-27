@@ -8,11 +8,15 @@ import {
   getSubscriptionHistory,
   getTrainerSubscriptionTotal,
   getAllTrainersSubscriptionTotals,
+  getTrainerPaymentHistory,
   markTrainerPaymentAsPaid,
-  getTrainerPaymentHistory
+  getSubscribersByTrainer,
 } from '../controllers/trainer.subscription.controller.js';
 
 const router = express.Router();
+
+// GET all subscribers for a specific trainer
+router.get('/trainer/:trainerId', protect, getSubscribersByTrainer);
 
 // Get user's subscription details for a trainer
 router.get('/:id', protect, getSubscriptionDetails);

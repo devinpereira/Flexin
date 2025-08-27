@@ -1,9 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Navigation from "../components/Navigation";
 import TrainerDashboardSidebar from "../components/TrainerDashboard/Sidebar";
 import { motion } from "framer-motion";
+import { getMyTrainerProfile } from "../api/trainer";
 
 const TrainerDashboardLayout = ({ children, activeSection }) => {
+  const [trainer, setTrainer] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchTrainer = async () => {
+      try {
+        const profile = await getMyTrainerProfile();
+        setTrainer(profile);
+      } catch (err) {
+        setTrainer(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrainer();
+  }, []);
+
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-fixed"
@@ -15,7 +32,12 @@ const TrainerDashboardLayout = ({ children, activeSection }) => {
       <div className="container mx-auto flex relative">
         {/* Left Sidebar */}
         <div className="fixed top-16 left-0 bottom-0 w-[240px] z-10 overflow-hidden">
-          <TrainerDashboardSidebar activeSection={activeSection} name="Nipuna Lakruwan" />
+          <TrainerDashboardSidebar
+            activeSection={activeSection}
+            name={trainer?.name || "Trainer"}
+            trainer={trainer}
+            loading={loading}
+          />
         </div>
         {/* Main Content */}
         <motion.div
