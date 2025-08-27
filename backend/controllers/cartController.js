@@ -1,5 +1,4 @@
 import Cart from "../models/Cart.js";
-import Product from "../models/Product.js";
 // Import admin store models for correct product source
 import StoreProduct from "../models/adminstore/StoreProduct.js";
 

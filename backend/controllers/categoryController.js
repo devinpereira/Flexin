@@ -1,6 +1,3 @@
-import Category from "../models/Catergory.js";
-import Subcategory from "../models/Subcategory.js";
-import Product from "../models/Product.js";
 // Admin store models for integration
 import StoreCategory from "../models/adminstore/StoreCategory.js";
 import StoreProduct from "../models/adminstore/StoreProduct.js";
@@ -127,7 +124,7 @@ export const createCategory = async (req, res) => {
         }
 
         // Check if category already exists
-        const existingCategory = await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+        const existingCategory = await StoreCategory.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
         if (existingCategory) {
             return res.status(400).json({
                 success: false,
@@ -135,7 +132,7 @@ export const createCategory = async (req, res) => {
             });
         }
 
-        const category = new Category({
+        const category = new StoreCategory({
             name,
             description,
             image
@@ -170,7 +167,7 @@ export const updateCategory = async (req, res) => {
             });
         }
 
-        const category = await Category.findByIdAndUpdate(
+        const category = await StoreCategory.findByIdAndUpdate(
             id,
             updates,
             { new: true, runValidators: true }
@@ -210,7 +207,7 @@ export const deleteCategory = async (req, res) => {
         }
 
         // Check if category has products
-        const productCount = await Product.countDocuments({ categoryId: id, isActive: true });
+        const productCount = await StoreProduct.countDocuments({ categoryId: id, isActive: true });
         if (productCount > 0) {
             return res.status(400).json({
                 success: false,
@@ -218,7 +215,7 @@ export const deleteCategory = async (req, res) => {
             });
         }
 
-        const category = await Category.findByIdAndUpdate(
+        const category = await StoreCategory.findByIdAndUpdate(
             id,
             { isActive: false },
             { new: true }
@@ -261,7 +258,7 @@ export const getSubcategories = async (req, res) => {
             filter.categoryId = categoryId;
         }
 
-        const subcategories = await Subcategory.find(filter)
+        const subcategories = await StoreCategory.find(filter)
             .populate('categoryId', 'name')
             .sort({ name: 1 });
 
@@ -298,7 +295,7 @@ export const createSubcategory = async (req, res) => {
         }
 
         // Check if category exists
-        const category = await Category.findById(categoryId);
+        const category = await StoreCategory.findById(categoryId);
         if (!category) {
             return res.status(404).json({
                 success: false,
@@ -306,7 +303,7 @@ export const createSubcategory = async (req, res) => {
             });
         }
 
-        const subcategory = new Subcategory({
+        const subcategory = new StoreCategory({
             name,
             categoryId,
             description,
