@@ -7,7 +7,6 @@ import { BsCalendarWeek, BsEmojiSmile } from 'react-icons/bs';
 import { GiMeal } from 'react-icons/gi';
 import { BiChat } from 'react-icons/bi';
 import { RiVipDiamondLine } from 'react-icons/ri';
-// --- Socket.IO client import ---
 import { io } from "socket.io-client";
 import { API_PATHS } from '../../utils/apiPaths';
 import axiosInstance from '../../utils/axiosInstance';
@@ -27,28 +26,22 @@ const Chat = () => {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Trainer data state
   const [trainer, setTrainer] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // --- Replace with your actual user ID logic ---
   const userId = localStorage.getItem("userId") || "demoUserId";
 
-  // --- Socket.IO connection (memoized) ---
   const socket = useMemo(() => io("http://localhost:8000", {
     auth: { token: localStorage.getItem("token") }
   }), []);
 
-  // --- Fetch trainer data ---
   useEffect(() => {
     const fetchTrainerData = async () => {
       if (trainerId) {
         try {
           setLoading(true);
           const response = await axiosInstance.get(API_PATHS.TRAINER.GET_TRAINER(trainerId));
-          console.log('Trainer API response:', response.data); // Debug log
-          const trainerData = response.data.trainer; // Note: API returns { success: true, trainer: {...} }
-          console.log('Trainer data:', trainerData); // Debug log
+          const trainerData = response.data.trainer;
           setTrainer({
             id: trainerData._id,
             name: trainerData.name,
@@ -57,8 +50,6 @@ const Chat = () => {
             status: trainerData.availabilityStatus === 'available' ? 'Online' : 'Offline'
           });
         } catch (error) {
-          console.error('Error fetching trainer data:', error);
-          // Fallback to default data
           setTrainer({
             id: trainerId,
             name: "Trainer",
@@ -77,12 +68,10 @@ const Chat = () => {
 
 
 
-  // Scroll to bottom of messages
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Handle window resize to close mobile menu on larger screens
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -94,7 +83,6 @@ const Chat = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // --- Load chat messages from API ---
   useEffect(() => {
     const fetchChatMessages = async () => {
       if (trainerId && userId) {
@@ -102,7 +90,6 @@ const Chat = () => {
           const response = await axiosInstance.get(`${API_PATHS.CHAT.GET_CHAT}?trainerId=${trainerId}&userId=${userId}`);
           const chatData = response.data;
           
-          // Transform API response to match component structure (handle empty messages array)
           const transformedMessages = (chatData.messages || []).map(msg => ({
             id: msg._id,
             sender: msg.sender === userId ? "user" : "trainer",
@@ -113,8 +100,6 @@ const Chat = () => {
 
           setMessages(transformedMessages);
         } catch (error) {
-          console.error('Error fetching chat messages:', error);
-          // Set empty messages on error
           setMessages([]);
         }
       }
@@ -123,7 +108,6 @@ const Chat = () => {
     fetchChatMessages();
   }, [trainerId, userId]);
 
-  // --- Listen for incoming messages from Socket.IO ---
   useEffect(() => {
     socket.on("receiveMessage", (msg) => {
       setMessages(prev => [
@@ -143,15 +127,13 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // --- Send message via API and Socket.IO ---
   const handleSendMessage = async () => {
     if (message.trim() === '') return;
 
     const messageContent = message;
-    setMessage(''); // Clear input immediately for better UX
+    setMessage('');
 
     try {
-      // Send message via API
       const response = await axiosInstance.post(API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE, { trainerId, userId, content: messageContent });
       
       const newMessage = {
@@ -164,22 +146,16 @@ const Chat = () => {
 
       setMessages(prev => [...prev, newMessage]);
 
-      // Send message via socket
       socket.emit("sendMessage", { to: trainerId, message: messageContent });
     } catch (error) {
-      console.error('Error sending message:', error);
-      // Restore message if API call fails
       setMessage(messageContent);
     }
   };
 
-  // Handle file upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // In a real app, you would upload the file to a server
-    // For this demo, we'll just simulate a file message
     const newMessage = {
       id: messages.length + 1,
       sender: 'user',
@@ -196,14 +172,11 @@ const Chat = () => {
     setShowAttachmentOptions(false);
   };
 
-  // Handle voice recording
   const toggleRecording = () => {
     if (isRecording) {
-      // Stop recording
       setIsRecording(false);
       setRecordingTime(0);
 
-      // Simulate sending voice message
       const newMessage = {
         id: messages.length + 1,
         sender: 'user',
@@ -215,20 +188,16 @@ const Chat = () => {
 
       setMessages([...messages, newMessage]);
     } else {
-      // Start recording
       setIsRecording(true);
 
-      // Start timer
       const timer = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
 
-      // Save timer ID for cleanup
       return () => clearInterval(timer);
     }
   };
 
-  // Format recording time
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -240,10 +209,9 @@ const Chat = () => {
       style={{ background: 'linear-gradient(180deg, #0A0A1F 0%, #1A1A2F 100%)' }}>
       <Navigation />
 
-      {/* Loading state */}
       {loading ? (
         <div className="container mx-auto pt-4 sm:pt-8 px-4">
-          <div className="w-full md:ml-[275px] lg:ml-[300px]">
+                  <div className="w-full md:ml-[275px] lg:ml-[300px]">
             <div className="flex items-center justify-center h-[60vh]">
               <div className="text-white text-lg">Loading trainer information...</div>
             </div>
@@ -251,7 +219,6 @@ const Chat = () => {
         </div>
       ) : (
         <>
-          {/* Mobile Menu Toggle Button */}
           <div className="md:hidden fixed bottom-6 right-6 z-50">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -261,7 +228,6 @@ const Chat = () => {
             </button>
           </div>
 
-      {/* Mobile Menu Panel */}
       <div className={`md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#03020d] rounded-t-3xl transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-full'
         }`}>
         <div className="w-12 h-1 bg-gray-600 rounded-full mx-auto mt-3 mb-6"></div>
@@ -309,8 +275,7 @@ const Chat = () => {
       </div>
 
       <div className="container mx-auto pt-4 sm:pt-8 px-4 overflow-x-hidden">
-        {/* Desktop Side Navigation */}
-        <div className="hidden md:block fixed left-0 top-50 z-10 h-screen">
+                <div className="hidden md:block fixed left-0 top-16 h-full w-[250px] lg:w-[275px] bg-[#03020d] z-30 border-r border-gray-800">
           <nav className="bg-[#03020d] rounded-tr-[30px] w-[275px] p-6 h-full">
             <div className="space-y-6 mt-8">
               <a
@@ -353,7 +318,6 @@ const Chat = () => {
           </nav>
         </div>
 
-        {/* Main Content */}
         <div className="w-full md:ml-[275px] lg:ml-[300px] overflow-x-hidden">
           <button
             onClick={() => navigate(`/trainers/${trainerId}`)}
@@ -364,10 +328,8 @@ const Chat = () => {
           </button>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
-            {/* Message area with fixed scrolling */}
             <div className="lg:col-span-2 space-y-4 sm:space-y-6 h-fit">
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden mb-4 sm:mb-8 flex flex-col h-[70vh]">
-                {/* Chat Header */}
                 <div className="bg-[#1A1A2F] p-3 sm:p-4 flex items-center justify-between border-b border-gray-700">
                   <div className="flex items-center">
                     <div className="relative">
@@ -396,7 +358,6 @@ const Chat = () => {
                   </button>
                 </div>
 
-                {/* Messages Area - Fix scrolling issues */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 overflow-x-hidden">
                   <div className="w-full">
                     {messages.map((msg) => (
@@ -493,7 +454,6 @@ const Chat = () => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Message Input Area */}
                 <div className="bg-[#1A1A2F] p-3 border-t border-gray-700 flex-shrink-0">
                   {isRecording ? (
                     <div className="flex items-center justify-between bg-[#121225] rounded-full px-4 py-2">
@@ -590,7 +550,6 @@ const Chat = () => {
               </div>
             </div>
 
-            {/* Sidebar - Trainer Info - Fixed for proper display */}
             <div className="lg:col-span-1 space-y-4 sm:space-y-6 h-fit">
               <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 sticky top-4">
                 <div className="flex flex-col items-center mb-4 sm:mb-6">
@@ -653,7 +612,6 @@ const Chat = () => {
         </div>
       </div>
 
-      {/* Appointment Modal */}
       {showAppointmentModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-[#121225] rounded-xl max-w-md w-full p-4 sm:p-6">
@@ -687,7 +645,6 @@ const Chat = () => {
               <button
                 onClick={() => {
                   setShowAppointmentModal(false);
-                  // In a real app, this would schedule the appointment
                   setTimeout(() => {
                     const appointmentMsg = {
                       id: messages.length + 1,
@@ -698,7 +655,6 @@ const Chat = () => {
                     };
                     setMessages(prev => [...prev, appointmentMsg]);
 
-                    // Simulate trainer response
                     setTimeout(() => {
                       const trainerResponse = {
                         id: messages.length + 2,

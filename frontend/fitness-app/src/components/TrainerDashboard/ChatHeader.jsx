@@ -9,22 +9,24 @@ const ChatHeader = ({ subscriber, onShowAppointmentModal }) => {
       <div className="flex items-center">
         <div className="relative">
           <img
-            src={subscriber?.image}
-            alt={subscriber?.name}
+            src={subscriber?.image || "/src/assets/profile1.png"}
+            alt={subscriber?.name || "Subscriber"}
             className="w-10 h-10 rounded-full object-cover"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = '/src/assets/profile1.png';
             }}
           />
-          <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${subscriber?.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'
-            } border-2 border-[#1A1A2F]`}></div>
+          <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full ${
+            subscriber?.status === 'Online' ? 'bg-green-500' : 'bg-gray-500'
+          } border-2 border-[#1A1A2F]`}></div>
         </div>
         <div className="ml-3">
           <h3 className="text-white font-medium">{subscriber?.name}</h3>
           <p className="text-gray-400 text-xs flex items-center">
-            <span className={`inline-block w-2 h-2 rounded-full mr-1 ${subscriber?.isTyping ? 'bg-green-500 animate-pulse' : 'hidden'
-              }`}></span>
+            <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
+              subscriber?.isTyping ? 'bg-green-500 animate-pulse' : 'hidden'
+            }`}></span>
             {subscriber?.isTyping ? 'Typing...' : subscriber?.status}
           </p>
         </div>

@@ -1,25 +1,23 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useContext } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import TrainerDashboardLayout from "../../layouts/TrainerDashboardLayout";
 import { MdArrowBack } from 'react-icons/md';
-// --- Socket.IO client import ---
 import { getSocket, connectSocket } from "../../utils/socket";
 import { API_PATHS } from "../../utils/apiPaths";
 import axiosInstance from "../../utils/axiosInstance";
-
-// Import components
 import ChatSidebar from '../../components/TrainerDashboard/ChatSidebar';
 import ChatHeader from '../../components/TrainerDashboard/ChatHeader';
 import MessageBubble from '../../components/TrainerDashboard/MessageBubble';
 import MessageInput from '../../components/TrainerDashboard/MessageInput';
 import AppointmentModal from '../../components/TrainerDashboard/AppointmentModal';
-import { useContext } from 'react';
 import { UserContext } from '../../context/UserContext';
 
 const Chat = () => {
   const { subscriberId } = useParams();
+  const { user, loading } = useContext(UserContext);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // Helper function to check if subscriberId is valid
   const isValidSubscriberId = (id) => {
     return id && 
            id !== 'undefined' && 
@@ -27,9 +25,6 @@ const Chat = () => {
            id !== undefined && 
            id !== null;
   };
-  const { user } = useContext(UserContext);
-  const navigate = useNavigate();
-  const location = useLocation();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -58,37 +53,30 @@ const Chat = () => {
     };
   }, [subscriberId, subscribers]);
 
-  console.log('Current subscriber:', subscriber);
+  const trainerId = user?.trainerId;
 
-  // --- Get trainer ID ---
-  const trainerId = user.trainerId;
-
-  // --- Socket.IO connection ---
   const socket = useMemo(() => {
     const token = localStorage.getItem("token");
     return token ? connectSocket(token) : null;
   }, []);
 
-  // --- Initialize subscribers data from API ---
   useEffect(() => {
     const fetchTrainerChats = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.CHAT.GET_TRAINER_CHATS(trainerId));
         const chatsData = response.data;
         
-        // Transform API response to match component structure
         const transformedSubscribers = chatsData
-          .filter(chat => chat.user) // Filter out invalid entries
+          .filter(chat => chat.user)
           .map(chat => {
-            // Handle both populated and non-populated user data
             const user = typeof chat.user === 'object' ? chat.user : { _id: chat.user, fullName: 'Unknown User' };
             
             return {
               id: user._id || user.id || chat.user,
               name: user.fullName || `${user.firstName || 'Unknown'} ${user.lastName || 'User'}` || 'Unknown User',
-              image: user.profileImage || "/src/assets/profile1.png",
-              specialty: "User", // You can customize this based on user data
-              status: "Offline", // This will be updated by socket events
+              image: user.profileImage || user.profileImageUrl || user.profilePhoto || "/src/assets/profile1.png",
+              specialty: "User",
+              status: "Offline",
               lastMessage: chat.lastMessage ? {
                 text: chat.lastMessage.content,
                 time: chat.lastMessage.timestamp,
@@ -97,22 +85,22 @@ const Chat = () => {
             };
           })
           .filter((subscriber, index, self) => 
-            // Remove duplicates based on ID
             index === self.findIndex(s => s.id === subscriber.id)
           );
 
         setSubscribers(transformedSubscribers);
         
-        // Set unread counts
         const unreadCountsObj = {};
         chatsData.forEach(chat => {
-          unreadCountsObj[chat.user._id] = chat.unreadCount;
+          if (chat.user && (chat.user._id || chat.user.id || chat.user)) {
+            const userId = typeof chat.user === 'object' ? (chat.user._id || chat.user.id) : chat.user;
+            unreadCountsObj[userId] = chat.unreadCount || 0;
+          }
         });
         setUnreadCounts(unreadCountsObj);
         
       } catch (error) {
         console.error('Error fetching trainer chats:', error);
-        // Fallback to empty array on error
         setSubscribers([]);
       }
     };
@@ -125,16 +113,17 @@ const Chat = () => {
   // --- Load previous messages ---
   useEffect(() => {
     const fetchChatMessages = async () => {
-      // Only fetch if we have a valid subscriberId (not undefined/null/string 'undefined'/'null')
+      // Only fetch if we have a valid subscriberId and trainerId
       if (isValidSubscriberId(subscriberId) && trainerId) {
         try {
+          setMessages([]);
+          
           const response = await axiosInstance.get(`${API_PATHS.CHAT.GET_CHAT}?trainerId=${trainerId}&userId=${subscriberId}`);
           const chatData = response.data;
-          
-          // Transform API response to match component structure (handle empty messages array)
+
           const transformedMessages = (chatData.messages || []).map(msg => ({
             id: msg._id,
-            sender: msg.sender === trainerId ? "trainer" : "user",
+            sender: user._id && (String(msg.sender) === String(user._id)) ? "trainer" : "user",
             text: msg.content,
             time: msg.timestamp,
             isRead: msg.isRead
@@ -142,7 +131,6 @@ const Chat = () => {
 
           setMessages(transformedMessages);
 
-          // Mark messages as read when opening chat
           if (unreadCounts[subscriberId]) {
             setUnreadCounts(prev => ({
               ...prev,
@@ -151,7 +139,6 @@ const Chat = () => {
           }
         } catch (error) {
           console.error('Error fetching chat messages:', error);
-          // Set empty messages on error
           setMessages([]);
         }
       }
@@ -160,30 +147,28 @@ const Chat = () => {
     fetchChatMessages();
   }, [subscriberId, trainerId]);
 
-  // Scroll to bottom of messages
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // --- Listen for incoming messages from Socket.IO ---
   useEffect(() => {
     if (socket) {
       // Listen for incoming messages
       socket.on("receiveMessage", (msg) => {
         const newMessage = {
           id: Date.now(),
-          sender: msg.from === trainerId ? "trainer" : "user",
+          sender: user._id && (String(msg.from) === String(user._id)) ? "trainer" : "user",
           text: msg.message,
           time: msg.time || new Date().toISOString(),
         };
 
         setMessages(prev => [...prev, newMessage]);
 
-        // Update last message for the subscriber
-        if (msg.from !== trainerId) {
+        // Update last message for the subscriber only if it's from the user
+        if (String(msg.from) !== String(user._id)) {
           setSubscribers(prev =>
             prev.map(sub =>
-              sub.id === subscriberId
+              sub.id === msg.from
                 ? {
                   ...sub,
                   lastMessage: {
@@ -197,7 +182,6 @@ const Chat = () => {
         }
       });
 
-      // Listen for typing indicators
       socket.on("userTyping", ({ userId, isTyping }) => {
         if (userId === subscriberId) {
           setSubscribers(prev =>
@@ -210,7 +194,6 @@ const Chat = () => {
         }
       });
 
-      // Listen for online status updates
       socket.on("userStatusChange", ({ userId, status }) => {
         if (status === 'online') {
           setOnlineUsers(prev => [...prev, userId]);
@@ -234,18 +217,15 @@ const Chat = () => {
   // --- Handle typing indicator ---
   const handleTyping = () => {
     if (socket && isValidSubscriberId(subscriberId)) {
-      // Clear previous timeout
       if (typingTimeout) {
         clearTimeout(typingTimeout);
       }
 
-      // If not currently set as typing, emit event
       if (!typing) {
         setTyping(true);
         socket.emit("typing", { to: subscriberId, isTyping: true });
       }
 
-      // Set timeout to stop typing indicator after 3 seconds of inactivity
       const timeout = setTimeout(() => {
         setTyping(false);
         socket.emit("typing", { to: subscriberId, isTyping: false });
@@ -255,15 +235,13 @@ const Chat = () => {
     }
   };
 
-  // --- Send message via API and Socket.IO ---
   const handleSendMessage = async () => {
     if (!message.trim() || !isValidSubscriberId(subscriberId)) return;
 
     const messageContent = message;
-    setMessage(''); // Clear input immediately for better UX
+    setMessage('');
 
     try {
-      // Send message via API
       const response = await axiosInstance.post(API_PATHS.CHAT.CREATE_OR_ADD_MESSAGE, { 
         trainerId, 
         userId: subscriberId, 
@@ -280,7 +258,6 @@ const Chat = () => {
 
       setMessages(prev => [...prev, newMsg]);
 
-      // Update last message for the subscriber
       setSubscribers(prev =>
         prev.map(sub =>
           sub.id === subscriberId
@@ -295,11 +272,9 @@ const Chat = () => {
         )
       );
 
-      // Send message via socket
       if (socket && subscriberId) {
-        socket.emit("sendMessage", { to: subscriberId, message: messageContent });
+        socket.emit("sendMessage", { to: subscriberId, message: messageContent, from: user._id });
 
-        // Stop typing indicator
         if (typing) {
           setTyping(false);
           socket.emit("typing", { to: subscriberId, isTyping: false });
@@ -311,7 +286,6 @@ const Chat = () => {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Restore message if API call fails
       setMessage(messageContent);
     }
   };
@@ -334,9 +308,6 @@ const Chat = () => {
     };
 
     setMessages(prev => [...prev, newMessage]);
-
-    // In a real implementation, you would upload the file to a server
-    // and send the URL via socket
   };
 
   // Handle voice recording
@@ -356,28 +327,22 @@ const Chat = () => {
       };
 
       setMessages(prev => [...prev, newMessage]);
-
-      // In a real implementation, you would upload the recording to a server
-      // and send the URL via socket
     } else {
       setIsRecording(true);
       const timer = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
 
-      // Store interval ID for cleanup
       inputTimeoutRef.current = timer;
     }
   };
 
-  // Format time for display
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Handle appointment scheduling
   const handleScheduleAppointment = ({ date, time }) => {
     setShowAppointmentModal(false);
 
@@ -401,20 +366,18 @@ const Chat = () => {
       };
       setMessages(prev => [...prev, appointmentMsg]);
 
-      // Simulate user response
       setTimeout(() => {
         const userResponse = {
           id: Date.now() + 1,
           sender: 'user',
           text: 'Great! Looking forward to our discussion!',
-          time: new Date(Date.now() + 1000 * 60).toISOString(), // 1 minute later
+          time: new Date(Date.now() + 1000 * 60).toISOString(),
         };
         setMessages(prev => [...prev, userResponse]);
       }, 1500);
     }, 500);
   };
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (inputTimeoutRef.current) {
@@ -426,8 +389,20 @@ const Chat = () => {
     };
   }, [typingTimeout]);
 
+  if (loading || !user || !user.trainerId || !user._id) {
+    return (
+      <TrainerDashboardLayout activeSection="Messages">
+        <div className="flex items-center justify-center h-[70vh]">
+          <div className="text-center p-6">
+            <h3 className="text-white text-lg font-medium mb-2">Loading...</h3>
+            <p className="text-gray-400">Please wait while we load your chat</p>
+          </div>
+        </div>
+      </TrainerDashboardLayout>
+    );
+  }
+
   if (!subscriberId && subscribers.length > 0) {
-    // If no subscriber selected, navigate to first subscriber
     return (
       <TrainerDashboardLayout activeSection="Messages">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
@@ -451,7 +426,6 @@ const Chat = () => {
 
   return (
     <TrainerDashboardLayout activeSection="Messages">
-      {/* Mobile Back Button */}
       <div className="lg:hidden">
         <button
           onClick={() => navigate("/trainer/subscribers")}
@@ -463,7 +437,6 @@ const Chat = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8">
-        {/* Chat Sidebar (only visible on large screens) */}
         <div className="lg:col-span-1 hidden lg:block">
           <ChatSidebar
             subscribers={subscribers}
@@ -472,21 +445,17 @@ const Chat = () => {
           />
         </div>
 
-        {/* Message area */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6 h-fit">
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg overflow-hidden mb-4 sm:mb-8 flex flex-col h-[70vh]">
-            {/* Chat Header */}
             <ChatHeader
               subscriber={subscriber}
               onShowAppointmentModal={() => setShowAppointmentModal(true)}
             />
 
-            {/* Messages Area */}
             <div
               className="flex-1 overflow-y-auto p-4 space-y-4 overflow-x-hidden"
               ref={messageAreaRef}
             >
-              {/* Date separator */}
               <div className="flex justify-center my-4">
                 <span className="bg-[#1A1A2F] text-gray-400 text-xs px-4 py-1 rounded-full">
                   {new Date().toLocaleDateString('en-US', {
@@ -502,13 +471,12 @@ const Chat = () => {
                   <MessageBubble
                     key={msg.id}
                     msg={msg}
-                    subscriberImage={subscriber?.profileImageUrl}
+                    subscriberImage={subscriber?.image}
                     formatTime={formatTime}
                   />
                 ))}
               </div>
 
-              {/* Typing indicator */}
               {subscriber?.isTyping && (
                 <div className="flex justify-start mb-2">
                   <div className="bg-[#1A1A2F]/50 text-white rounded-lg py-2 px-3 flex items-center space-x-1 max-w-[100px]">
@@ -522,7 +490,6 @@ const Chat = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input Area */}
             <MessageInput
               message={message}
               setMessage={(val) => {
@@ -539,14 +506,13 @@ const Chat = () => {
           </div>
         </div>
 
-        {/* Sidebar - Subscriber Info */}
         <div className="lg:col-span-1 space-y-4 sm:space-y-6 h-fit">
           <div className="bg-[#121225] border border-[#f67a45]/30 rounded-lg p-4 sm:p-6 sticky top-4">
             <div className="flex flex-col items-center mb-4 sm:mb-6">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 sm:mb-4">
                 <img
-                  src={subscriber?.profileImageUrl}
-                  alt={subscriber?.name}
+                  src={subscriber?.image || "/src/assets/profile1.png"}
+                  alt={subscriber?.name || "Subscriber"}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
@@ -580,7 +546,6 @@ const Chat = () => {
         </div>
       </div>
 
-      {/* Appointment Modal */}
       {showAppointmentModal && (
         <AppointmentModal
           subscriber={subscriber}

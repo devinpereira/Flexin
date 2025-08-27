@@ -1,7 +1,10 @@
 import React from 'react';
 import { FaFile, FaPlay } from 'react-icons/fa';
+import { useContext } from 'react';
+import { UserContext } from '../../context/UserContext';
 
 const MessageBubble = ({ msg, subscriberImage, formatTime }) => {
+  const { user } = useContext(UserContext);
   const isTrainer = msg.sender === 'trainer';
 
   // Function to format timestamp for chat messages
@@ -18,7 +21,7 @@ const MessageBubble = ({ msg, subscriberImage, formatTime }) => {
     >
       {!isTrainer && (
         <img
-          src={subscriberImage}
+          src={subscriberImage || '/src/assets/profile1.png'}
           alt="Subscriber"
           className="w-8 h-8 rounded-full mr-2 mt-1 object-cover flex-shrink-0"
           onError={(e) => {
@@ -28,10 +31,11 @@ const MessageBubble = ({ msg, subscriberImage, formatTime }) => {
         />
       )}
       <div
-        className={`max-w-[75%] rounded-lg p-3 ${isTrainer
+        className={`max-w-[75%] rounded-lg p-3 ${
+          isTrainer
             ? 'bg-[#f67a45] text-white rounded-tr-none'
             : 'bg-[#1A1A2F] text-white rounded-tl-none'
-          }`}
+        }`}
       >
         {msg.image && (
           <div className="mb-2">
@@ -73,8 +77,9 @@ const MessageBubble = ({ msg, subscriberImage, formatTime }) => {
 
         {msg.text && <p className="whitespace-pre-wrap break-words">{msg.text}</p>}
 
-        <div className={`text-xs mt-1 flex justify-end items-center gap-1 ${isTrainer ? 'text-white/70' : 'text-white/50'
-          }`}>
+        <div className={`text-xs mt-1 flex justify-end items-center gap-1 ${
+          isTrainer ? 'text-white/70' : 'text-white/50'
+        }`}>
           {formatMessageTime(msg.time)}
           {isTrainer && (
             <span className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -93,9 +98,13 @@ const MessageBubble = ({ msg, subscriberImage, formatTime }) => {
       </div>
       {isTrainer && (
         <img
-          src="/src/assets/profile1.png"
+          src={user?.profileImage || user?.profileImageUrl || user?.profilePhoto || "/src/assets/profile1.png"}
           alt="You"
           className="w-8 h-8 rounded-full ml-2 mt-1 object-cover flex-shrink-0"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '/src/assets/profile1.png';
+          }}
         />
       )}
     </div>
