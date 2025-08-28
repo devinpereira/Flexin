@@ -254,7 +254,7 @@ const Explore = () => {
 
                     <div className="flex items-center justify-center text-[#f67a45] mb-2">
                       <span className="mr-1">★</span>
-                      <span>{trainer.rating || "4.8"}</span>
+                      <span>{trainer.rating}</span>
                     </div>
                   </div>
                 </div>

@@ -352,13 +352,16 @@ const Trainers = () => {
                   <tr key={trainer._id} className="hover:bg-gray-800/30">
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-700 flex items-center justify-center">
-                          <span className="text-white font-medium">
-                            {trainer.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </span>
+                        <div className="w-10 h-10 rounded-full border-2 border-[#f67a45]/20 overflow-hidden mb-0.5 mt-1.5 cursor-pointer">
+                          <img
+                            src={trainer.profilePhoto}
+                            alt={trainer.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                        e.target.src = "/src/assets/default-avatar.png";
+                      }}
+                    />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-white">
