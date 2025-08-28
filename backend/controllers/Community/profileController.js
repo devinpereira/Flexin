@@ -25,7 +25,8 @@ export const registerProfile = async (req, res) => {
       return res.status(400).json({ message: "Username already in use" });
     }
 
-    const profileImageUrl = profileImageFile.path || "";
+    // Handle profile image URL safely
+    const profileImageUrl = profileImageFile ? profileImageFile.path : "";
 
     // Create the profile
     const profile = await ProfileData.create({
@@ -34,14 +35,24 @@ export const registerProfile = async (req, res) => {
       bio,
     });
 
-    await User.findByIdAndUpdate(userId, { profileImageUrl });
+    // Update user with profile image URL if provided
+    if (profileImageUrl) {
+      await User.findByIdAndUpdate(userId, { profileImageUrl });
+    }
+
+    // Get updated user data to include in response
+    const updatedUser = await User.findById(userId).select("fullName profileImageUrl");
 
     res.status(200).json({
       message: "Profile created successfully",
-      profile,
+      profile: {
+        ...profile.toObject(),
+        profileImageUrl: updatedUser.profileImageUrl,
+        fullName: updatedUser.fullName
+      },
     });
   } catch (err) {
-    console.error(err);
+    console.error("Profile registration error:", err);
     res.status(500).json({
       message: "Error registering profile",
       error: err.message,
@@ -135,11 +146,19 @@ export const updateProfile = async (req, res) => {
     }
     const user = await User.findById(userId);
 
+    // Check if new username is already taken (only if username is being changed)
+    if (username && username !== profile.username) {
+      const existingUsername = await ProfileData.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already in use" });
+      }
+    }
+
     // Update fields
     if (username) {
       profile.username = username;
     }
-    if (bio) {
+    if (bio !== undefined) {
       profile.bio = bio;
     }
     if (profileImageFile) {
@@ -151,10 +170,14 @@ export const updateProfile = async (req, res) => {
 
     res.status(200).json({
       message: "Profile updated successfully",
-      profile,
+      profile: {
+        ...profile.toObject(),
+        profileImageUrl: user.profileImageUrl,
+        fullName: user.fullName
+      },
     });
   } catch (err) {
-    console.error(err);
+    console.error("Profile update error:", err);
     res.status(500).json({
       message: "Error updating profile",
       error: err.message,
@@ -166,23 +189,27 @@ export const updateProfileImage = async (req, res) => {
   const userId = req.user._id;
   const profileImageFile = req.file;
 
+  if (!profileImageFile) {
+    return res.status(400).json({ message: "No image file provided" });
+  }
+
   try {
-    // Check if profile exists
-    const profile = await User.findById(userId);
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Update profile image
-    profile.profileImageUrl = profileImageFile.path;
-    await profile.save();
+    user.profileImageUrl = profileImageFile.path;
+    await user.save();
 
     res.status(200).json({
       message: "Profile image updated successfully",
-      profile,
+      profileImageUrl: user.profileImageUrl,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Profile image update error:", err);
     res.status(500).json({
       message: "Error updating profile image",
       error: err.message,

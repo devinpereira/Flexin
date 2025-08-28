@@ -207,7 +207,7 @@ const Navbar = () => {
                 to="/calculators"
                 className={`text-white ${isLinkActive('/calculators') ? 'text-[#f67a45]' : 'hover:text-[#f67a45]'} text-base lg:text-lg px-2 py-1 relative group transition-all duration-300`}
               >
-                Home
+                HOME
                 <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/calculators') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
               <Link
@@ -231,14 +231,14 @@ const Navbar = () => {
                 COMMUNITY
                 <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/community') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
-              <Link
+              {/* <Link
                 to="/help"
                 className={`text-white ${isLinkActive('/help') || isLinkActive('/user-manual') ? 'text-[#f67a45]' : 'hover:text-[#f67a45]'} text-base lg:text-lg px-2 py-1 relative group transition-all duration-300 flex items-center`}
               >
                 <FaQuestion className="mr-1" size={14} />
                 HELP
                 <span className={`absolute bottom-0 left-0 h-0.5 bg-[#f67a45] transition-all duration-300 ${isLinkActive('/help') || isLinkActive('/user-manual') ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
-              </Link>
+              </Link> */}
 
               {/* Admin link - only visible for admin users */}
               {isAdmin && (
