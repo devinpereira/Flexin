@@ -1,6 +1,6 @@
-# 💪 PulsePlus
+# 💪 Flexin
 
-PulsePlus is a modern, full-stack health & fitness platform that blends AI-driven personal training with social engagement and eCommerce. Built with the **MERN stack + Python**, it features an ML-powered workout planner, a community feed for user interaction, and a fully integrated store.
+Flexin is a modern, full-stack health & fitness platform that blends AI-driven personal training with social engagement and eCommerce. Built with the **MERN stack + Python**, it features an ML-powered workout planner, a community feed for user interaction, and a fully integrated store.
 
 ---
 
@@ -46,7 +46,7 @@ PulsePlus is a modern, full-stack health & fitness platform that blends AI-drive
 ## 🗂 Project Structure
 
 ```
-pulseplus/
+Flexin/
 ├── client/           # React frontend
 │   ├── pages/
 │   ├── components/
@@ -72,8 +72,8 @@ pulseplus/
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/PasinduFdo/pulseplus.git
-cd pulseplus
+git clone https://github.com/PasinduFdo/Flexin.git
+cd Flexin
 ```
 
 ### 2. Backend Setup (Express)
@@ -137,5 +137,5 @@ Contributions are welcome!
 
 ## 📜 License
 ```
-MIT License © PulsePlus
+MIT License © Flexin
 ```
